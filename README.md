@@ -28,6 +28,10 @@ git clone https://github.com/ecleveland02/FrierenActionRPG.git
 Opening in a different Unity 6 patch release is fine; the Hub will offer to upgrade. Opening in
 Unity 2022 or earlier is not supported.
 
+> **Never used Unity before, or setting up a new machine?**
+> [docs/SETUP.md](docs/SETUP.md) walks through installing Unity, cloning the branch, opening the
+> project and wiring up a code editor.
+
 ## First open
 
 1. Open the project folder in Unity Hub. The first import takes a few minutes while packages resolve.
@@ -136,6 +140,7 @@ installed but not yet configured. See [docs/DECISIONS.md](docs/DECISIONS.md), de
 
 ## Documentation
 
+- [docs/SETUP.md](docs/SETUP.md) - installing Unity, cloning, and setting up an editor from scratch
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - how the systems fit together and where the next ones plug in
 - [docs/DECISIONS.md](docs/DECISIONS.md) - decisions taken without asking, and why
 - [docs/MILESTONES.md](docs/MILESTONES.md) - the plan and current status
