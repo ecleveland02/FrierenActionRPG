@@ -181,6 +181,42 @@ git push origin claude/frieren-rpg-foundation-svvrqc
 In GitHub Desktop these are **Fetch origin**, then a summary and **Commit**, then **Push origin**.
 Unity Hub cannot do either; it only clones.
 
+### Confirming you actually have the latest
+
+A pull that appears to work but changes nothing is the most common way to spend an hour debugging
+code that is no longer there. Two checks, one on the repository and one in the editor.
+
+**The repository.** Compare your top commit against the one you were told to expect:
+
+```powershell
+cd C:\Users\ericc\Code\Frieren\FrierenActionRPG
+git fetch origin
+git log --oneline -1
+git status --short
+```
+
+`git log --oneline -1` prints the commit you are on. If it does not match, you have not pulled. In
+GitHub Desktop the same information is the top row of the **History** tab.
+
+If `git status --short` lists files, you have local changes. Unity writes some by itself on first
+open - `Packages/packages-lock.json`, sometimes files under `ProjectSettings` - and they can block a
+pull with "local changes would be overwritten". Commit them; they are legitimate:
+
+```powershell
+git add -A
+git commit -m "Local Unity changes"
+git pull origin claude/frieren-rpg-foundation-svvrqc
+```
+
+**The editor.** Pulling changes files on disk; it does not recompile anything. Unity only rebuilds
+when it regains focus, so after pulling, click into the Unity window and wait for the spinner in the
+bottom-right to finish. Until that completes you are still running the old assemblies no matter what
+git says.
+
+The reliable confirmation is behavioural: pick something visible that the new commit adds - a new
+line in the debug overlay, a new menu item - and check it is there. If it is not, the build in the
+editor is not the build in the repository, and nothing else you observe means anything.
+
 **Close Unity, or at least save your scenes, before pulling.** Unity holds scenes and prefabs in
 memory and will overwrite files underneath a pull when it next saves.
 
