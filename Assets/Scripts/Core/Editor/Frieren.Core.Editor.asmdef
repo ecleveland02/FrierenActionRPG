@@ -1,0 +1,21 @@
+{
+    "name": "Frieren.Core.Editor",
+    "rootNamespace": "Frieren.Core.EditorTools",
+    "references": [
+        "Frieren.Core",
+        "Frieren.Data",
+        "Frieren.Save",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

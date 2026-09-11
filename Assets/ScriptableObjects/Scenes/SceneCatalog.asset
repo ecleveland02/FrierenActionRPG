@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 43c7082c9feb9e6e853a8d12cd80f6f8, type: 3}
+  m_Name: SceneCatalog
+  m_EditorClassIdentifier: 
+  id: scene.catalog
+  displayName: Scene Catalog
+  description: Every loadable scene, so a scene id from a save file can be resolved.
+  scenes:
+  - {fileID: 11400000, guid: 0791d8dd9c8798dff0a62023da610108, type: 2}
+  - {fileID: 11400000, guid: 89d7d894b5e0b090236e34a3f873364f, type: 2}
