@@ -8,25 +8,32 @@ Code is split into assembly definitions so a change in one system does not recom
 and so the dependency direction is enforced by the compiler rather than by discipline.
 
 ```
-Frieren.Data          (no dependencies)
-    ^
-    |
-Frieren.Core  ------> Frieren.Save   (no dependencies)
-    ^                      ^
-    |                      |
-Frieren.Core.Editor   Frieren.Tests.EditMode
+Frieren.Data (no deps)        Frieren.Save (no deps)        Frieren.Characters (no deps)
+        ^                            ^                              ^
+        |                            |                              |
+        +--------- Frieren.Core -----+                              |
+                        ^                                           |
+                        +-------------- Frieren.Player -------------+
+                                              ^
+                        Frieren.Core.Editor --+-- Frieren.Tests.EditMode
 ```
+
+The direction is enforced by the compiler, and the leaves are deliberately dependency-free:
+`Frieren.Characters` references nothing, so the enemy work in Milestone 5 cannot accidentally drag
+player code in with it.
 
 | Assembly | Folder | Holds |
 |---|---|---|
 | `Frieren.Data` | `Scripts/ScriptableObjects` | Base types for authored content. Depends on nothing, so everything can depend on it. |
 | `Frieren.Save` | `Scripts/Save` | Save file format, storage backends, `SaveService`. Deliberately knows nothing about scenes, input or gameplay. |
+| `Frieren.Characters` | `Scripts/Characters` | What any character needs, player or enemy: `CharacterMotor`, `CharacterActionLock`, the animation abstraction. References nothing. |
+| `Frieren.Player` | `Scripts/Player` | Player-specific intent only: locomotion, dodge, interaction probe, camera rig, spawner. |
 | `Frieren.Core` | `Scripts/Core` | Bootstrap, service registry, scene loading, game state, input, debug tooling. |
 | `Frieren.Core.Editor` | `Scripts/Core/Editor` | Editor-only: setup validation, asset creation, scene regeneration, menus. |
 | `Frieren.Tests.EditMode` | `Scripts/Tests/EditMode` | Edit-mode tests. |
 
-Gameplay assemblies (`Frieren.Player`, `Frieren.Combat`, `Frieren.Magic`, ...) get their own asmdefs
-as those folders gain code. They should depend on `Frieren.Core` and `Frieren.Data`, and on each
+Remaining gameplay assemblies (`Frieren.Combat`, `Frieren.Magic`, `Frieren.Enemies`, ...) get their
+own asmdefs as those folders gain code. They should depend on `Frieren.Core` and `Frieren.Data`, and on each
 other as little as possible. `Frieren.Core` must never gain a dependency on a gameplay assembly:
 if core needs to talk to gameplay, that is a signal to invert it with an interface or an event.
 
@@ -111,16 +118,53 @@ calls and their string concatenation are removed by the compiler rather than ski
 `DebugOverlay` is IMGUI on purpose: no canvas, no prefab, no scene setup, works in any scene, and
 will not collide with the real UI built later.
 
+## Character layer (Milestone 2)
+
+```
+input  ->  PlayerLocomotion  --.
+                               |--> CharacterMotor --> CharacterController
+       ->  PlayerDodge       --'        (integrates, once per frame)
+              |
+              +-- holds --> CharacterActionLock  <-- locomotion stands down while held
+```
+
+**One integrator.** `CharacterMotor` moves the `CharacterController` in its own `Update`, at
+execution order 100 so every ability has already set a velocity for the frame. Abilities call
+`SetHorizontalVelocity` and `Jump`; nothing else calls `CharacterController.Move`. There is exactly
+one place the character's position changes, so double integration is impossible by construction.
+
+**One claimant at a time.** `CharacterActionLock` is a single-holder claim on the body. The dodge
+takes it for its duration; locomotion sees it held and stops steering without ever taking it itself,
+because movement is a character's default state rather than an action competing for it. Casting
+(Milestone 4) and attacks (Milestone 5) take the same lock.
+
+**Animation is told, never asked.** `ICharacterAnimation` is one-directional: gameplay reports state,
+presentation reacts. `PlaceholderCharacterAnimation` squashes and tints a primitive;
+`MecanimCharacterAnimation` drives an `Animator`. Swapping the placeholder capsule for the rigged
+Blender character means changing which component is on the prefab, and nothing else. Animation must
+never become the source of truth for whether the character is moving, or a missing clip turns into a
+gameplay bug.
+
+**Logic is extracted so it can be tested.** MonoBehaviours cannot be unit-tested meaningfully, so
+the parts that are easy to get subtly wrong live in plain classes: `JumpGate` (coyote time and input
+buffering), `OrbitCameraSolver` (orbit math, pitch clamping, yaw wrapping), `InteractionSelector`
+(candidate scoring), `MotorMath` (gravity, jump height, camera-relative direction). The
+MonoBehaviours are then thin wiring.
+
+**The player is spawned, not placed.** `PlayerSpawner` instantiates the prefab and wires the camera
+in both directions. One prefab stays the single definition of what a player is, and respawning,
+loading a save into a named spawn point, and arriving through a specific door all reuse the same
+step.
+
 ## Where the next milestones attach
 
 | Milestone | Attaches via |
 |---|---|
-| 2 - Player controller | New `Frieren.Player` asmdef. Reference the `InputReader` asset; read `GameStateMachine.Current` to ignore input while paused. |
-| 3 - Character architecture | `CharacterStats`, `CharacterHealth`, `CharacterMana` etc. as separate components. Any that persists implements `ISaveable` and registers with `SaveService`. |
-| 4 - Magic framework | `SpellDefinition : IdentifiableScriptableObject` with a list of effect objects. Its `Id` is what a save file records as "known spells". Environmental interaction is an effect type, not a special case. |
-| 5 - Enemy | Its own behaviour state machine - not `GameStateMachine`, which is for application modes. |
-| 6 - Environmental interaction | Components responding to spell effect *types*, so a new spell reusing an existing effect works on existing objects with no changes. |
-| 7 - Vertical slice | `GameSceneDefinition` per area, added to `SceneCatalog` and Build Settings; `SceneLoader` handles the transitions. |
+| 3 - Character architecture | `CharacterStats`, `CharacterHealth`, `CharacterMana` as separate components in `Frieren.Characters`. Any that persists implements `ISaveable`. The rigged character replaces `PlaceholderCharacterAnimation` with `MecanimCharacterAnimation`. |
+| 4 - Magic framework | `SpellDefinition : IdentifiableScriptableObject` with a list of effect objects. Casting takes `CharacterActionLock`. Environmental interaction is an effect type, not a special case. |
+| 5 - Enemy | Reuses `CharacterMotor` driven by a navigation agent instead of input. Its own behaviour state machine, not `GameStateMachine`, which is for application modes. `PlayerDodge.IsInvulnerable` is already exposed for damage to read. |
+| 6 - Environmental interaction | Components responding to spell effect *types*. Separate from `IInteractable`: pressing a lever and burning a crate are different verbs with different rules. |
+| 7 - Vertical slice | `GameSceneDefinition` per area, added to `SceneCatalog` and Build Settings. `PlayerSpawner` handles arrival in each. |
 
 ## Conventions
 
@@ -129,3 +173,8 @@ will not collide with the real UI built later.
   needs neither - plain C# is the testable kind, so prefer it.
 - Content is referenced by stable string `Id`, never by asset path or build index.
 - Comments explain *why*. The code already says what.
+- A namespace segment may shadow a Unity type only if that type is one the project has banned.
+  `Frieren.Core.Input` and `Frieren.Characters.Animation` shadow the legacy `Input` and `Animation`
+  classes, which is harmless and mildly protective. `Frieren.Player.Cameras` is plural precisely
+  because `Camera` is live API, and shadowing it would break every file in the namespace with a
+  CS0118 that names the wrong cause.

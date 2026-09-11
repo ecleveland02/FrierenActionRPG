@@ -7,8 +7,9 @@ The design principle everything else serves: **magic is a tool, not merely a wea
 expected to interact with the world - burning, freezing, lifting, flooding, repairing, unlocking -
 and most environmental problems should have more than one solution.
 
-> Status: **Milestone 1 complete** - project foundation only. There is no player character, no
-> combat and no magic yet. See [docs/MILESTONES.md](docs/MILESTONES.md).
+> Status: **Milestones 1-2 complete, neither verified in the editor.** There is a controllable
+> placeholder capsule with a camera, jump, dodge and interaction. There is no combat and no magic
+> yet. See [docs/MILESTONES.md](docs/MILESTONES.md).
 
 ---
 
@@ -43,15 +44,26 @@ the editor. It should already be set - `ProjectSettings.asset` is committed with
 ## Running and testing Milestone 1
 
 Press Play from `Boot.unity`. Boot loads `TestScene` additively and hands control to the
-`Playing` state. You should see a gray plane, a white cube, and a debug overlay.
+`Playing` state, then `PlayerSpawner` drops a capsule in and points the camera at it.
 
-| Key | Effect |
-|---|---|
-| `F1` | Toggle the debug overlay |
-| `F5` | Quick save to `slot_0` |
-| `F6` | Change the `SaveProbe` counter |
-| `F9` | Quick load `slot_0` |
-| `Esc` | Toggle Playing / Paused |
+| Action | Keyboard / mouse | Gamepad |
+|---|---|---|
+| Move | `WASD` | Left stick |
+| Look | Mouse | Right stick |
+| Sprint | `Shift` | L3 |
+| Jump | `Space` | A / cross |
+| Dodge | `Ctrl` | B / circle |
+| Interact | `E` | X / square |
+| Pause | `Esc` | Start |
+
+Debug keys: `F1` overlay, `F5` quick save, `F6` change the `SaveProbe` counter, `F9` quick load.
+
+**Movement checks, in the order worth doing them:** the capsule spawns and the camera follows;
+movement is camera-relative; walking off the platform and jumping a frame late still jumps (coyote
+time); pressing jump just before landing jumps on landing (input buffering); dodging mid-run ignores
+steering until it ends; the capsule tints blue with speed and amber in the air; backing the camera
+into the wall pulls it in rather than clipping; standing near a grey cube and pressing interact turns
+it green.
 
 **The save round-trip test:** press `F6` three times (counter reads 3), `F5` to save, `F6` twice more
 (counter reads 5), then `F9`. The counter should snap back to 3. `Frieren > Saves > Open Save Folder`
@@ -61,8 +73,9 @@ shows the JSON that was written.
 pulls the Boot scene in behind it so services exist, and suppresses the first-scene load so the
 scene under test is not immediately replaced.
 
-**Automated tests:** `Window > General > Test Runner > EditMode > Run All`. 36 tests cover the
-service locator, the game state machine and the save system. They do not touch the disk.
+**Automated tests:** `Window > General > Test Runner > EditMode > Run All`. 97 tests cover the service
+locator, the game state machine, the save system, jump timing, motor maths, camera orbit maths and
+interaction scoring. They do not touch the disk and need no scene.
 
 ## Layout
 
@@ -74,10 +87,12 @@ Assets/
   ScriptableObjects/   Authored data assets (scene definitions, settings)
   Settings/Input/ FrierenControls.inputactions
   Scripts/
-    Core/         Bootstrap, Services, Scenes, StateMachine, Input, Debugging, Editor
+    Core/         Bootstrap, Services, Scenes, StateMachine, Input, Interaction, Debugging, Editor
+    Characters/   Motor, action lock, animation abstraction - shared by player and enemies
+    Player/       Locomotion, dodge, interaction probe, camera rig, spawner
     Save/         Save service, storage backends, file format
     ScriptableObjects/  Shared base types for authored content
-    Player/ Combat/ Magic/ Enemies/ Inventory/ Equipment/ Quests/ Dialogue/   (empty - later milestones)
+    Combat/ Magic/ Enemies/ Inventory/ Equipment/ Quests/ Dialogue/   (empty - later milestones)
     Tests/EditMode/
 docs/
 ```
@@ -94,15 +109,23 @@ classes live with the system that owns them, not in a shared bucket.
 | `Frieren > Open Test Scene` (`F8`) | Jump to the test scene |
 | `Frieren > Setup > Create Missing Core Assets` | Recreate any deleted settings asset, non-destructively |
 | `Frieren > Setup > Configure Build Settings` | Reset the build scene list with Boot first |
-| `Frieren > Setup > Regenerate Core Scenes` | Rebuild Boot and TestScene from code (destructive - confirms first) |
+| `Frieren > Setup > Regenerate Core Scenes` | Rebuild the player prefab, Boot and TestScene from code (destructive - confirms first) |
 | `Frieren > Saves > Open Save Folder` | Reveal `persistentDataPath/Saves` |
 | `Frieren > Saves > Delete All Saves` | Wipe save files |
 
 ## Troubleshooting
 
-**A scene fails to open or its objects are unwired.** Run `Frieren > Setup > Regenerate Core Scenes`.
-Both core scenes can be rebuilt from code; that tool is the authoritative description of what they
-should contain.
+**A scene or the player prefab fails to open, or its objects are unwired.** Run
+`Frieren > Setup > Regenerate Core Scenes`. The prefab and both core scenes can be rebuilt from
+code; that tool is the authoritative description of what they should contain.
+
+**The capsule falls through the floor, or will not move.** Check that `Player.prefab`'s only
+collider is the `CharacterController` on the root - a stray `CapsuleCollider` on the Visual child
+fights it for the same space.
+
+**The camera sits inside the capsule.** `OrbitCameraRig` discards hits on the target's own
+colliders, so this means `SetTarget` was never called: check the `PlayerSpawner`'s camera rig
+reference.
 
 **Packages fail to resolve.** The versions in `Packages/manifest.json` are pinned for Unity 6000.0.
 If your editor version disagrees, open Package Manager and let it resolve, then commit the updated

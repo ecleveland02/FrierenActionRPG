@@ -1,17 +1,11 @@
 {
-    "name": "Frieren.Core.Editor",
-    "rootNamespace": "Frieren.Core.EditorTools",
+    "name": "Frieren.Player",
+    "rootNamespace": "Frieren.Player",
     "references": [
         "Frieren.Core",
-        "Frieren.Characters",
-        "Frieren.Player",
-        "Frieren.Data",
-        "Frieren.Save",
-        "Unity.InputSystem"
+        "Frieren.Characters"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

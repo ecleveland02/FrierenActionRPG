@@ -1,9 +1,13 @@
 using System.Collections.Generic;
 using System.IO;
+using Frieren.Characters;
+using Frieren.Characters.Animation;
 using Frieren.Core.Bootstrap;
 using Frieren.Core.Debugging;
 using Frieren.Core.Input;
 using Frieren.Core.Scenes;
+using Frieren.Player;
+using Frieren.Player.Cameras;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -12,13 +16,16 @@ using UnityEngine.SceneManagement;
 namespace Frieren.Core.EditorTools
 {
     /// <summary>
-    /// Rebuilds the Boot and Test scenes from code.
+    /// Rebuilds the player prefab and the Boot and Test scenes from code.
     /// </summary>
     /// <remarks>
-    /// Scenes are checked in, so this is not needed day to day. It exists because a scene file is
-    /// the one asset that cannot be reviewed in a diff, and a broken one is otherwise unrecoverable
-    /// without redoing the wiring by hand. It also documents, in code, exactly what the Boot scene
-    /// is supposed to contain.
+    /// These assets are checked in, so this is not needed day to day. It exists because a scene or
+    /// prefab is the one kind of asset that cannot be reviewed in a diff, and a corrupted one is
+    /// otherwise unrecoverable without redoing the wiring by hand.
+    ///
+    /// It is also the authoritative, reviewable description of what those assets contain - which
+    /// only holds while it is kept in step with them. Changing the committed scene by hand without
+    /// changing this is how the safety net quietly stops being one.
     /// </remarks>
     internal static class CoreSceneGenerator
     {
@@ -27,6 +34,7 @@ namespace Frieren.Core.EditorTools
             CoreAssetFactory.EnsureAll();
             Directory.CreateDirectory(ProjectPaths.ScenesFolder);
 
+            BuildPlayerPrefab();
             BuildBootScene();
             BuildTestScene();
 
@@ -34,8 +42,67 @@ namespace Frieren.Core.EditorTools
             ConfigureBuildSettings();
 
             EditorSceneManager.OpenScene(ProjectPaths.BootScene, OpenSceneMode.Single);
-            Debug.Log("[Setup] Core scenes regenerated.");
+            Debug.Log("[Setup] Player prefab and core scenes regenerated.");
         }
+
+        // ------------------------------------------------------------------ player
+
+        public static GameObject BuildPlayerPrefab()
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(ProjectPaths.PlayerPrefab) ?? "Assets");
+
+            var reader = AssetDatabase.LoadAssetAtPath<InputReader>(ProjectPaths.InputReader);
+            var root = new GameObject("Player");
+            int playerLayer = ResolveLayer("Player");
+
+            var controller = root.AddComponent<CharacterController>();
+            controller.height = 2f;
+            controller.radius = 0.5f;
+            controller.center = new Vector3(0f, 1f, 0f);
+            controller.slopeLimit = 45f;
+            controller.stepOffset = 0.3f;
+            controller.skinWidth = 0.08f;
+
+            root.AddComponent<CharacterMotor>();
+            root.AddComponent<CharacterActionLock>();
+
+            PlayerLocomotion locomotion = root.AddComponent<PlayerLocomotion>();
+            PlayerDodge dodge = root.AddComponent<PlayerDodge>();
+            PlayerInteractor interactor = root.AddComponent<PlayerInteractor>();
+            PlaceholderCharacterAnimation placeholder = root.AddComponent<PlaceholderCharacterAnimation>();
+
+            AssignReference(locomotion, "inputReader", reader);
+            AssignReference(dodge, "inputReader", reader);
+            AssignReference(interactor, "inputReader", reader);
+
+            GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            visual.name = "Visual";
+            visual.transform.SetParent(root.transform, false);
+            visual.transform.localPosition = new Vector3(0f, 1f, 0f);
+
+            // A primitive brings its own collider, which would fight the CharacterController for
+            // the same space. The controller is the character's only collider.
+            StripColliders(visual);
+
+            GameObject nose = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            nose.name = "FacingMarker";
+            nose.transform.SetParent(visual.transform, false);
+            nose.transform.localPosition = new Vector3(0f, 0.35f, 0.42f);
+            nose.transform.localScale = new Vector3(0.28f, 0.28f, 0.45f);
+            StripColliders(nose);
+
+            AssignReference(placeholder, "visual", visual.transform);
+            AssignReference(placeholder, "tintTarget", visual.GetComponent<Renderer>());
+
+            SetLayerRecursively(root, playerLayer);
+
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, ProjectPaths.PlayerPrefab);
+            Object.DestroyImmediate(root);
+
+            return prefab;
+        }
+
+        // ------------------------------------------------------------------- scenes
 
         private static void BuildBootScene()
         {
@@ -48,16 +115,14 @@ namespace Frieren.Core.EditorTools
             systems.AddComponent<SceneLoader>();
             systems.AddComponent<DebugOverlay>();
 
-            var serialized = new SerializedObject(bootstrapper);
-            serialized.FindProperty("firstScene").objectReferenceValue =
-                AssetDatabase.LoadAssetAtPath<GameSceneDefinition>(ProjectPaths.TestSceneDefinition);
-            serialized.FindProperty("sceneCatalog").objectReferenceValue =
-                AssetDatabase.LoadAssetAtPath<SceneCatalog>(ProjectPaths.SceneCatalog);
-            serialized.FindProperty("inputReader").objectReferenceValue =
-                AssetDatabase.LoadAssetAtPath<InputReader>(ProjectPaths.InputReader);
-            serialized.FindProperty("logSettings").objectReferenceValue =
-                AssetDatabase.LoadAssetAtPath<LogSettings>(ProjectPaths.LogSettings);
-            serialized.ApplyModifiedPropertiesWithoutUndo();
+            AssignReference(bootstrapper, "firstScene",
+                AssetDatabase.LoadAssetAtPath<GameSceneDefinition>(ProjectPaths.TestSceneDefinition));
+            AssignReference(bootstrapper, "sceneCatalog",
+                AssetDatabase.LoadAssetAtPath<SceneCatalog>(ProjectPaths.SceneCatalog));
+            AssignReference(bootstrapper, "inputReader",
+                AssetDatabase.LoadAssetAtPath<InputReader>(ProjectPaths.InputReader));
+            AssignReference(bootstrapper, "logSettings",
+                AssetDatabase.LoadAssetAtPath<LogSettings>(ProjectPaths.LogSettings));
 
             EditorSceneManager.SaveScene(scene, ProjectPaths.BootScene);
         }
@@ -66,38 +131,121 @@ namespace Frieren.Core.EditorTools
         {
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
 
+            var reader = AssetDatabase.LoadAssetAtPath<InputReader>(ProjectPaths.InputReader);
+            int groundLayer = ResolveLayer("Ground");
+            int interactableLayer = ResolveLayer("Interactable");
+
             GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
             ground.name = "Ground";
             ground.transform.localScale = new Vector3(4f, 1f, 4f);
+            ground.layer = groundLayer;
 
-            int groundLayer = LayerMask.NameToLayer("Ground");
+            CreateBox("Platform", new Vector3(7f, 0.75f, 3f), new Vector3(5f, 1.5f, 5f), groundLayer);
+            CreateBox("Step", new Vector3(3.5f, 0.15f, 3f), new Vector3(2f, 0.3f, 2f), groundLayer);
+            CreateBox("WallForCameraCollision", new Vector3(-6f, 2f, 2f), new Vector3(0.5f, 4f, 8f), groundLayer);
 
-            if (groundLayer >= 0)
-            {
-                ground.layer = groundLayer;
-            }
-            else
-            {
-                Debug.LogWarning("[Setup] No 'Ground' layer defined; leaving the plane on Default.");
-            }
-
-
-            GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            marker.name = "OriginMarker";
-            marker.transform.position = new Vector3(0f, 0.5f, 0f);
+            CreateInteractable("Interactable_Lever", new Vector3(2.5f, 0.4f, -2.5f), "Pull", interactableLayer);
+            CreateInteractable("Interactable_Crate", new Vector3(-2.5f, 0.4f, -2.5f), "Open", interactableLayer);
 
             var probe = new GameObject("SaveProbe");
             probe.AddComponent<SaveProbe>();
 
-            Camera camera = Object.FindFirstObjectByType<Camera>();
+            OrbitCameraRig rig = null;
+            UnityEngine.Camera camera = Object.FindFirstObjectByType<UnityEngine.Camera>();
 
             if (camera != null)
             {
                 camera.transform.position = new Vector3(0f, 4f, -8f);
                 camera.transform.rotation = Quaternion.Euler(20f, 0f, 0f);
+                camera.nearClipPlane = 0.15f;
+                rig = camera.gameObject.AddComponent<OrbitCameraRig>();
+                AssignReference(rig, "inputReader", reader);
             }
 
+            var spawn = new GameObject("PlayerSpawn");
+            spawn.transform.position = new Vector3(0f, 0.1f, -3f);
+            PlayerSpawner spawner = spawn.AddComponent<PlayerSpawner>();
+            AssignReference(spawner, "playerPrefab",
+                AssetDatabase.LoadAssetAtPath<GameObject>(ProjectPaths.PlayerPrefab));
+            AssignReference(spawner, "cameraRig", rig);
+
             EditorSceneManager.SaveScene(scene, ProjectPaths.TestScene);
+        }
+
+        // -------------------------------------------------------------------- utils
+
+        private static GameObject CreateBox(string name, Vector3 position, Vector3 scale, int layer)
+        {
+            GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            box.name = name;
+            box.transform.position = position;
+            box.transform.localScale = scale;
+            box.layer = layer;
+            return box;
+        }
+
+        private static void CreateInteractable(string name, Vector3 position, string prompt, int layer)
+        {
+            GameObject box = CreateBox(name, position, Vector3.one * 0.8f, layer);
+            box.tag = "Interactable";
+
+            DebugInteractable interactable = box.AddComponent<DebugInteractable>();
+            var serialized = new SerializedObject(interactable);
+            serialized.FindProperty("prompt").stringValue = prompt;
+            serialized.FindProperty("tintTarget").objectReferenceValue = box.GetComponent<Renderer>();
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void StripColliders(GameObject target)
+        {
+            foreach (Collider collider in target.GetComponents<Collider>())
+            {
+                Object.DestroyImmediate(collider);
+            }
+        }
+
+        private static void SetLayerRecursively(GameObject target, int layer)
+        {
+            target.layer = layer;
+
+            foreach (Transform child in target.transform)
+            {
+                SetLayerRecursively(child.gameObject, layer);
+            }
+        }
+
+        /// <summary>Falls back to Default rather than assigning -1, which Unity rejects.</summary>
+        private static int ResolveLayer(string layerName)
+        {
+            int layer = LayerMask.NameToLayer(layerName);
+
+            if (layer >= 0)
+            {
+                return layer;
+            }
+
+            Debug.LogWarning($"[Setup] No '{layerName}' layer defined; falling back to Default.");
+            return 0;
+        }
+
+        private static void AssignReference(Object component, string propertyName, Object value)
+        {
+            if (component == null)
+            {
+                return;
+            }
+
+            var serialized = new SerializedObject(component);
+            SerializedProperty property = serialized.FindProperty(propertyName);
+
+            if (property == null)
+            {
+                Debug.LogWarning($"[Setup] {component.GetType().Name} has no serialized field '{propertyName}'.");
+                return;
+            }
+
+            property.objectReferenceValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         public static void ConfigureBuildSettings()

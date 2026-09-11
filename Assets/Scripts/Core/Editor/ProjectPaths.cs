@@ -15,6 +15,8 @@ namespace Frieren.Core.EditorTools
         public const string TestSceneDefinition = SceneDefinitionsFolder + "/Scene_TestScene.asset";
         public const string SceneCatalog = SceneDefinitionsFolder + "/SceneCatalog.asset";
 
+        public const string PlayerPrefab = "Assets/Prefabs/Characters/Player.prefab";
+
         public const string LogSettings = "Assets/ScriptableObjects/Debug/LogSettings.asset";
         public const string InputReader = "Assets/ScriptableObjects/Input/InputReader.asset";
         public const string InputActions = "Assets/Settings/Input/FrierenControls.inputactions";

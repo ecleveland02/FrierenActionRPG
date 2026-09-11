@@ -3,6 +3,8 @@
     "rootNamespace": "Frieren.Tests.EditMode",
     "references": [
         "Frieren.Core",
+        "Frieren.Characters",
+        "Frieren.Player",
         "Frieren.Data",
         "Frieren.Save",
         "UnityEngine.TestRunner",

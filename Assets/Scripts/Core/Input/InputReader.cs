@@ -47,6 +47,18 @@ namespace Frieren.Core.Input
 
         public Vector2 LookInput { get; private set; }
 
+        /// <summary>
+        /// True when the most recent look input came from a pointer.
+        /// </summary>
+        /// <remarks>
+        /// A mouse reports a delta already accumulated over the frame; a gamepad stick reports a
+        /// position that has to be multiplied by delta time to become a rate. Applying either rule
+        /// to both devices is wrong - a stick treated as a delta makes camera speed depend on frame
+        /// rate, and a mouse scaled by delta time makes it depend on it the other way. Consumers
+        /// branch on this rather than trying to guess from the magnitude.
+        /// </remarks>
+        public bool LookIsPointerDelta { get; private set; }
+
         public bool SprintHeld { get; private set; }
 
         public event Action<Vector2> MoveChanged;
@@ -121,6 +133,10 @@ namespace Frieren.Core.Input
         {
             gameplayMap?.Disable();
             uiMap?.Enable();
+
+            // Disabling a map cancels its in-progress actions, but clear the cached values too so a
+            // held stick cannot leak a stale direction into the frame gameplay resumes.
+            ResetValues();
         }
 
         public void DisableAll()
@@ -176,6 +192,7 @@ namespace Frieren.Core.Input
         {
             MoveInput = Vector2.zero;
             LookInput = Vector2.zero;
+            LookIsPointerDelta = false;
             SprintHeld = false;
         }
 
@@ -232,6 +249,7 @@ namespace Frieren.Core.Input
         private void OnLook(InputAction.CallbackContext context)
         {
             LookInput = context.ReadValue<Vector2>();
+            LookIsPointerDelta = context.control != null && context.control.device is Pointer;
             LookChanged?.Invoke(LookInput);
         }
 

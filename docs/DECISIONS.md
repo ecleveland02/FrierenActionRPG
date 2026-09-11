@@ -142,3 +142,97 @@ Strictly this is Milestone 2 territory. It is here because it is the only thing 
 input → state machine → game reaction end to end, which makes the milestone actually verifiable
 rather than merely compiled. It is about fifteen lines in `Bootstrapper` and moves out when a real
 pause menu exists.
+
+---
+
+## Milestone 2
+
+### 13. A hand-written camera rig, not Cinemachine
+
+This reverses the recommendation made at the end of Milestone 1. The tradeoff has not changed -
+Cinemachine is still the better answer for complex framing - but a blocker turned up: Cinemachine's
+component script GUIDs live inside the package, so a committed scene or prefab cannot reference them
+from outside the editor. Shipping Cinemachine would have meant shipping a scene that has to be wired
+by hand before it works.
+
+`OrbitCameraRig` is about two hundred lines doing one job: orbit, follow, and pull in on collision.
+It is not a Cinemachine substitute. Switching later means deleting the component and pointing
+`PlayerSpawner` at a Cinemachine target, which is a contained change.
+
+---
+
+### 14. `CharacterController`, not `Rigidbody`
+
+Action-RPG movement wants authored, predictable motion. A physics-driven character fights the
+designer on every slope, every step and every knockback, and the usual remedy is to suppress so much
+of the physics that the Rigidbody stops earning its place.
+
+The cost is real: forces have to be faked, and there is no free interaction with physics objects.
+The decision to revisit is levitation cast on *the player*. Levitating world objects does not force
+it; levitating the player does.
+
+---
+
+### 15. Character-level code lives in its own assembly, above the folder sketch
+
+The original structure sketch has `Player/`, `Enemies/`, `Combat/` and so on, with no home for
+things a player and an enemy both need. `Frieren.Characters` is that home, and it references
+nothing.
+
+Milestone 3 is explicitly "modular character architecture" and Milestone 5 needs a moving enemy.
+Writing the motor as player-only and then rewriting it for enemies is the waste this avoids. The
+code is identical either way; only the folder differs.
+
+---
+
+### 16. One integrator, enforced by execution order
+
+`CharacterMotor` moves the `CharacterController` in its own `Update` at execution order 100.
+Abilities set a velocity; nothing else moves the character.
+
+The alternative - each ability calling `Move` itself - integrates gravity twice the moment two
+abilities are active in one frame, and produces a bug that looks like "the character falls faster
+while dodging" and takes an afternoon to find.
+
+---
+
+### 17. No serialized `AnimationCurve` or `LayerMask` in committed prefabs
+
+Value fields are deliberately omitted from the hand-authored prefab YAML. Unity constructs a
+MonoBehaviour with its field initializers and then overwrites only the keys present in the file, so
+an omitted field takes its documented C# default rather than a zero.
+
+That property is only useful if the defaults are safe, which rules out two types. An
+`AnimationCurve` serialises as keyframe data, and an empty curve evaluates to zero - a dodge that
+silently does nothing. A `LayerMask`'s YAML shape is version-sensitive enough that getting it wrong
+means a mask of zero, which is a probe that silently finds nothing. Both failure modes are invisible
+rather than loud. So the dodge speed profile is two floats, and every mask defaults to everything
+and is narrowed by checking the object rather than the layer.
+
+Narrowing the masks for performance is a tuning pass once the project can be opened and profiled.
+
+---
+
+### 18. Namespaces may shadow banned Unity types, never live ones
+
+`Frieren.Core.Input` and `Frieren.Characters.Animation` shadow `UnityEngine.Input` and
+`UnityEngine.Animation`. Both are legacy APIs this project has decided not to use, so inside those
+namespaces the shadowing is harmless and mildly protective.
+
+`Frieren.Player.Cameras` is plural for the opposite reason. `Camera` is live API used constantly,
+and a namespace named `Camera` makes every `Camera` reference in it a CS0118 error that names the
+symbol rather than the cause.
+
+---
+
+### 19. Mouse and stick look input are handled differently
+
+A mouse reports a delta already accumulated over the frame; a stick reports a position that must be
+multiplied by delta time to become a rate. `InputReader.LookIsPointerDelta` reports which device the
+last look event came from so consumers can branch.
+
+There is a second, less obvious reason the two paths differ. An Input System `Value` action fires
+only when its value *changes*, so a stick held at constant deflection stops raising events entirely.
+Driving the camera from the callback alone makes it stall mid-turn. The stick is therefore polled
+once per frame, while mouse deltas are summed from the callback - several input events can land in
+one frame, and taking only the last throws away part of a flick.
