@@ -18,21 +18,21 @@ and quests are authored content, never hardcoded branches.
 
 | Milestone | Status |
 |---|---|
-| 1 - Foundation: bootstrap, scenes, save, input, debug | Compiles and boots in the editor, 0 errors |
-| 2 - Placeholder third-person player | Compiles; gameplay not yet exercised |
+| 1 - Foundation: bootstrap, scenes, save, input, debug | Verified in the editor |
+| 2 - Placeholder third-person player | Verified in the editor, character is playable |
 | 3 - Modular character architecture | Not started |
 | 4-7 | Not started, see `docs/MILESTONES.md` |
 
-Milestones 1 and 2 were authored with no Unity installed, so nothing was compiled while it was
-written. That has now changed: as of the first editor session on Unity 6000.0 (Windows), **all six
-assemblies compile and the game boots with zero errors and zero warnings.** Confirmed working at
-runtime: `Bootstrapper`, `ServiceLocator`, `GameStateMachine`, `SaveService`, `DebugOverlay`, the
-hand-authored scenes and ScriptableObject assets, and every `.meta` GUID.
+Milestones 1 and 2 were authored with no Unity installed, and have since been run. The project
+compiles with zero errors, boots, spawns the player, and the character is controllable with a
+following camera. Pause works and the save probe round-trips.
 
-So compile-level API errors are largely ruled out. What is **still unexercised** is everything that
-needs the player to actually be in the world: scene transitions, the save round-trip, movement,
-camera, jump, dodge and interaction. Runtime defects there - wrong parameter *values*, inverted
-signs, event subscriptions that never fire - remain likely, and finding them is high-value work.
+Running it found three defects that static analysis had missed, which is worth knowing before
+trusting any similar reasoning: a scene guard that suppressed the first-scene load, a pause that
+could not be released because the state change ran inside an Input System callback, and a mouse
+look delta that was summed when it should have been assigned. **Anything not actually exercised in
+the editor should still be treated as unverified**, including jump, dodge, interaction and scene
+transitions.
 
 ## Hard rules
 

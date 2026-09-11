@@ -5,24 +5,24 @@ Each milestone must produce something playable or testable, and be verified befo
 | # | Goal | Status |
 |---|---|---|
 | 1 | Project foundation | **Complete**, opens and runs in the editor |
-| 2 | Placeholder third-person player | **Complete**, compiles; gameplay not yet exercised |
+| 2 | Placeholder third-person player | **Complete**, playable in the editor |
 | 3 | Modular character architecture | Not started |
 | 4 | Data-driven magic framework + 8 prototype spells | Not started |
 | 5 | First enemy and basic combat | Not started |
 | 6 | Reusable environmental interaction systems | Not started |
 | 7 | Gray-box vertical slice | Not started |
 
-> **Note on status.** First editor session, Unity 6000.0 on Windows: the project opens, all six
-> assemblies compile, and the game boots with **zero errors and zero warnings**. Confirmed working:
-> package resolution, the hand-written `ProjectSettings` and `TagManager`, every `.meta` GUID, the
-> hand-authored `Boot.unity`, the ScriptableObject assets, `Bootstrapper`, `ServiceLocator`,
-> `GameStateMachine`, `SaveService` and `DebugOverlay`.
+> **Note on status.** Both milestones are now confirmed in the editor on Unity 6000.0 (Windows).
+> The project compiles with zero errors, boots, loads the test scene, spawns the player, and the
+> character moves under player control with a following camera. Pause and resume work, and the save
+> probe round-trips.
 >
-> One real defect found and fixed: `SceneBootstrapGuard` treated an unsaved scene like a scene under
-> test and suppressed the first-scene load, so a fresh clone booted services into an empty world with
-> no error to explain it.
+> Three real defects were found by running it, all of which static analysis had missed:
+> `SceneBootstrapGuard` suppressing the first-scene load from an unsaved scene, pause being
+> unreleasable because the state change ran inside an Input System callback, and the mouse look
+> delta being summed when it should be assigned.
 >
-> Still unexercised: scene transitions, the save round-trip, and all of Milestone 2's gameplay.
+> Jump, dodge and interaction have not been separately reported on.
 
 ---
 

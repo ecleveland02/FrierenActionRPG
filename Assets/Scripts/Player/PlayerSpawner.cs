@@ -65,10 +65,7 @@ namespace Frieren.Player
             SpawnedPlayer.name = playerPrefab.name;
 
             ConnectCamera();
-            GameLog.Warn(LogChannel.Player,
-                $"Player spawned at {point.position} as '{SpawnedPlayer.name}'. " +
-                "Logged as a warning so it is impossible to miss while movement is being diagnosed.",
-                this);
+            GameLog.Info(LogChannel.Player, $"Player spawned at {point.position}.", this);
 
             return SpawnedPlayer;
         }
