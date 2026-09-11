@@ -1,7 +1,12 @@
-# Frieren Action RPG (working title)
+# Kael RPG (working title)
 
-A non-commercial fan project: a 3D single-player action RPG inspired by the world and themes of
-*Frieren: Beyond Journey's End*. Original characters, original story, placeholder art.
+A non-commercial, third-person single-player action RPG inspired by the tone and worldbuilding of
+*Frieren: Beyond Journey's End*. Kael is an original human apprentice mage from Eldenbrook; the
+adventure does not depend on canon characters or storylines. Original story, placeholder art.
+
+The repository name, `Frieren` namespaces and editor menus remain unchanged. See
+[docs/KAEL_ROADMAP.md](docs/KAEL_ROADMAP.md) for the current creative direction and
+[docs/COLLABORATION.md](docs/COLLABORATION.md) for the Codex/Claude handoff and validation gate.
 
 The design principle everything else serves: **magic is a tool, not merely a weapon.** Spells are
 expected to interact with the world - burning, freezing, lifting, flooding, repairing, unlocking -

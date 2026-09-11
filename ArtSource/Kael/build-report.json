@@ -1,0 +1,49 @@
+{
+  "height_target_m": 1.78,
+  "bones": 25,
+  "vertices": 3394,
+  "triangles": 6280,
+  "clips": {
+    "Idle": {
+      "frames": 61,
+      "seconds": 2.0,
+      "loop": true
+    },
+    "Walk": {
+      "frames": 31,
+      "seconds": 1.0,
+      "loop": true
+    },
+    "Run": {
+      "frames": 23,
+      "seconds": 0.7333333333333333,
+      "loop": true
+    },
+    "Air": {
+      "frames": 31,
+      "seconds": 1.0,
+      "loop": true
+    },
+    "Land": {
+      "frames": 13,
+      "seconds": 0.4,
+      "loop": false
+    },
+    "Dodge": {
+      "frames": 13,
+      "seconds": 0.4,
+      "loop": false
+    },
+    "Cast": {
+      "frames": 37,
+      "seconds": 1.2,
+      "loop": false
+    },
+    "Hit": {
+      "frames": 16,
+      "seconds": 0.5,
+      "loop": false
+    }
+  },
+  "rig_type": "Generic; in-place motion; no facial rig or individual fingers"
+}

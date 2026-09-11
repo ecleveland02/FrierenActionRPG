@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de9a19c3ed6614e2d9ffe55c6f848794, type: 3}
-  m_Name: InputReader
+  m_Script: {fileID: 11500000, guid: d7fd9488000d3734a9e00ee676215985, type: 3}
+  m_Name: DefaultVolumeProfile
   m_EditorClassIdentifier: 
-  actions: {fileID: -944628639613478452, guid: 02d4e6b09f3a128e476e140b6c0e0919, type: 3}
+  components: []
