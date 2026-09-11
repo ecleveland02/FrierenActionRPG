@@ -69,6 +69,7 @@ namespace Frieren.Player
         private JumpGate jumpGate;
         private Transform cameraTransform;
         private Vector3 planarVelocity;
+        private bool hasReportedFirstMovement;
 
         /// <summary>Speed as a fraction of sprint speed. Drives the animation blend.</summary>
         public float NormalizedSpeed => sprintSpeed <= 0f ? 0f : Mathf.Clamp01(planarVelocity.magnitude / sprintSpeed);
@@ -200,6 +201,34 @@ namespace Frieren.Player
 
             planarVelocity = MotorMath.MoveTowardsRate(planarVelocity, targetVelocity, rate, deltaTime);
             motor.SetHorizontalVelocity(planarVelocity);
+
+            ReportFirstMovementAttempt(input, direction, targetSpeed);
+        }
+
+        /// <summary>
+        /// Logs the whole movement path once, the first time a real input arrives.
+        /// </summary>
+        /// <remarks>
+        /// Temporary. A character that does not move looks identical whether this component never
+        /// ran, ran with a zero direction, computed a velocity the motor ignored, or moved somewhere
+        /// off camera - and each needs a different fix. One line naming every value in the chain
+        /// collapses that to a single observation. Delete once movement is confirmed working.
+        /// </remarks>
+        private void ReportFirstMovementAttempt(Vector2 input, Vector3 direction, float targetSpeed)
+        {
+            if (hasReportedFirstMovement || input.sqrMagnitude <= 0.01f)
+            {
+                return;
+            }
+
+            hasReportedFirstMovement = true;
+
+            GameLog.Info(LogChannel.Player,
+                $"First movement: input {input} -> direction {direction} at {targetSpeed} m/s, " +
+                $"velocity {planarVelocity}, grounded {motor.IsGrounded}, " +
+                $"locked {(actionLock != null && actionLock.IsLocked)}, " +
+                $"camera '{(cameraTransform != null ? cameraTransform.name : "none")}', " +
+                $"position {transform.position}, controller enabled {motor.Controller.enabled}.", this);
         }
 
         private void ApplyRotation(float deltaTime)
