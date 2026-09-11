@@ -1,5 +1,6 @@
 using Frieren.Characters;
 using Frieren.Characters.Animation;
+using Frieren.Core.Debugging;
 using Frieren.Core.Input;
 using UnityEngine;
 
@@ -80,6 +81,33 @@ namespace Frieren.Player
             actionLock = GetComponent<CharacterActionLock>();
             characterAnimation = GetComponent<ICharacterAnimation>();
             jumpGate = new JumpGate(coyoteTime, jumpBufferTime);
+            WarnAboutConfigurationThatCannotWork();
+        }
+
+        /// <summary>
+        /// Says out loud when this component is configured such that it cannot possibly move
+        /// anything.
+        /// </summary>
+        /// <remarks>
+        /// Both of these previously failed in complete silence: no input reader meant every frame
+        /// read a zero input, and a zero walk speed meant every frame asked for zero velocity. The
+        /// symptom in each case is a character that stands still with an empty console, which is
+        /// the most expensive kind of bug to diagnose from the outside.
+        /// </remarks>
+        private void WarnAboutConfigurationThatCannotWork()
+        {
+            if (inputReader == null)
+            {
+                GameLog.Error(LogChannel.Player,
+                    $"{name}: PlayerLocomotion has no InputReader assigned, so it will never move.", this);
+            }
+
+            if (walkSpeed <= 0f || sprintSpeed <= 0f)
+            {
+                GameLog.Error(LogChannel.Player,
+                    $"{name}: PlayerLocomotion speeds are zero (walk {walkSpeed}, sprint {sprintSpeed}). " +
+                    "Serialized values did not survive loading; check the prefab in the Inspector.", this);
+            }
         }
 
         private void OnEnable()

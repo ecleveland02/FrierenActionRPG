@@ -1,3 +1,4 @@
+using Frieren.Core.Input;
 using Frieren.Core.Scenes;
 using Frieren.Core.Services;
 using Frieren.Core.StateMachine;
@@ -21,7 +22,7 @@ namespace Frieren.Core.Debugging
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const float SampleInterval = 0.25f;
 
-        private static readonly Rect PanelRect = new Rect(10f, 10f, 340f, 210f);
+        private static readonly Rect PanelRect = new Rect(10f, 10f, 420f, 235f);
 
         private GUIStyle panelStyle;
         private float accumulatedTime;
@@ -94,9 +95,10 @@ namespace Frieren.Core.Debugging
 
             GUILayout.BeginArea(PanelRect, panelStyle);
             GUILayout.Label($"FPS {framesPerSecond:0.0}   ({millisecondsPerFrame:0.0} ms)");
-            GUILayout.Label($"State: {DescribeGameState()}");
+            GUILayout.Label($"State: {DescribeGameState()}   timeScale {Time.timeScale:0.##}");
             GUILayout.Label($"Scenes: {DescribeScenes()}");
             GUILayout.Label($"Save: {DescribeSave()}");
+            GUILayout.Label($"Input: {DescribeInput()}");
             GUILayout.Label($"Last action: {lastAction}");
             GUILayout.Space(6f);
             GUILayout.Label("F1 overlay   F5 quick save   F9 quick load");
@@ -123,6 +125,28 @@ namespace Frieren.Core.Debugging
             }
 
             return loader.ActiveGameplayScene != null ? loader.ActiveGameplayScene.ToString() : "none active";
+        }
+
+        /// <summary>
+        /// Live action values. This is the line that separates "the action never fired" from
+        /// "input arrived and something downstream ignored it", which are indistinguishable from
+        /// the outside and were costing a round trip each time to tell apart.
+        /// </summary>
+        private static string DescribeInput()
+        {
+            if (!ServiceLocator.TryGet(out InputReader input))
+            {
+                return "no input reader";
+            }
+
+            if (!input.IsInitialized)
+            {
+                return "reader not initialised";
+            }
+
+            return $"move {input.MoveInput.x:0.00},{input.MoveInput.y:0.00}   " +
+                   $"look {input.LookInput.x:0.0},{input.LookInput.y:0.0}   " +
+                   $"sprint {(input.SprintHeld ? 1 : 0)}";
         }
 
         private static string DescribeSave()

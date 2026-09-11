@@ -134,6 +134,11 @@ namespace Frieren.Core.Input
             gameplayMap?.Disable();
             uiMap?.Enable();
 
+            // Pause lives in the Gameplay map, so disabling that map disables the only input that
+            // can leave the paused state. Combined with a zero time scale that is a hard lock: one
+            // press of Escape and the game never comes back. Re-enable the single action.
+            pauseAction?.Enable();
+
             // Disabling a map cancels its in-progress actions, but clear the cached values too so a
             // held stick cannot leak a stale direction into the frame gameplay resumes.
             ResetValues();
@@ -143,6 +148,12 @@ namespace Frieren.Core.Input
         {
             gameplayMap?.Disable();
             uiMap?.Disable();
+
+            // Explicit, because EnableUI can leave this action enabled on its own. Disabling the
+            // map should already cover it; saying so here means the invariant does not depend on
+            // that detail.
+            pauseAction?.Disable();
+
             ResetValues();
         }
 
