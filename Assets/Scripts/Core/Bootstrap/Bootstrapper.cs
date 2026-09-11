@@ -41,6 +41,7 @@ namespace Frieren.Core.Bootstrap
 
         private GameStateMachine stateMachine;
         private DebugOverlay debugOverlay;
+        private bool pauseTogglePending;
 
         public static bool IsInitialized { get; private set; }
 
@@ -90,6 +91,7 @@ namespace Frieren.Core.Bootstrap
 
         private void Update()
         {
+            ApplyPendingPauseToggle();
             stateMachine?.Tick(Time.deltaTime);
         }
 
@@ -102,7 +104,7 @@ namespace Frieren.Core.Bootstrap
 
             if (inputReader != null)
             {
-                inputReader.PausePerformed -= TogglePause;
+                inputReader.PausePerformed -= RequestPauseToggle;
                 inputReader.Dispose();
             }
 
@@ -148,13 +150,15 @@ namespace Frieren.Core.Bootstrap
             }
 
             stateMachine = new GameStateMachine();
+            stateMachine.StateChanged += (previous, current) =>
+                GameLog.Info(LogChannel.Core, $"Game state {previous} -> {current}.", this);
             RegisterGameStates();
             ServiceLocator.Register(stateMachine);
 
             if (inputReader != null)
             {
                 inputReader.Initialize();
-                inputReader.PausePerformed += TogglePause;
+                inputReader.PausePerformed += RequestPauseToggle;
                 ServiceLocator.Register(inputReader);
             }
             else
@@ -225,8 +229,30 @@ namespace Frieren.Core.Bootstrap
             loader.TransitionToGameplayScene(firstScene, () => stateMachine.ChangeTo(GameStateId.Playing));
         }
 
-        private void TogglePause()
+        /// <summary>
+        /// Records that pause was pressed. Deliberately does no more than that.
+        /// </summary>
+        /// <remarks>
+        /// This runs inside an Input System action callback, and entering or leaving the paused
+        /// state enables and disables action maps. Changing the enabled state of actions while
+        /// actions are being processed is not something the Input System guarantees, and it is why
+        /// simply re-enabling the pause action was not enough to make pause releasable: the call
+        /// was being made in the one context where it may not take effect.
+        ///
+        /// So the callback sets a flag and <see cref="Update"/> does the work, outside the input
+        /// pipeline. Any future input that reconfigures maps should follow the same shape.
+        /// </remarks>
+        private void RequestPauseToggle() => pauseTogglePending = true;
+
+        private void ApplyPendingPauseToggle()
         {
+            if (!pauseTogglePending)
+            {
+                return;
+            }
+
+            pauseTogglePending = false;
+
             if (stateMachine == null)
             {
                 return;

@@ -252,3 +252,24 @@ holds the whole delta.
 summed or part of a flick would be lost - and the code summed them. That triple-counts a
 three-event frame and made the camera turn roughly twice as far as the mouse moved, with the error
 scaling with event rate rather than being a constant the sensitivity setting could absorb.
+
+
+---
+
+### 20. Input callbacks record intent; they never reconfigure input
+
+An Input System action callback runs inside the input pipeline, and changing which action maps are
+enabled from in there is not something the Input System guarantees. Pause was doing exactly that:
+the callback ran the state transition, and the state transition enabled and disabled maps.
+
+The visible symptom was a game that could be paused and never unpaused, with the time scale stuck at
+zero. The first fix - re-enabling the pause action when the UI map came up - was correct in
+substance and useless in practice, because it was made from inside the callback.
+
+So an input callback now sets a flag and nothing else. `Bootstrapper.Update` performs the
+transition, outside the input pipeline. Any future input that reconfigures maps, opens a menu or
+changes control scheme follows the same shape.
+
+`Update` still runs at a zero time scale, so pausing does not prevent the code that unpauses from
+running. That is worth knowing before anything else is moved into a coroutine or `FixedUpdate`,
+where it would not.
