@@ -1,7 +1,10 @@
 # Getting the project open, and writing code in it
 
 Written for a machine that has never had Unity on it. If you already have Unity 6 and an IDE, skip
-to [4](#4-clone-the-repository).
+to [section 3](#3-get-the-files-onto-your-machine).
+
+No command line is required. Unity Hub can clone the repository itself, and GitHub Desktop covers
+pulling and pushing afterwards.
 
 ---
 
@@ -32,33 +35,67 @@ Modules to tick during install:
 Skip Android, iOS, WebGL and the documentation module. They are large and this project does not need
 them.
 
-## 3. Install Git and Git LFS
+## 3. Get the files onto your machine
 
-- Git: <https://git-scm.com/downloads> (macOS: `brew install git`, or Xcode command line tools).
-- Git LFS: <https://git-lfs.com>, then run **`git lfs install`** once per machine.
+The repository has a single branch, `claude/frieren-rpg-foundation-svvrqc`, and it is the default
+branch. There is no `main` yet. Anything that clones the repository therefore lands on the right
+branch with no extra step.
 
-`git lfs install` matters. `.gitattributes` routes FBX, textures, audio and fonts through LFS. Clone
-without it and those files arrive as small text pointer files instead of real assets. Nothing in the
-repo uses LFS yet, so a mistake here is invisible until the first piece of art lands.
+### The quick way: Unity Hub
 
-## 4. Clone the repository
+Hub can clone it for you. **Projects → Add → Add project from repository**, give it
+`https://github.com/ecleveland02/FrierenActionRPG.git` and a local folder. Hub clones the default
+branch and registers the project in one go, so you can skip straight to
+[section 4](#4-open-it).
 
-The work is on a branch, not `main`:
+Two things Hub does not do, both of which matter later rather than now:
+
+- It is not a Git client. It clones once; it will not pull Claude's next commit or push your work
+  back. For that you still want GitHub Desktop, your IDE's Git panel, or the command line - all of
+  which work on the folder Hub just created, so installing one later costs nothing.
+- Git LFS handling is not guaranteed. Nothing in the repository uses LFS yet, so this is harmless
+  today, but run `git lfs install` before the first art asset arrives.
+
+### GitHub Desktop, if you want pull and push without a terminal
+
+1. Install from <https://desktop.github.com> and sign in with the account that owns the repository.
+   It bundles Git and Git LFS.
+2. **File → Clone repository**, pick `ecleveland02/FrierenActionRPG` from the **GitHub.com** tab,
+   choose a local path, **Clone**.
+
+Afterwards, **Fetch origin** pulls Claude's changes and **Commit** then **Push origin** sends yours.
+Rider and VS Code can clone from their welcome screens and offer the same operations.
+
+### Git on the command line
 
 ```bash
 git lfs install
 git clone https://github.com/ecleveland02/FrierenActionRPG.git
 cd FrierenActionRPG
-git checkout claude/frieren-rpg-foundation-svvrqc
 ```
 
-Clone somewhere local. A path inside OneDrive, Dropbox or iCloud Drive will cause file-locking
-fights with Unity's `Library` folder and produce import errors that look like corruption.
+Git from <https://git-scm.com/downloads>, LFS from <https://git-lfs.com>. `git lfs install` matters:
+`.gitattributes` routes FBX, textures, audio and fonts through LFS, and cloning without it turns
+those files into small text pointers. Invisible until the first piece of art lands.
 
-## 5. Open it
+### Not "Download ZIP"
 
-In Hub: **Projects → Add → Add project from disk**, and pick the `FrierenActionRPG` folder - the one
-containing `Assets`, `Packages` and `ProjectSettings`. Then click it to open.
+GitHub's **Code → Download ZIP** gives a folder Unity will open, and it is still the wrong choice. It
+is not a git repository, so there is no way to pull the next commit or push your work back - you
+would be re-downloading and hand-merging forever. It also substitutes pointer files for anything
+tracked by LFS.
+
+### Where to put it
+
+Somewhere local. A path inside OneDrive, Dropbox or iCloud Drive will cause file-locking fights with
+Unity's `Library` folder and produce import errors that look like corruption.
+
+## 4. Open it
+
+If Hub cloned the repository for you it is already in the Projects list; click it.
+
+Otherwise: **Projects → Add → Add project from disk**, and pick the `FrierenActionRPG` folder - the
+one containing `Assets`, `Packages` and `ProjectSettings`.
 
 **The first open takes several minutes.** Unity is resolving packages, importing every asset and
 building the `Library` folder, which is machine-local and gitignored. It is not frozen.
@@ -80,7 +117,7 @@ Neither milestone has ever been run, so there may well be compile errors. If the
 Console output and paste it back into the Claude session - the errors name the file and line, which
 is all that is needed to fix them.
 
-## 6. Set up code editing
+## 5. Set up code editing
 
 Unity does not edit code itself. It hands `.cs` files to an external editor and generates a C#
 project so that editor can offer autocomplete and go-to-definition.
@@ -103,7 +140,7 @@ conflict constantly if committed. Regenerating them is always safe.
 After that, double-clicking any script in Unity's Project window opens it in your editor with full
 IntelliSense.
 
-## 7. Writing code
+## 6. Writing code
 
 Scripts live under `Assets/Scripts`. You can create and edit them either in Unity's Project window
 (**right-click → Create → Scripting → MonoBehaviour Script**) or directly in your editor - Unity
@@ -123,7 +160,7 @@ current dependency graph is in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 Running the tests: **Window → General → Test Runner → EditMode → Run All**.
 
-## 8. Working alongside Claude
+## 7. Working alongside Claude
 
 Both of us push to `claude/frieren-rpg-foundation-svvrqc`.
 
@@ -140,6 +177,9 @@ git add -A
 git commit -m "what you changed"
 git push origin claude/frieren-rpg-foundation-svvrqc
 ```
+
+In GitHub Desktop these are **Fetch origin**, then a summary and **Commit**, then **Push origin**.
+Unity Hub cannot do either; it only clones.
 
 **Close Unity, or at least save your scenes, before pulling.** Unity holds scenes and prefabs in
 memory and will overwrite files underneath a pull when it next saves.
