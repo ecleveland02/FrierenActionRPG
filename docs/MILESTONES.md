@@ -4,27 +4,25 @@ Each milestone must produce something playable or testable, and be verified befo
 
 | # | Goal | Status |
 |---|---|---|
-| 1 | Project foundation | **Complete** (unverified in-editor - see note) |
-| 2 | Placeholder third-person player | **Complete** (unverified in-editor - see note) |
+| 1 | Project foundation | **Complete**, opens and runs in the editor |
+| 2 | Placeholder third-person player | **Complete**, compiles; gameplay not yet exercised |
 | 3 | Modular character architecture | Not started |
 | 4 | Data-driven magic framework + 8 prototype spells | Not started |
 | 5 | First enemy and basic combat | Not started |
 | 6 | Reusable environmental interaction systems | Not started |
 | 7 | Gray-box vertical slice | Not started |
 
-> **Note on status.** Milestones 1 and 2 were both authored in an environment without Unity
-> installed, so nothing here has been compiled or run. Milestone 2 was written before Milestone 1
-> had been opened in the editor, at the user's request, so two unverified milestones are stacked.
-> The first editor session should expect to fix things, and should verify Milestone 1 first: if the
-> foundation is wrong, Milestone 2's symptoms will be misleading.
+> **Note on status.** First editor session, Unity 6000.0 on Windows: the project opens, all six
+> assemblies compile, and the game boots with **zero errors and zero warnings**. Confirmed working:
+> package resolution, the hand-written `ProjectSettings` and `TagManager`, every `.meta` GUID, the
+> hand-authored `Boot.unity`, the ScriptableObject assets, `Bootstrapper`, `ServiceLocator`,
+> `GameStateMachine`, `SaveService` and `DebugOverlay`.
 >
-> The original wording follows.
+> One real defect found and fixed: `SceneBootstrapGuard` treated an unsaved scene like a scene under
+> test and suppressed the first-scene load, so a fresh clone booted services into an empty world with
+> no error to explain it.
 >
-> The code was authored in an environment without Unity installed, so nothing here has been
-> compiled or run. Static checks passed (brace balance, assembly reference
-> consistency, every project type resolvable from its file's usings, every scene and asset GUID
-> cross-reference resolving, all Unity YAML parsing). Treat the milestone as unverified until the
-> project opens cleanly, the EditMode tests pass, and the save round-trip in the README works.
+> Still unexercised: scene transitions, the save round-trip, and all of Milestone 2's gameplay.
 
 ---
 

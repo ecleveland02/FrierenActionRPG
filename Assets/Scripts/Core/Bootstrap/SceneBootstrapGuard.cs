@@ -13,6 +13,16 @@ namespace Frieren.Core.Bootstrap
     ///
     /// <see cref="BootedFromAnotherScene"/> tells <see cref="Bootstrapper"/> not to load its first
     /// scene in that case, so the scene being tested is not immediately replaced.
+    ///
+    /// There are three cases, and the third was learned the hard way:
+    /// <list type="bullet">
+    /// <item>Started in Boot - nothing to do.</item>
+    /// <item>Started in a saved scene - load Boot additively and leave that scene alone, because
+    /// the whole point is to test it.</item>
+    /// <item>Started in an unsaved scene - which is what Unity opens on a fresh clone - load Boot
+    /// in single mode and let it boot normally. Treating this like the second case gave running
+    /// services, an empty world, and no error to explain it.</item>
+    /// </list>
     /// </remarks>
     public static class SceneBootstrapGuard
     {
@@ -49,9 +59,27 @@ namespace Frieren.Core.Bootstrap
                 return;
             }
 
-            BootedFromAnotherScene = true;
-            Debug.Log($"[Core] Play mode started in '{activeScene.name}'; loading '{BootSceneName}' for services.");
-            SceneManager.LoadScene(BootSceneName, LoadSceneMode.Additive);
+            // An unsaved scene has no asset path. Unity opens one of those when a project is first
+            // cloned, and it has nothing in it worth protecting - so boot properly over the top of
+            // it. Loading additively there produced the worst possible result: services running,
+            // no world, no error, and a Game view showing nothing but the skybox.
+            bool startedFromASavedScene = !string.IsNullOrEmpty(activeScene.path);
+
+            if (startedFromASavedScene)
+            {
+                BootedFromAnotherScene = true;
+                Debug.Log(
+                    $"[Core] Play mode started in '{activeScene.name}'; loading '{BootSceneName}' additively " +
+                    "for services, and leaving this scene in place.");
+                SceneManager.LoadScene(BootSceneName, LoadSceneMode.Additive);
+                return;
+            }
+
+            BootedFromAnotherScene = false;
+            Debug.Log(
+                $"[Core] Play mode started in an unsaved scene; booting '{BootSceneName}' normally. " +
+                $"Open {BootSceneName} or a gameplay scene to skip this step.");
+            SceneManager.LoadScene(BootSceneName, LoadSceneMode.Single);
         }
 #endif
     }

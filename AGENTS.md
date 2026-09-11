@@ -18,18 +18,21 @@ and quests are authored content, never hardcoded branches.
 
 | Milestone | Status |
 |---|---|
-| 1 - Foundation: bootstrap, scenes, save, input, debug | Written, **not yet verified in-editor** |
-| 2 - Placeholder third-person player | Written, **not yet verified in-editor** |
+| 1 - Foundation: bootstrap, scenes, save, input, debug | Compiles and boots in the editor, 0 errors |
+| 2 - Placeholder third-person player | Compiles; gameplay not yet exercised |
 | 3 - Modular character architecture | Not started |
 | 4-7 | Not started, see `docs/MILESTONES.md` |
 
-**Milestones 1 and 2 were authored in an environment with no Unity installed. Nothing has been
-compiled or run.** Static checks passed (brace balance, assembly reference direction and acyclicity,
-type resolution, cross-component member access, scene and prefab GUID cross-references, transform
-hierarchy consistency, YAML parsing) but those catch structural errors, not API errors.
+Milestones 1 and 2 were authored with no Unity installed, so nothing was compiled while it was
+written. That has now changed: as of the first editor session on Unity 6000.0 (Windows), **all six
+assemblies compile and the game boots with zero errors and zero warnings.** Confirmed working at
+runtime: `Bootstrapper`, `ServiceLocator`, `GameStateMachine`, `SaveService`, `DebugOverlay`, the
+hand-authored scenes and ScriptableObject assets, and every `.meta` GUID.
 
-Treat any Unity API call in this repository as unverified. Wrong overloads, renamed Unity 6 APIs and
-wrong parameter orders are the most likely defects. Finding them is high-value work.
+So compile-level API errors are largely ruled out. What is **still unexercised** is everything that
+needs the player to actually be in the world: scene transitions, the save round-trip, movement,
+camera, jump, dodge and interaction. Runtime defects there - wrong parameter *values*, inverted
+signs, event subscriptions that never fire - remain likely, and finding them is high-value work.
 
 ## Hard rules
 
