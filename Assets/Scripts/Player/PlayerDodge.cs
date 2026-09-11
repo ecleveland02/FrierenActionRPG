@@ -72,6 +72,18 @@ namespace Frieren.Player
             motor = GetComponent<CharacterMotor>();
             actionLock = GetComponent<CharacterActionLock>();
             characterAnimation = GetComponent<ICharacterAnimation>();
+
+            if (inputReader == null)
+            {
+                GameLog.Error(LogChannel.Player,
+                    $"{name}: PlayerDodge has no InputReader assigned, so dodge will never fire.", this);
+            }
+
+            if (startSpeed <= 0f || duration <= 0f)
+            {
+                GameLog.Error(LogChannel.Player,
+                    $"{name}: PlayerDodge is inert (start speed {startSpeed}, duration {duration}).", this);
+            }
         }
 
         private void OnEnable()

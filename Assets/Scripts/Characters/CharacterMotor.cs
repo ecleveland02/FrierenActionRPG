@@ -73,6 +73,15 @@ namespace Frieren.Characters
         {
             controller = GetComponent<CharacterController>();
             IsGrounded = true;
+
+            if (gravity <= 0f)
+            {
+                // Zero here means serialized values did not load, which makes every tuning value on
+                // this character suspect rather than just this one.
+                Debug.LogError(
+                    $"{name}: CharacterMotor gravity is {gravity}. Serialized values did not survive " +
+                    "loading; check the prefab in the Inspector.", this);
+            }
         }
 
         /// <summary>Sets the horizontal velocity applied from the next <see cref="Tick"/> onward.</summary>
