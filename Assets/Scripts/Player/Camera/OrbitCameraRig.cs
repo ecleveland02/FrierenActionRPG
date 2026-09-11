@@ -107,21 +107,27 @@ namespace Frieren.Player.Cameras
         }
 
         /// <summary>
-        /// Accumulates pointer movement between frames.
+        /// Records the frame's pointer movement.
         /// </summary>
         /// <remarks>
         /// Mouse and stick have to be handled differently, and not only because of the units. A
         /// Value action fires only when its value <em>changes</em>, so a stick held at a constant
         /// deflection stops raising events entirely - driving the camera from this callback alone
         /// would make it stall mid-turn. The stick is therefore polled once per frame in
-        /// <see cref="LateUpdate"/>, while mouse deltas are summed here, because several input
-        /// events can land in one frame and taking only the last would throw away part of a flick.
+        /// <see cref="LateUpdate"/>.
+        ///
+        /// The mouse is assigned, not accumulated. A delta control sums its events <em>within</em>
+        /// a frame and resets at the start of the next, so when several mouse events land in one
+        /// frame each callback reports the running total rather than its own increment. Adding
+        /// them up counts the same movement repeatedly: three events in a frame make the camera
+        /// turn roughly twice as far as the mouse actually moved. The last callback of the frame
+        /// already holds the whole delta.
         /// </remarks>
         private void OnLookChanged(Vector2 look)
         {
             if (inputReader != null && inputReader.LookIsPointerDelta)
             {
-                pendingPointerDelta += look;
+                pendingPointerDelta = look;
             }
         }
 

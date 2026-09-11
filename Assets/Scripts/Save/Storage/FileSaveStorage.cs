@@ -42,8 +42,13 @@ namespace Frieren.Save.Storage
 
             if (File.Exists(target))
             {
-                // Replace keeps a .bak so a corrupted swap is still recoverable by hand.
-                File.Replace(temp, target, target + BackupExtension);
+                // Take the backup as a separate copy, then replace with no backup argument.
+                // Asking File.Replace for a backup turns the swap into two renames on POSIX -
+                // move the target aside, then move the temp in - and a crash between them leaves
+                // no save file at all, which is the exact failure this method exists to prevent.
+                // Without a backup argument the swap is a single rename, and rename is atomic.
+                File.Copy(target, target + BackupExtension, overwrite: true);
+                File.Replace(temp, target, destinationBackupFileName: null);
             }
             else
             {

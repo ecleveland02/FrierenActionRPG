@@ -198,9 +198,16 @@ while dodging" and takes an afternoon to find.
 
 ### 17. No serialized `AnimationCurve` or `LayerMask` in committed prefabs
 
-Value fields are deliberately omitted from the hand-authored prefab YAML. Unity constructs a
-MonoBehaviour with its field initializers and then overwrites only the keys present in the file, so
-an omitted field takes its documented C# default rather than a zero.
+Value fields are deliberately omitted from the hand-authored prefab YAML, on the understanding that
+Unity constructs a MonoBehaviour with its field initializers and then overwrites only the keys
+present in the file, so an omitted field takes its C# default rather than a zero.
+
+> **This assumption is load-bearing and was not verified when the prefab was written.** It is the
+> documented behaviour for `JsonUtility`, but the prefab path uses Unity's native serializer, which
+> is a different mechanism. If it is wrong, every tuning value on `Player.prefab` is zero and the
+> character cannot move at all. Check it by selecting `Assets/Prefabs/Characters/Player.prefab` and
+> reading `PlayerLocomotion`'s Walk Speed in the Inspector: 4.5 confirms the assumption, 0 refutes
+> it, in which case every value field has to be written into the YAML explicitly.
 
 That property is only useful if the defaults are safe, which rules out two types. An
 `AnimationCurve` serialises as keyframe data, and an empty curve evaluates to zero - a dodge that
@@ -234,5 +241,14 @@ last look event came from so consumers can branch.
 There is a second, less obvious reason the two paths differ. An Input System `Value` action fires
 only when its value *changes*, so a stick held at constant deflection stops raising events entirely.
 Driving the camera from the callback alone makes it stall mid-turn. The stick is therefore polled
-once per frame, while mouse deltas are summed from the callback - several input events can land in
-one frame, and taking only the last throws away part of a flick.
+once per frame, while the mouse is read from the callback.
+
+The mouse value is **assigned, not accumulated.** A delta control sums its events within a frame and
+resets at the start of the next, so when several mouse events land in one frame each callback
+reports the running total rather than its own increment. The last callback of the frame already
+holds the whole delta.
+
+*Corrected after review.* This entry originally claimed the opposite - that callbacks had to be
+summed or part of a flick would be lost - and the code summed them. That triple-counts a
+three-event frame and made the camera turn roughly twice as far as the mouse moved, with the error
+scaling with event rate rather than being a constant the sensitivity setting could absorb.
