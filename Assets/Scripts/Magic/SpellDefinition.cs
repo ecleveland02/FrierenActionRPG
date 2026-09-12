@@ -55,6 +55,10 @@ namespace Frieren.Magic
         [Tooltip("Longest a single channel may run. Zero means until released or out of mana.")]
         private float maxChannelSeconds;
 
+        [SerializeField]
+        [Tooltip("Whether casting takes over the body. Turn off for spells you should be able to move during.")]
+        private bool holdsActionLock = true;
+
         [Header("Targeting")]
         [SerializeField] private SpellTargeting targeting = SpellTargeting.Ray;
 
@@ -88,6 +92,12 @@ namespace Frieren.Magic
         public float ChannelTickInterval => Mathf.Max(0.02f, channelTickInterval);
 
         public float MaxChannelSeconds => maxChannelSeconds;
+
+        /// <summary>
+        /// Whether the cast claims <c>CharacterActionLock</c>. Off means locomotion keeps running,
+        /// which is what a spell you are supposed to move around during needs.
+        /// </summary>
+        public bool HoldsActionLock => holdsActionLock;
 
         public float CastTime => castTime;
 

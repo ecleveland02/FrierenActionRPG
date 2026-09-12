@@ -76,6 +76,7 @@ namespace Frieren.Core.EditorTools
             root.AddComponent<CharacterPersistence>();
             root.AddComponent<CharacterVitalsReadout>();
             root.AddComponent<CharacterSpellcaster>();
+            root.AddComponent<CharacterLevitation>();
 
             PlayerSpellInput spellInput = root.AddComponent<PlayerSpellInput>();
             AssignReference(spellInput, "inputReader", reader);
@@ -201,7 +202,11 @@ namespace Frieren.Core.EditorTools
             SerializedProperty spells = serialized.FindProperty("knownSpells");
             spells.ClearArray();
 
-            string[] paths = { ProjectPaths.SpellArcaneBolt, ProjectPaths.SpellFire, ProjectPaths.SpellLevitate };
+            string[] paths =
+            {
+                ProjectPaths.SpellArcaneBolt, ProjectPaths.SpellFire,
+                ProjectPaths.SpellLevitate, ProjectPaths.SpellFloat
+            };
 
             foreach (string path in paths)
             {

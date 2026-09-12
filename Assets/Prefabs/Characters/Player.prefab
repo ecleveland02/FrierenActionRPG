@@ -23,6 +23,7 @@ GameObject:
   - component: {fileID: 144}
   - component: {fileID: 150}
   - component: {fileID: 151}
+  - component: {fileID: 152}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -416,3 +417,21 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 30d2e9d55088031c40ca647b9069b12f, type: 2}
   - {fileID: 11400000, guid: f704c53443fbd0505ee80d59b2389868, type: 2}
   - {fileID: 11400000, guid: 6566dac43b3b4adf31177fc429a09724, type: 2}
+  - {fileID: 11400000, guid: e9c217eee26c63af65ae68dcdaf29524, type: 2}
+--- !u!114 &152
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5e746e77b0a3485f3b0832d32945f80, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  forceThreshold: 5
+  maximumRise: 4
+  riseSpeed: 3.5
+  hoverDuration: 0.35
+  settleSpeed: 2.5

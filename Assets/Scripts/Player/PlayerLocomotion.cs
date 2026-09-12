@@ -121,6 +121,11 @@ namespace Frieren.Player
             {
                 motor.Landed += OnLanded;
             }
+
+            if (actionLock != null)
+            {
+                actionLock.Acquired += OnActionLockAcquired;
+            }
         }
 
         private void OnDisable()
@@ -133,6 +138,11 @@ namespace Frieren.Player
             if (motor != null)
             {
                 motor.Landed -= OnLanded;
+            }
+
+            if (actionLock != null)
+            {
+                actionLock.Acquired -= OnActionLockAcquired;
             }
 
             jumpGate?.Reset();
@@ -250,6 +260,25 @@ namespace Frieren.Player
                 NormalizedSpeed,
                 motor.IsGrounded,
                 motor.VerticalVelocity);
+        }
+
+        /// <summary>
+        /// Stops the character dead the moment another ability takes over the body.
+        /// </summary>
+        /// <remarks>
+        /// Without this the motor keeps the last velocity locomotion gave it, because locomotion
+        /// stops writing one and nothing else necessarily starts. The dodge hid the problem by
+        /// driving the motor every frame; a channelled spell does not touch it, so the character
+        /// slid forward at running speed for as long as the spell was held.
+        ///
+        /// Zeroing here rather than in each ability means the rule holds for every future one: take
+        /// the lock and the body stops unless you move it yourself. The dodge sets its velocity
+        /// immediately after acquiring, so it is unaffected.
+        /// </remarks>
+        private void OnActionLockAcquired(object owner)
+        {
+            planarVelocity = Vector3.zero;
+            motor.SetHorizontalVelocity(Vector3.zero);
         }
 
         private void OnJumpPressed() => jumpGate.NotifyJumpPressed(Time.time);

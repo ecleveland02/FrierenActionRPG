@@ -59,6 +59,16 @@ namespace Frieren.Characters
 
         public bool IsGrounded { get; private set; }
 
+        /// <summary>
+        /// Whether gravity is integrated. Turn it off to hover, swim or fly.
+        /// </summary>
+        /// <remarks>
+        /// A flag rather than something an ability fights every frame. Countering gravity by writing
+        /// a vertical velocity each frame still loses one frame's acceleration per frame, which
+        /// reads as a slow, inexplicable sink.
+        /// </remarks>
+        public bool GravityEnabled { get; set; } = true;
+
         /// <summary>Signed vertical speed. Negative is falling.</summary>
         public float VerticalVelocity { get; private set; }
 
@@ -99,6 +109,12 @@ namespace Frieren.Characters
             Jumped?.Invoke();
         }
 
+        /// <summary>
+        /// Sets vertical speed directly. For hovering and other cases that own the vertical axis;
+        /// pair it with <see cref="GravityEnabled"/> set to false.
+        /// </summary>
+        public void SetVerticalVelocity(float value) => VerticalVelocity = value;
+
         /// <summary>Cuts an ascent short, for variable jump height on button release.</summary>
         public void CancelAscent(float retainedFraction = 0.35f)
         {
@@ -124,7 +140,11 @@ namespace Frieren.Characters
 
             bool wasGrounded = IsGrounded;
 
-            if (IsGrounded && VerticalVelocity <= 0f)
+            if (!GravityEnabled)
+            {
+                // Whoever turned gravity off owns the vertical axis; leave their value alone.
+            }
+            else if (IsGrounded && VerticalVelocity <= 0f)
             {
                 // A small constant downward push, not zero: zero lets the controller float off the
                 // top of steps and ramps and report itself airborne every other frame.

@@ -23,6 +23,7 @@ namespace Frieren.Core.EditorTools
         public const string SpellArcaneBolt = SpellFolder + "/Spell_ArcaneBolt.asset";
         public const string SpellFire = SpellFolder + "/Spell_Fire.asset";
         public const string SpellLevitate = SpellFolder + "/Spell_Levitate.asset";
+        public const string SpellFloat = SpellFolder + "/Spell_Float.asset";
 
         public const string LogSettings = "Assets/ScriptableObjects/Debug/LogSettings.asset";
         public const string InputReader = "Assets/ScriptableObjects/Input/InputReader.asset";

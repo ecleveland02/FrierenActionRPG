@@ -107,7 +107,7 @@ namespace Frieren.Magic
                 return Refuse(spell, $"needs {spell.ManaCost:0} mana, has {mana.Current:0}");
             }
 
-            if (!actionLock.TryAcquire(this))
+            if (spell.HoldsActionLock && !actionLock.TryAcquire(this))
             {
                 return Refuse(spell, "busy with another action");
             }
@@ -116,7 +116,11 @@ namespace Frieren.Magic
             {
                 // Should be unreachable given CanAfford above, but a silent free cast is worse than
                 // a loud contradiction.
-                actionLock.Release(this);
+                if (spell.HoldsActionLock)
+                {
+                    actionLock.Release(this);
+                }
+
                 return Refuse(spell, "mana was spent by something else this frame");
             }
 
