@@ -16,6 +16,7 @@ Frieren.Characters    -> Core, Data, Save
 Frieren.Magic         -> Core, Characters, Data
 Frieren.Enemies       -> Core, Characters, Data
 Frieren.Player        -> Core, Characters, Magic, Data
+Frieren.Presentation  -> Core, Characters, Magic, Enemies, Data
 Frieren.Core.Editor   -> everything above
 Frieren.Tests.EditMode-> everything above
 ```
@@ -37,6 +38,7 @@ inheritance chain crossing an unreferenced assembly is a CS0012 waiting to happe
 | `Frieren.Magic` | `Scripts/Magic` | Spell definitions, effects, and the component that casts them. |
 | `Frieren.World` | `Scripts/World` | Objects magic acts on. Depends only on Core, never on Magic. |
 | `Frieren.Enemies` | `Scripts/Enemies` | Perception, behaviour, melee, spawning. Cannot see `Frieren.Player`. |
+| `Frieren.Presentation` | `Scripts/Presentation` | Reacts to gameplay and is read by none of it. Flashes, telegraphs, beams, numbers. |
 | `Frieren.Core` | `Scripts/Core` | Bootstrap, service registry, scene loading, game state, input, debug tooling. |
 | `Frieren.Core.Editor` | `Scripts/Core/Editor` | Editor-only: setup validation, asset creation, scene regeneration, menus. |
 | `Frieren.Tests.EditMode` | `Scripts/Tests/EditMode` | Edit-mode tests. |
@@ -317,6 +319,49 @@ made behaviour depend on component order, which is not a thing anyone should hav
 Settings silently repoints every mask built from a literal, with no error - enemies just stop seeing
 you. The constants live in one file and an editor check confirms at load that they still name the
 layers `ProjectSettings` says they do.
+
+## Presentation (Milestone 5.5)
+
+```
+gameplay events                 Frieren.Presentation
+  CharacterHealth.Damaged ----> CharacterCombatFeedback --> CharacterFlash
+  CharacterBarrier.Broke  ---->            |                FloatingCombatText
+  EnemyMelee.SwingStarted ----> EnemyCombatFeedback  ------>  (the same flash)
+  Spellcaster.CastResolved ---> SpellTracer
+  CharacterHealth.Died    ----> DeathSink
+                                     |
+                          ServiceLocator: IScreenShake, TimeScaleService
+                                     |
+                            CameraShake (on the camera rig)
+```
+
+**Nothing references this assembly.** It depends on Core, Characters, Magic and Enemies; no gameplay
+assembly depends on it. So the compiler forbids a combat class from ever calling `PlayFlash()`, and
+the entire layer is deletable when real VFX arrive. Same one-directional rule as
+`ICharacterAnimation`, made structural instead of conventional.
+
+**Presentation derives, it does not demand.** Where a fact is missing it is inferred rather than
+added to gameplay's API: healing is read off `CharacterHealth.Changed` moving upwards, above a
+threshold that suppresses regeneration dribble, because adding a `Healed` event would be a
+presentation concern reshaping a gameplay contract. The one exception is
+`CharacterSpellcaster.CastResolved`, added because the resolved geometry genuinely could not be
+derived from outside - and even then it hands over information the caster already had.
+
+**Nothing here is required.** Every output is fetched through `ServiceLocator.TryGet` or a null
+check. No shake service, no time service, no flash shell - each is skipped. A presentation layer
+that throws when the thing it wanted to decorate is absent has the dependency backwards.
+
+**One writer for `Time.timeScale`.** Pause wants time stopped indefinitely; hit-stop wants it dipped
+for four frames. Both writing the property directly means a dip expiring after a pause began sets
+the scale back to 1 and unpauses the game - the same shape as the Milestone 1 pause defect.
+`TimeScaleService` multiplies a base scale owned by game state with a self-expiring dip, so the two
+cannot interact wrongly. The arithmetic is in `TimeScaleState`, plain C# with no Unity types, and
+tested - the alternative test would have to write the editor's real clock and could leave it at zero.
+
+**The flash cannot tint the character.** `PlaceholderCharacterAnimation` already owns that renderer
+and rewrites it every frame from speed and grounding. So `CharacterFlash` builds a shell - a copy of
+the mesh, scaled a few percent up, disabled until wanted - which nothing contends for and which
+reads as an aura rather than as the character changing colour.
 
 ## Where the next milestones attach
 

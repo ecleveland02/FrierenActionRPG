@@ -16,6 +16,6 @@ namespace Frieren.Core.Debugging
     public static class BuildStamp
     {
         /// <summary>Bump this whenever behaviour changes. Shown in the debug overlay.</summary>
-        public const string Current = "m5 enemies and the full spell set";
+        public const string Current = "m5.5 combat feel";
     }
 }

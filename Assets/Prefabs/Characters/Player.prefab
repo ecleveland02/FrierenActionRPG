@@ -25,6 +25,11 @@ GameObject:
   - component: {fileID: 151}
   - component: {fileID: 152}
   - component: {fileID: 153}
+  - component: {fileID: 160}
+  - component: {fileID: 161}
+  - component: {fileID: 162}
+  - component: {fileID: 163}
+  - component: {fileID: 164}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -456,3 +461,80 @@ MonoBehaviour:
   wardThreshold: 5
   capacity: 60
   lapseDelay: 0.35
+--- !u!114 &160
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24b04ca46be7e629f1e26c84a5bc7ac9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  source: {fileID: 122}
+  scale: 1.08
+--- !u!114 &161
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f77e49354d7703f4b89ea0e42ed4bbc6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  originHeight: 2.1
+  rise: 0.9
+  lifetime: 1.1
+--- !u!114 &162
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ce9c2654529cd1bc0bc1160cf5975dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  flashSeconds: 0.16
+  shakesTheView: 1
+  stopsTime: 1
+  heavyDamage: 25
+--- !u!114 &163
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6f5a977b3eed38765b3a0d14ab5540d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lifetime: 0.22
+  startWidth: 0.16
+  endWidth: 0.05
+  originDrop: 0.35
+--- !u!114 &164
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a8bf5ecfb0bd67fec75fca328d96303, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  visual: {fileID: 121}
+  tipDegrees: 82
+  sinkMetres: 1.6
+  duration: 1.4

@@ -59,6 +59,18 @@ namespace Frieren.Magic
         /// <summary>Raised each time a channelled spell re-applies its effects.</summary>
         public event Action<SpellDefinition> ChannelTicked;
 
+        /// <summary>
+        /// Raised every time a spell's effects are applied, with the resolved geometry - once for an
+        /// instant cast, once per tick for a channelled one.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="CastCompleted"/> says whether a spell landed; this says where. A tracer, an
+        /// impact flash or a decal needs the line and the point, and they exist here already. This
+        /// is presentation asking gameplay for what it knows, which is the right direction: nothing
+        /// in this component knows that anything is drawing.
+        /// </remarks>
+        public event Action<SpellDefinition, SpellContext, bool> CastResolved;
+
         /// <summary>Raised when a channel ends, with why: released, out of mana, or timed out.</summary>
         public event Action<SpellDefinition, string> ChannelEnded;
 
@@ -287,6 +299,8 @@ namespace Frieren.Magic
 
                 GameLog.Info(LogChannel.Magic, $"{name} cast {spell.Id} at {context.Point}: {outcome}.", this);
             }
+
+            CastResolved?.Invoke(spell, context, affectedSomething);
 
             return affectedSomething;
         }

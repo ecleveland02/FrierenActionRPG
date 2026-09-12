@@ -9,6 +9,7 @@ Each milestone must produce something playable or testable, and be verified befo
 | 3 | Modular character architecture | **Complete**, not yet run in the editor |
 | 4 | Data-driven magic framework + 3 spells | **Complete**, confirmed in the editor |
 | 5 | First enemy and basic combat, plus the remaining spells | **Complete**, not yet run in the editor |
+| 5.5 | Combat feel: placeholder feedback so the loop can be judged | **Complete**, not yet run in the editor |
 | 6 | Reusable environmental interaction systems | Contract landed in M4; three more receivers landed in M5; breadth remaining |
 | 7 | Gray-box vertical slice | Not started |
 
@@ -248,7 +249,7 @@ spell carrying Heat will light it with no change to the crate.
 
 ## Milestone 5 - First enemy, and the rest of the spells (complete, unverified in the editor)
 
-**Build stamp: `m5 enemies and the full spell set`.** The debug overlay prints this. If it says
+**Build stamp at the time: `m5 enemies and the full spell set`.** The debug overlay prints this. If it says
 anything else, the build being looked at is not this one and nothing observed in it is evidence.
 
 ### Architecture, before the detail
@@ -354,6 +355,95 @@ anything below.
 
 Items 4 and 5 are the ones that matter. Nothing in the trough knows what Ice is; nothing in the door
 knows what Fire is. Each reacts to an element, which is why new spells keep working on old objects.
+
+---
+
+## Milestone 5.5 - Combat feel (complete, unverified in the editor)
+
+**Build stamp: `m5.5 combat feel`.** Check the overlay before trusting anything below.
+
+Not in the original plan. It exists because of a gap the plan did not anticipate: the brief says not
+to build final art until the gameplay loop is proven fun, which is right, but the loop as shipped in
+Milestone 5 could not be *judged* at all. `EnemyMelee` has a 0.55 second wind-up whose entire purpose
+is to give the player time to react, and nothing drew it. That is not a dodge window; it is a coin
+flip followed by damage. Zoltraak was a log line and a number.
+
+Placeholder feedback is not art. Everything here is primitives, `LineRenderer`,
+`MaterialPropertyBlock` and IMGUI - no assets, no packages, no particle systems. It is instrumentation
+for answering "is this fun", and it doubles as a diagnostic: if the Sentinel never swings, the
+telegraph says whether it reached Attack at all, which separates a perception bug from a timing one
+without reading a log.
+
+### Architecture
+
+**`Frieren.Presentation` is a new assembly that nothing references back.** It depends on Core,
+Characters, Magic and Enemies; no gameplay assembly depends on it. So the compiler, not discipline,
+guarantees that no combat code can call into a flash or a shake, and the whole layer can be deleted
+or replaced when real VFX arrive without touching a gameplay file. It is the same one-directional
+rule `ICharacterAnimation` established in Milestone 2, made structural.
+
+**Everything subscribes to events that already existed.** `CharacterHealth.Damaged`,
+`DamageReduced`, `Died` and `Changed`; `CharacterBarrier.Raised` and `Broke`; `EnemyMelee.SwingStarted`
+and `SwingLanded`; `EnemyBrain.StateChanged`. Those events were written as their systems went in,
+largely for this.
+
+**One gameplay addition.** `CharacterSpellcaster.CastResolved(spell, context, affected)` - the
+existing `CastCompleted` says *whether* a spell landed, not *where*, so a tracer had nothing to draw
+along. That is presentation asking gameplay for what it already knows, which is the right direction.
+
+**`TimeScaleService` now owns `Time.timeScale`, and this is the important one.** Hit-stop and pause
+both want to slow time, and both writing `Time.timeScale` directly is a defect waiting to happen: a
+hit landing a frame before a pause restores the scale to 1 when its dip expires, and the game
+unpauses itself. That is the same shape as the pause bug found in Milestone 1. So they are separate
+factors that multiply - a base scale owned by game state, and a self-expiring dip - and the
+arithmetic lives in a plain-C# `TimeScaleState` that is tested.
+
+**Delivered**
+
+| Component | Reacts to | Shows |
+|---|---|---|
+| `CharacterFlash` | driven by the two below | A shell of the character's own mesh, scaled up. Collapses back to rest instead of fading, because the placeholder material is opaque and cannot fade. |
+| `EnemyCombatFeedback` | `SwingStarted`, `SwingLanded`, `StateChanged` | **The wind-up telegraph.** Orange for the whole 0.55s, red on the strike, violet while staggered, yellow while chasing. |
+| `CharacterCombatFeedback` | `Damaged`, `DamageReduced`, `Died`, `Changed`, barrier events | Red on a real hit, blue on one a ward ate, green on a heal, plus the numbers, the shake and the dip. |
+| `FloatingCombatText` | driven by the above | World-projected damage numbers, so tuning becomes measurable instead of guessed. |
+| `SpellTracer` | `CastResolved` | A beam along the resolved line, coloured from the spell's own first pulse element - so a new spell is coloured right the day it is authored, with nothing to configure. |
+| `DeathSink` | `Died` | The body tips and sinks rather than blinking out. Moves the visual child only, never the root, or a corpse would shove the player around while falling. |
+| `CameraShake` | registered as `IScreenShake` | Perlin kick on the camera, decaying on *unscaled* time so a hit that also dips time feels sharper rather than longer. |
+
+Plus `TimeScaleService`, `TimeScaleState`, `IScreenShake`, and 17 new EditMode tests (196 total).
+
+**Known limitations**
+
+1. **Not run in the editor.** Same caveat as Milestone 5, and now two unverified layers stack.
+2. `Shader.Find("Sprites/Default")` supplies the beam's material. Fine in the editor and in a build
+   that includes it; if it ever comes back null the beam draws in the default magenta rather than
+   failing, which is ugly but harmless.
+3. The flash shell is opaque, so it reads as an aura rather than a glow. A transparent material
+   would look better and needs an actual material asset, which is art.
+4. Hit-stop fires on the enemy's connecting swing and on hits to the player. It is deliberately
+   shallow and short; whether it feels good at 0.06s is exactly the sort of thing that needs playing.
+5. No audio at all. Sound is the single largest remaining gap in combat feel and none of this
+   addresses it.
+6. Numbers are drawn per character, so numbers still rising from an enemy vanish when its corpse
+   disables.
+7. `CameraShake` decays on unscaled time but is applied in `LateUpdate`, so at very low frame rates
+   the kick can be visibly stepped.
+
+**How to test it**
+
+Everything in the Milestone 5 list, plus:
+
+1. **The telegraph is the point.** Let the Sentinel reach you and watch for the orange shell. Learn
+   to move on it. If the fight now has a rhythm, that is the answer we were after; if the wind-up is
+   too short or too long to react to, that is a number worth changing and now a visible one.
+2. **Zoltraak looks like something.** Violet beam. Fire is orange, Ice pale blue, Water blue,
+   Mending green, Unbinding gold - none of which is configured anywhere; each is read off the
+   spell's own effects.
+3. **Barrier is legible.** Hold `3` and let the Sentinel hit you: a blue flash and a bracketed
+   number, and health that does not move. Let it break and you get `BROKEN`.
+4. **Pause during an impact.** Land a hit and press `Esc` inside the hit-stop. It should pause, and
+   unpausing should return to full speed - not to the dipped speed, and not stay frozen. That is
+   the interaction `TimeScaleState` exists to make impossible to get wrong.
 
 ---
 

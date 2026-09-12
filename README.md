@@ -16,7 +16,9 @@ and most environmental problems should have more than one solution.
 > placeholder capsule with camera, jump, dodge, interaction, health, mana, and a data-driven magic
 > system. Milestone 5 adds the first enemy - detection, chasing, a telegraphed swing, stagger and
 > death - and the remaining six spells, including Zoltraak and a channelled Barrier. It has not been
-> run in the editor yet. See [docs/MILESTONES.md](docs/MILESTONES.md).
+> run in the editor yet. A follow-on pass adds placeholder combat feedback - a wind-up telegraph,
+> spell beams, damage numbers, screen shake and hit-stop - so the loop can actually be judged.
+> See [docs/MILESTONES.md](docs/MILESTONES.md).
 
 ---
 
@@ -94,10 +96,10 @@ and walk across - or hold Levitation (`6`) and float over instead. Further west,
 Unbinding (`9`) opens and Fire (`4`) burns down. South-east, a broken stump that Mending (`8`) puts
 back together if you hold it long enough.
 
-**Automated tests:** `Window > General > Test Runner > EditMode > Run All`. 179 tests cover the service
+**Automated tests:** `Window > General > Test Runner > EditMode > Run All`. 196 tests cover the service
 locator, the game state machine, the save system, jump timing, motor maths, camera orbit maths,
 interaction scoring, the character resource pool, spell cooldowns, burn state, the damage barrier,
-the water basin and the lock. They do not touch the disk and need no scene.
+the water basin, the lock and the time scale. They do not touch the disk and need no scene.
 
 ## Layout
 
@@ -117,6 +119,7 @@ Assets/
     Magic/        Spell definitions, effects, and the component that casts them
     World/        Objects magic acts on: flammable, levitatable, water basin, repairable, locked
     Enemies/      Perception, behaviour state machine, melee, spawning
+    Presentation/ Reacts to gameplay, read by none of it: flashes, telegraphs, beams, numbers
     Combat/ Inventory/ Equipment/ Quests/ Dialogue/   (empty - later milestones)
     Tests/EditMode/
 docs/

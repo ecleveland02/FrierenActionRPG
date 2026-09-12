@@ -3,6 +3,7 @@ using Frieren.Core.Input;
 using Frieren.Core.Scenes;
 using Frieren.Core.Services;
 using Frieren.Core.StateMachine;
+using Frieren.Core.Timing;
 using Frieren.Save;
 using Frieren.Save.Storage;
 using UnityEngine;
@@ -40,6 +41,7 @@ namespace Frieren.Core.Bootstrap
         private bool useInMemorySaves;
 
         private GameStateMachine stateMachine;
+        private readonly TimeScaleService timeScale = new TimeScaleService();
         private DebugOverlay debugOverlay;
         private bool pauseTogglePending;
 
@@ -91,6 +93,9 @@ namespace Frieren.Core.Bootstrap
 
         private void Update()
         {
+            // The dip expires on real time, so it must be ticked before anything reads deltaTime,
+            // and it must keep ticking while paused - a zero scale still runs Update.
+            timeScale.Tick();
             ApplyPendingPauseToggle();
             stateMachine?.Tick(Time.deltaTime);
         }
@@ -149,6 +154,8 @@ namespace Frieren.Core.Bootstrap
                 ServiceLocator.Register(sceneCatalog);
             }
 
+            ServiceLocator.Register(timeScale);
+
             stateMachine = new GameStateMachine();
             stateMachine.StateChanged += (previous, current) =>
                 GameLog.Info(LogChannel.Core, $"Game state {previous} -> {current}.", this);
@@ -180,17 +187,21 @@ namespace Frieren.Core.Bootstrap
             stateMachine.Register(GameStateId.Playing, new DelegateGameState(
                 onEnter: () =>
                 {
-                    Time.timeScale = 1f;
+                    timeScale.BaseScale = 1f;
                     EnableGameplayInput();
                 }));
 
+            // Only the base scale moves here. A hit-stop dip is a separate factor that expires on
+            // its own, so pausing mid-impact cannot leave time running slow, and a dip expiring
+            // cannot unpause the game.
             stateMachine.Register(GameStateId.Paused, new DelegateGameState(
                 onEnter: () =>
                 {
-                    Time.timeScale = 0f;
+                    timeScale.ClearDip();
+                    timeScale.BaseScale = 0f;
                     EnableUIInput();
                 },
-                onExit: () => Time.timeScale = 1f));
+                onExit: () => timeScale.BaseScale = 1f));
 
             stateMachine.ChangeTo(GameStateId.Booting);
         }

@@ -1,0 +1,20 @@
+{
+    "name": "Frieren.Presentation",
+    "rootNamespace": "Frieren.Presentation",
+    "references": [
+        "Frieren.Core",
+        "Frieren.Characters",
+        "Frieren.Magic",
+        "Frieren.Enemies",
+        "Frieren.Data"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

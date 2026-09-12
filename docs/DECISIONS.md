@@ -365,3 +365,52 @@ plain YAML scalar and would have imported as a broken asset.
 It only inspects the files this project hand-authors. The URP settings and the Kael art spike's
 prefabs were written by Unity and use prefab-variant and stripped-object forms it deliberately does
 not model.
+
+
+---
+
+## Milestone 5.5
+
+### 27. Presentation is an assembly nothing depends on
+
+Feedback could have gone into the components that already exist - a flash in `CharacterHealth`, a
+telegraph in `EnemyMelee`. It is a separate assembly instead, and the important property is not that
+the code is tidier but that `Frieren.Presentation` is referenced by nothing. The compiler now
+forbids a gameplay class from calling into it, in either direction of intent: not deliberately, not
+by autocomplete, not in a hurry at 1am.
+
+That buys two things. The whole layer is deletable when real VFX arrive, without touching a gameplay
+file. And the placeholder nature is enforced rather than promised - there is no way for a temporary
+flash to quietly become load-bearing, because nothing can read it.
+
+The layer also derives rather than demands. Healing is inferred from `CharacterHealth.Changed`
+rising past a threshold, not from a `Healed` event added for its benefit. The single exception,
+`CastResolved`, exists because the resolved line genuinely cannot be reconstructed from outside the
+caster.
+
+### 28. One writer for `Time.timeScale`
+
+Hit-stop is four frames of slowed time on impact. Pause is an indefinite stop. Written the obvious
+way they both assign `Time.timeScale`, and then a hit landing just before a pause restores the scale
+to 1 when its dip expires - and the game unpauses itself with the menu still up.
+
+This project has already shipped one unrecoverable pause, by a different route (decision 20), so the
+second one is worth designing out rather than fixing later. `TimeScaleService` multiplies two
+independent inputs: a base scale that only game state writes, and a dip that expires on its own and
+restores only its own factor. A dip during a pause changes nothing, because the base is zero.
+
+The arithmetic lives in `TimeScaleState`, plain C# with no Unity types, for a reason specific to
+this class: the natural test would write the real `Time.timeScale`, which in edit mode is the
+editor's own clock, and a test that fails partway through would leave the editor frozen.
+
+### 29. Feedback is a milestone, not a garnish
+
+The brief says not to build final art before the loop is proven fun. Correct, and followed - there
+is still no art here. But Milestone 5 shipped a fight that could not be *judged*: a 0.55 second
+wind-up that nothing drew, so the dodge window was a coin flip, and a signature spell that was a log
+line and a number.
+
+Placeholder feedback is not art. It is the instrumentation that makes the fun question answerable at
+all, and it is cheap - primitives, `LineRenderer`, `MaterialPropertyBlock` and IMGUI, no assets and
+no packages. It also turned out to be a diagnostic: the telegraph reports whether the brain reached
+its Attack state, which separates a perception bug from a melee-timing one without reading a log.

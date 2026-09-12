@@ -23,6 +23,7 @@ and quests are authored content, never hardcoded branches.
 | 3 - Modular character architecture | Verified in the editor |
 | 4 - Magic framework, 3 spells | Verified in the editor |
 | 5 - First enemy, plus the remaining 6 spells | Written, not yet run in the editor |
+| 5.5 - Combat feel: placeholder feedback | Written, not yet run in the editor |
 
 Running alongside the milestones is a **Kael character spike** built by Codex: a Meshy-derived
 skinned character with Unity `Cloth`, its own prefab and scene, plus a separate animated prototype.
