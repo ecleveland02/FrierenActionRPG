@@ -33,6 +33,7 @@ GameObject:
   - component: {fileID: 170}
   - component: {fileID: 171}
   - component: {fileID: 180}
+  - component: {fileID: 182}
   - component: {fileID: 181}
   m_Layer: 8
   m_Name: Player
@@ -597,3 +598,25 @@ MonoBehaviour:
   radius: 150
   pointerRange: 220
   timeScaleWhileOpen: 0.25
+--- !u!114 &182
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bac31a2afbf8cd5e617056edf3a77dcd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  inputReader: {fileID: 11400000, guid: 4abd5fac414a09822d2bbf6488bd6377, type: 2}
+  acquireRange: 22
+  acquireAngle: 65
+  distanceWeight: 1.5
+  breakRange: 30
+  requireLineOfSight: 1
+  sightGrace: 1.2
+  pointerSwitchThreshold: 260
+  stickSwitchThreshold: 0.22
+  switchDecay: 3

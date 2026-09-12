@@ -42,6 +42,7 @@ namespace Frieren.Core.Bootstrap
 
         private GameStateMachine stateMachine;
         private readonly TimeScaleService timeScale = new TimeScaleService();
+        private readonly CursorService cursor = new CursorService();
         private DebugOverlay debugOverlay;
         private bool pauseTogglePending;
 
@@ -100,6 +101,23 @@ namespace Frieren.Core.Bootstrap
             stateMachine?.Tick(Time.deltaTime);
         }
 
+        /// <summary>
+        /// Re-asserts the pointer state when the window comes back.
+        /// </summary>
+        /// <remarks>
+        /// Unity releases the cursor lock when the application loses focus and does not restore it,
+        /// so without this, alt-tabbing away during play and back leaves a free cursor over a game
+        /// that thinks it captured one. Re-applying only on focus rather than every frame is
+        /// deliberate: a per-frame re-apply fights the operating system and traps the pointer.
+        /// </remarks>
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (hasFocus)
+            {
+                cursor.Apply();
+            }
+        }
+
         private void OnDestroy()
         {
             if (Instance != this)
@@ -112,6 +130,11 @@ namespace Frieren.Core.Bootstrap
                 inputReader.PausePerformed -= RequestPauseToggle;
                 inputReader.Dispose();
             }
+
+            // Show, not just release: ReleaseAll drops the claims and then re-captures, because
+            // no claims is the gameplay default. That would leave the editor's cursor locked to a
+            // game view that has stopped running.
+            cursor.ReleaseAndShow();
 
             ServiceLocator.Clear();
             Instance = null;
@@ -155,6 +178,7 @@ namespace Frieren.Core.Bootstrap
             }
 
             ServiceLocator.Register(timeScale);
+            ServiceLocator.Register(cursor);
 
             stateMachine = new GameStateMachine();
             stateMachine.StateChanged += (previous, current) =>
@@ -178,8 +202,14 @@ namespace Frieren.Core.Bootstrap
         {
             stateMachine.Register(GameStateId.Booting, new DelegateGameState());
 
+            // The menu and the paused game want a pointer; the Bootstrapper files those claims
+            // under its own name so releasing one cannot release the spell wheel's.
             stateMachine.Register(GameStateId.MainMenu, new DelegateGameState(
-                onEnter: EnableUIInput));
+                onEnter: () =>
+                {
+                    EnableUIInput();
+                    cursor.RequestPointer(this);
+                }));
 
             // A slow held open when a scene starts unloading has nothing left to release it, and
             // the next scene would start at a third speed with nothing to blame.
@@ -187,6 +217,10 @@ namespace Frieren.Core.Bootstrap
                 onEnter: () =>
                 {
                     timeScale.ForceClearHold();
+
+                    // Same reasoning as the time hold above: the objects holding pointer claims
+                    // are in the scene being unloaded and will never get to release them.
+                    cursor.ReleaseAll();
                     DisableInput();
                 }));
 
@@ -195,6 +229,7 @@ namespace Frieren.Core.Bootstrap
                 {
                     timeScale.BaseScale = 1f;
                     EnableGameplayInput();
+                    cursor.ReleasePointer(this);
                 }));
 
             // Only the base scale moves here. A hit-stop dip is a separate factor that expires on
@@ -206,8 +241,13 @@ namespace Frieren.Core.Bootstrap
                     timeScale.ClearDip();
                     timeScale.BaseScale = 0f;
                     EnableUIInput();
+                    cursor.RequestPointer(this);
                 },
-                onExit: () => timeScale.BaseScale = 1f));
+                onExit: () =>
+                {
+                    timeScale.BaseScale = 1f;
+                    cursor.ReleasePointer(this);
+                }));
 
             stateMachine.ChangeTo(GameStateId.Booting);
         }

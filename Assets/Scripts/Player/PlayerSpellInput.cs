@@ -32,6 +32,10 @@ namespace Frieren.Player
 
         private CharacterSpellcaster spellcaster;
 
+        // Optional sibling. Resolved rather than serialized so a player without a wheel - a test
+        // rig, an early tutorial - still casts.
+        private SpellWheelInput wheel;
+
         /// <summary>Raised when the selected spell changes, for a HUD that does not exist yet.</summary>
         public event Action<SpellDefinition> SelectionChanged;
 
@@ -45,6 +49,7 @@ namespace Frieren.Player
         private void Awake()
         {
             spellcaster = GetComponent<CharacterSpellcaster>();
+            wheel = GetComponent<SpellWheelInput>();
 
             if (inputReader == null)
             {
@@ -118,8 +123,24 @@ namespace Frieren.Player
             SelectionChanged?.Invoke(SelectedSpell);
         }
 
+        /// <summary>
+        /// Set when a click was spent choosing a spell, so the matching release is not read as the
+        /// end of a channel that never started.
+        /// </summary>
+        private bool castWasConsumedByWheel;
+
         private void OnCastPressed()
         {
+            // Clicking a slot picks it. Checked here rather than by having the wheel subscribe to
+            // the same button, because two handlers on one event resolve by subscription order and
+            // that is not something a component can be sure of.
+            if (wheel != null && wheel.IsOpen)
+            {
+                castWasConsumedByWheel = true;
+                wheel.CloseAndCommit();
+                return;
+            }
+
             if (SelectedSpell == null)
             {
                 GameLog.Warn(LogChannel.Magic, "Cast pressed with no spell selected.", this);
@@ -129,7 +150,16 @@ namespace Frieren.Player
             spellcaster.TryCast(SelectedSpell);
         }
 
-        private void OnCastReleased() => spellcaster.ReleaseChannel(SelectedSpell);
+        private void OnCastReleased()
+        {
+            if (castWasConsumedByWheel)
+            {
+                castWasConsumedByWheel = false;
+                return;
+            }
+
+            spellcaster.ReleaseChannel(SelectedSpell);
+        }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         /// <summary>
@@ -159,7 +189,7 @@ namespace Frieren.Player
                 : cooldown > 0f ? $"  cooling {cooldown:0.0}s" : string.Empty;
 
             GUILayout.Label($"{SelectedIndex + 1}. {spell.DisplayName}   {cost}{state}");
-            GUILayout.Label("Q wheel (point or press a number)   LMB cast   RMB block");
+            GUILayout.Label("Q wheel (point, click or press a number)   LMB cast   RMB block   MMB/Tab lock on");
             GUILayout.EndArea();
         }
 #endif

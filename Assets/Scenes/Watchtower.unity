@@ -234,6 +234,10 @@ MonoBehaviour:
   distance: 5
   minPitch: -30
   maxPitch: 65
+  framingOffset: {x: 0, y: 0.55}
+  lockTurnSmoothing: 0.12
+  lockFocusBias: 0.5
+  lockPitchBias: 8
   followSmoothTime: 0.06
   collisionLayers:
     serializedVersion: 2

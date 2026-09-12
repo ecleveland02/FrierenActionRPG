@@ -5,6 +5,7 @@ using Frieren.Core.Timing;
 using Frieren.Magic;
 using Frieren.Player.Cameras;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Frieren.Player
 {
@@ -24,6 +25,12 @@ namespace Frieren.Player
     /// It takes the pointer from the camera while it is open, through
     /// <see cref="OrbitCameraRig.LookEnabled"/>. Aiming a wheel and turning the camera with the
     /// same mouse movement is not a thing that can be shared.
+    ///
+    /// It also files a claim with <c>CursorService</c>, which is what puts the real mouse cursor
+    /// back on screen so slots can be clicked. While that claim stands the wheel reads the
+    /// pointer's actual position rather than accumulating deltas, because a visible cursor that
+    /// does not agree with the slot being highlighted is worse than no cursor. The cursor is warped
+    /// to the middle of the wheel on open so the two always start out agreeing.
     ///
     /// It also slows time while it is open, through <c>TimeScaleService</c>. That is what makes the
     /// wheel usable mid-fight rather than a thing you only open when nothing is happening - which
@@ -62,6 +69,7 @@ namespace Frieren.Player
         private OrbitCameraRig cameraRig;
         private Vector2 pointer;
         private bool cameraLookWasEnabled = true;
+        private bool holdingCursor;
 
         /// <summary>What the number row last chose. The pointer overrides it while it is out of the
         /// dead zone, and it is what the wheel falls back to when the pointer is not.</summary>
@@ -136,6 +144,32 @@ namespace Frieren.Player
             {
                 time.TryHold(this, timeScaleWhileOpen);
             }
+
+            ClaimCursor();
+        }
+
+        /// <summary>
+        /// Puts the hardware cursor back on screen, in the middle of the wheel.
+        /// </summary>
+        /// <remarks>
+        /// Warping matters as much as unhiding. The cursor was locked to the centre while it was
+        /// hidden, but the operating system remembers where it was before that, and an unhidden
+        /// cursor that reappears in the corner of the screen highlights a slot the player never
+        /// pointed at. Releasing the claim on close re-locks and re-hides it.
+        /// </remarks>
+        private void ClaimCursor()
+        {
+            if (!ServiceLocator.TryGet(out CursorService cursor))
+            {
+                return;
+            }
+
+            holdingCursor = cursor.RequestPointer(this);
+
+            if (holdingCursor && Mouse.current != null)
+            {
+                Mouse.current.WarpCursorPosition(new Vector2(Screen.width * 0.5f, Screen.height * 0.5f));
+            }
         }
 
         /// <summary>Closes without changing the selection.</summary>
@@ -159,6 +193,13 @@ namespace Frieren.Player
             {
                 time.ReleaseHold(this);
             }
+
+            if (holdingCursor && ServiceLocator.TryGet(out CursorService cursor))
+            {
+                cursor.ReleasePointer(this);
+            }
+
+            holdingCursor = false;
         }
 
         public void CloseAndCommit()
@@ -206,7 +247,15 @@ namespace Frieren.Player
 
             Vector2 look = inputReader.LookInput;
 
-            if (inputReader.LookIsPointerDelta)
+            if (holdingCursor && Mouse.current != null)
+            {
+                // The cursor is visible, so it is the truth. Accumulating deltas alongside a
+                // rendered pointer lets the two drift apart, and then the wheel highlights one
+                // slot while the arrow sits over another.
+                Vector2 screen = Mouse.current.position.ReadValue();
+                pointer = screen - new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+            }
+            else if (inputReader.LookIsPointerDelta)
             {
                 pointer += new Vector2(look.x, look.y);
             }

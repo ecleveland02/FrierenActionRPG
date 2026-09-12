@@ -212,14 +212,48 @@ namespace Frieren.Player
             motor.SetHorizontalVelocity(planarVelocity);
         }
 
+        /// <summary>
+        /// Something to keep facing regardless of which way the character is travelling, or
+        /// <c>null</c> to face the direction of movement as usual.
+        /// </summary>
+        /// <remarks>
+        /// Set by <c>PlayerTargetLock</c> while a target is held. This is what turns running away
+        /// into backing away: without it, retreating from an enemy spins the character round and
+        /// the player loses sight of the thing they are retreating from.
+        ///
+        /// A transform rather than a direction because the target moves, and a direction sampled
+        /// once would be stale by the next frame.
+        /// </remarks>
+        public Transform FaceTarget { get; set; }
+
         private void ApplyRotation(float deltaTime)
         {
-            if (planarVelocity.sqrMagnitude <= 0.01f)
+            Vector3 facing;
+
+            if (FaceTarget != null)
+            {
+                Vector3 toTarget = FaceTarget.position - transform.position;
+                toTarget.y = 0f;
+
+                // Standing exactly on top of the target gives no direction to face, so keep the
+                // current one rather than snapping to north.
+                if (toTarget.sqrMagnitude <= 0.0001f)
+                {
+                    return;
+                }
+
+                facing = toTarget.normalized;
+            }
+            else if (planarVelocity.sqrMagnitude > 0.01f)
+            {
+                facing = planarVelocity.normalized;
+            }
+            else
             {
                 return;
             }
 
-            Quaternion target = Quaternion.LookRotation(planarVelocity.normalized, Vector3.up);
+            Quaternion target = Quaternion.LookRotation(facing, Vector3.up);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, target, turnSpeed * deltaTime);
         }
 

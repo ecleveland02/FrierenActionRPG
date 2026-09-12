@@ -126,6 +126,13 @@ namespace Frieren.Player
             {
                 spellWheel.SetCameraRig(cameraRig);
             }
+
+            // Lock-on measures from the camera, not the body: the player chooses a target by
+            // looking at it, so anything else disagrees with what is on screen.
+            if (SpawnedPlayer.TryGetComponent(out PlayerTargetLock targetLock))
+            {
+                targetLock.SetCameraRig(cameraRig);
+            }
         }
 
 #if UNITY_EDITOR

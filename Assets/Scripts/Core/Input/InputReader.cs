@@ -41,6 +41,7 @@ namespace Frieren.Core.Input
         private InputAction castAction;
         private InputAction blockAction;
         private InputAction spellWheelAction;
+        private InputAction lockOnAction;
         private InputAction pauseAction;
 
         public bool IsInitialized { get; private set; }
@@ -95,6 +96,9 @@ namespace Frieren.Core.Input
 
         public event Action SpellWheelReleased;
 
+        /// <summary>Raised when the lock-on button goes down. A toggle, not a hold.</summary>
+        public event Action LockOnPerformed;
+
         public event Action PausePerformed;
 
         /// <summary>
@@ -135,6 +139,7 @@ namespace Frieren.Core.Input
             castAction = Resolve(gameplayMap, "Cast");
             blockAction = Resolve(gameplayMap, "Block");
             spellWheelAction = Resolve(gameplayMap, "SpellWheel");
+            lockOnAction = Resolve(gameplayMap, "LockOn");
             pauseAction = Resolve(gameplayMap, "Pause");
 
             Bind(moveAction, OnMove, OnMove);
@@ -146,6 +151,7 @@ namespace Frieren.Core.Input
             Bind(castAction, OnCast, OnCastReleased);
             Bind(blockAction, OnBlock, OnBlockReleased);
             Bind(spellWheelAction, OnSpellWheel, OnSpellWheelReleased);
+            Bind(lockOnAction, OnLockOn);
             Bind(pauseAction, OnPause);
 
             IsInitialized = true;
@@ -208,6 +214,7 @@ namespace Frieren.Core.Input
             BlockReleased = null;
             SpellWheelPerformed = null;
             SpellWheelReleased = null;
+            LockOnPerformed = null;
             PausePerformed = null;
         }
 
@@ -223,6 +230,7 @@ namespace Frieren.Core.Input
             Unbind(castAction, OnCast, OnCastReleased);
             Unbind(blockAction, OnBlock, OnBlockReleased);
             Unbind(spellWheelAction, OnSpellWheel, OnSpellWheelReleased);
+            Unbind(lockOnAction, OnLockOn);
             Unbind(pauseAction, OnPause);
 
             gameplayMap?.Disable();
@@ -237,6 +245,7 @@ namespace Frieren.Core.Input
             castAction = null;
             blockAction = null;
             spellWheelAction = null;
+            lockOnAction = null;
             pauseAction = null;
             gameplayMap = null;
             uiMap = null;
@@ -359,6 +368,8 @@ namespace Frieren.Core.Input
             SpellWheelHeld = false;
             SpellWheelReleased?.Invoke();
         }
+
+        private void OnLockOn(InputAction.CallbackContext context) => LockOnPerformed?.Invoke();
 
         private void OnPause(InputAction.CallbackContext context) => PausePerformed?.Invoke();
     }
