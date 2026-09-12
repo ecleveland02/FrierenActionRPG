@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Effect_Vfx_Fire
   m_EditorClassIdentifier: 
   editorNote: A burst of flame at the impact point.
-  prefab: {fileID: 100100000, guid: 8eb503696b886e04faff8fc0f480d473, type: 3}
+  prefab: {fileID: 358637981425055526, guid: 8eb503696b886e04faff8fc0f480d473, type: 3}
   placement: 0
   facing: 0
   offset: {x: 0, y: 0, z: 0}

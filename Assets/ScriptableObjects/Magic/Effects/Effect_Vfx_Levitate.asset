@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Effect_Vfx_Levitate
   m_EditorClassIdentifier: 
   editorNote: A sigil under the caster while they hold something aloft.
-  prefab: {fileID: 100100000, guid: a2a060732547fe64581bb0cb3c2bdf1d, type: 3}
+  prefab: {fileID: 3744133877081091469, guid: a2a060732547fe64581bb0cb3c2bdf1d, type: 3}
   placement: 1
   facing: 2
   offset: {x: 0, y: 0, z: 0}

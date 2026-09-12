@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Effect_Vfx_ArcaneBolt
   m_EditorClassIdentifier: 
   editorNote: Blue sparks where an arcane bolt lands.
-  prefab: {fileID: 100100000, guid: 1095a5c9f65bfbe4383f63d5d1886c65, type: 3}
+  prefab: {fileID: 952961124639765284, guid: 1095a5c9f65bfbe4383f63d5d1886c65, type: 3}
   placement: 0
   facing: 0
   offset: {x: 0, y: 0, z: 0}
