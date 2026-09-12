@@ -16,6 +16,6 @@ namespace Frieren.Core.Debugging
     public static class BuildStamp
     {
         /// <summary>Bump this whenever behaviour changes. Shown in the debug overlay.</summary>
-        public const string Current = "m7.1 watchtower woodland";
+        public const string Current = "m7.2 boot-watchtower, look input, monster art";
     }
 }

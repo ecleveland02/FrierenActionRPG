@@ -100,11 +100,16 @@ namespace Frieren.Core.Input
         /// <summary>
         /// Resolves actions and subscribes. Safe to call repeatedly: it tears down any previous
         /// wiring first, which matters in the editor where a ScriptableObject's runtime fields can
-        /// survive leaving play mode when domain reload is disabled.
+        /// survive leaving play mode when domain reload is disabled. Listeners registered on the
+        /// public events are kept; only <see cref="Dispose"/> drops those.
         /// </summary>
         public void Initialize()
         {
-            Dispose();
+            // Unwire, deliberately not Dispose. A scene that is not Boot loads its own components
+            // first and SceneBootstrapGuard pulls Boot in additively afterwards, so by the time the
+            // Bootstrapper initialises this asset the camera rig and player have already
+            // subscribed. Dropping their handlers here left the camera unable to look around.
+            Unwire();
 
             if (actions == null)
             {
@@ -181,8 +186,33 @@ namespace Frieren.Core.Input
             ResetValues();
         }
 
-        /// <summary>Unsubscribes, disables the maps and drops all listeners.</summary>
+        /// <summary>
+        /// Full teardown: unwires the actions and drops every listener. Called when the asset is
+        /// unloaded, which in the editor is leaving play mode. Anything short of that wants
+        /// <see cref="Unwire"/>, because listeners outlive a re-initialisation.
+        /// </summary>
         public void Dispose()
+        {
+            Unwire();
+
+            // Listeners from a previous play session would otherwise point at destroyed objects.
+            MoveChanged = null;
+            LookChanged = null;
+            SprintChanged = null;
+            JumpPerformed = null;
+            DodgePerformed = null;
+            InteractPerformed = null;
+            CastPerformed = null;
+            CastReleased = null;
+            BlockPerformed = null;
+            BlockReleased = null;
+            SpellWheelPerformed = null;
+            SpellWheelReleased = null;
+            PausePerformed = null;
+        }
+
+        /// <summary>Unsubscribes from the actions and disables the maps, leaving listeners intact.</summary>
+        private void Unwire()
         {
             Unbind(moveAction, OnMove, OnMove);
             Unbind(lookAction, OnLook, OnLook);
@@ -210,21 +240,6 @@ namespace Frieren.Core.Input
             pauseAction = null;
             gameplayMap = null;
             uiMap = null;
-
-            // Listeners from a previous play session would otherwise point at destroyed objects.
-            MoveChanged = null;
-            LookChanged = null;
-            SprintChanged = null;
-            JumpPerformed = null;
-            DodgePerformed = null;
-            InteractPerformed = null;
-            CastPerformed = null;
-            CastReleased = null;
-            BlockPerformed = null;
-            BlockReleased = null;
-            SpellWheelPerformed = null;
-            SpellWheelReleased = null;
-            PausePerformed = null;
 
             ResetValues();
             IsInitialized = false;

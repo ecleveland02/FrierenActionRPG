@@ -205,10 +205,12 @@ def main():
     scenes = sys.argv[1:]
 
     if not scenes:
+        # Marker is the name of the objectives root a slice scene carries. It was
+        # "SliceObjectives" here and "Objectives" in the scene, so this matched nothing and the
+        # gate silently passed every run since it was written.
         scenes = [os.path.join("Assets/Scenes", n) for n in sorted(os.listdir("Assets/Scenes"))
-                  if n.endswith(".unity") and "SliceObjectives" in open(
-                      os.path.join("Assets/Scenes", n)).read() or False]
-        scenes = [s for s in scenes if os.path.exists(s)]
+                  if n.endswith(".unity")
+                  and "m_Name: Objectives" in open(os.path.join("Assets/Scenes", n)).read()]
 
     if not scenes:
         print("No slice scenes found; nothing to check.")
