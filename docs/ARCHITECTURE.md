@@ -8,19 +8,25 @@ Code is split into assembly definitions so a change in one system does not recom
 and so the dependency direction is enforced by the compiler rather than by discipline.
 
 ```
-Frieren.Data (no deps)        Frieren.Save (no deps)        Frieren.Characters (no deps)
-        ^                            ^                              ^
-        |                            |                              |
-        +--------- Frieren.Core -----+                              |
-                        ^                                           |
-                        +-------------- Frieren.Player -------------+
-                                              ^
-                        Frieren.Core.Editor --+-- Frieren.Tests.EditMode
+Frieren.Data          -> (nothing)
+Frieren.Save          -> (nothing)
+Frieren.Core          -> Data, Save
+Frieren.World         -> Core
+Frieren.Characters    -> Core, Data, Save
+Frieren.Magic         -> Core, Characters, Data
+Frieren.Enemies       -> Core, Characters, Data
+Frieren.Player        -> Core, Characters, Magic, Data
+Frieren.Core.Editor   -> everything above
+Frieren.Tests.EditMode-> everything above
 ```
 
-The direction is enforced by the compiler, and the leaves are deliberately dependency-free:
-`Frieren.Characters` references nothing, so the enemy work in Milestone 5 cannot accidentally drag
-player code in with it.
+The direction is enforced by the compiler. `Frieren.Enemies` and `Frieren.Player` are siblings that
+cannot see each other: both are only ways of driving the same `Frieren.Characters` components, which
+is what stopped the enemy work in Milestone 5 from dragging player code in with it.
+
+An assembly reference is not unused just because no type from it appears by name in the source - an
+inheritance chain crossing an unreferenced assembly is a CS0012 waiting to happen. Run
+`Tools/Validation/check_assemblies.py` before pushing; it catches that and reference cycles.
 
 | Assembly | Folder | Holds |
 |---|---|---|
@@ -30,11 +36,12 @@ player code in with it.
 | `Frieren.Player` | `Scripts/Player` | Player-specific intent only: locomotion, dodge, interaction probe, camera rig, spawner, spell input. |
 | `Frieren.Magic` | `Scripts/Magic` | Spell definitions, effects, and the component that casts them. |
 | `Frieren.World` | `Scripts/World` | Objects magic acts on. Depends only on Core, never on Magic. |
+| `Frieren.Enemies` | `Scripts/Enemies` | Perception, behaviour, melee, spawning. Cannot see `Frieren.Player`. |
 | `Frieren.Core` | `Scripts/Core` | Bootstrap, service registry, scene loading, game state, input, debug tooling. |
 | `Frieren.Core.Editor` | `Scripts/Core/Editor` | Editor-only: setup validation, asset creation, scene regeneration, menus. |
 | `Frieren.Tests.EditMode` | `Scripts/Tests/EditMode` | Edit-mode tests. |
 
-Remaining gameplay assemblies (`Frieren.Combat`, `Frieren.Magic`, `Frieren.Enemies`, ...) get their
+Remaining gameplay assemblies (`Frieren.Combat`, `Frieren.Quests`, ...) get their
 own asmdefs as those folders gain code. They should depend on `Frieren.Core` and `Frieren.Data`, and on each
 other as little as possible. `Frieren.Core` must never gain a dependency on a gameplay assembly:
 if core needs to talk to gameplay, that is a signal to invert it with an interface or an event.
@@ -252,14 +259,73 @@ holding a spell on an object feel like holding it rather than having thrown some
 `PlayerSpellInput` calls it. An enemy in Milestone 5 casts the same spells through the same
 component with a behaviour tree driving it.
 
+## Combat and enemies (Milestone 5)
+
+```
+EnemyPerception --> EnemyBrain --> CharacterMotor      (movement, shared with the player)
+  range, FOV, LOS     Idle/Chase/    EnemyMelee        (wind-up -> strike -> recovery)
+  with hysteresis     Attack/         |
+                      Stagger/Dead    v
+                            ^    CharacterHealth.TakeDamage
+                            |         |
+                            |         v
+                       Damaged   IDamageModifier (ordered)
+                                      |
+                                 CharacterBarrier (order 0)
+```
+
+**An enemy is a character with a decision-maker instead of a keyboard.** `Frieren.Enemies`
+references Core, Characters and Data - not Player, not Magic. Everything about having a body comes
+from Milestone 3: motor, health, stats, action lock. Only the deciding is new. That split is the
+whole reason the character layer was built as components rather than as a `PlayerController`.
+
+**`EnemyBrain` is not `GameStateMachine`.** One is menus and pausing, the other is one wolf's
+opinion of the next two seconds. Collapsing them would put "loading" and "staggered" in one enum.
+
+**Perception is three tests, cheapest first**: range, then field of view, then a raycast. Losing a
+target is deliberately harder than gaining one - a larger radius and a delay - so stepping behind a
+pillar does not reset the fight. A target set by being hit from behind survives long enough for the
+enemy to turn around.
+
+**No NavMesh, on purpose.** The brain hands a direction to `CharacterMotor` and the motor does the
+rest. A bake needs level geometry that does not exist yet. An agent that writes to the same motor
+replaces the steering later without touching a single decision.
+
+**`IDamageModifier` is the seam everything defensive plugs into.** `CharacterHealth` runs an
+incoming hit through its modifiers in `ModifierOrder`, each returning the remainder. `CharacterBarrier`
+is the first, at order 0. Armour, resistances, damage-over-time reduction and a dodge's
+invulnerability are later implementations of the same interface. Health never learns about any of
+them; it applies whatever survives the pass. Putting the barrier inside health instead would have
+made the second defensive mechanic a rewrite.
+
+**Warding is an element like Heat.** `CharacterBarrier` implements `IMagicReceiver` and answers
+`MagicElement.Warding`, exactly as a crate answers Heat. So a barrier spell, a warding rune, an
+ally's shield and a defensive item are all the same thing arriving from different places. It
+refreshes to full rather than accumulating - a barrier is held, not stockpiled, and stacking would
+make hiding in a corner charging up the correct opening move.
+
+**Zoltraak is an effect, not a class.** Piercing is a property of the damage, so it lives in
+`PiercingDamageEffect` and any spell can have it by swapping which damage effect is in its list. The
+beam is clipped by a thin ray against solid geometry before the thick cast runs, so a shot that
+grazes the floor is not stopped by it.
+
+**A pulse reaches every receiver on an object, not the first.** The player carries both levitation
+and a barrier. Delivering to whichever component happened to be highest in the inspector would have
+made behaviour depend on component order, which is not a thing anyone should have to know.
+
+**`GameLayers` holds the layer numbers.** Masks are integers, so inserting a layer in Project
+Settings silently repoints every mask built from a literal, with no error - enemies just stop seeing
+you. The constants live in one file and an editor check confirms at load that they still name the
+layers `ProjectSettings` says they do.
+
 ## Where the next milestones attach
 
 | Milestone | Attaches via |
 |---|---|
 | 3 - Character architecture | Done. The rigged character still needs to replace `PlaceholderCharacterAnimation` with `MecanimCharacterAnimation`. |
-| 4 - Magic framework | Done, with three spells. The remaining five are new assets plus, where needed, new `SpellEffect` subclasses. |
-| 5 - Enemy | Reuses `CharacterMotor` driven by a navigation agent instead of input. Its own behaviour state machine, not `GameStateMachine`, which is for application modes. `PlayerDodge.IsInvulnerable` is already exposed for damage to read. |
-| 6 - Environmental interaction | The contract landed early in Milestone 4. What remains is breadth: more receiver kinds (freezable water, repairable mechanisms, locks) and puzzles combining them. New receivers need no change to any spell. |
+| 4 - Magic framework | Done, with nine spells. New spells are assets; only a genuinely new *kind* of effect needs code. |
+| 5 - Enemy | Done. Steering is direct; a navigation agent writing to the same motor replaces it when there is a level to bake. `PlayerDodge.IsInvulnerable` is still not read by anything - it wants to be an `IDamageModifier`. |
+| 6 - Environmental interaction | The contract landed in Milestone 4 and has five receivers after Milestone 5: flammable, levitatable, basin, repairable, locked. What remains is breadth and persistence - none of the five survives a save. New receivers still need no change to any spell. |
 | 7 - Vertical slice | `GameSceneDefinition` per area, added to `SceneCatalog` and Build Settings. `PlayerSpawner` handles arrival in each. |
 
 ## Conventions

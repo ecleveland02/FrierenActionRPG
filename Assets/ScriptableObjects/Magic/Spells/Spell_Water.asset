@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 344d7fa350bdab4d4403cf8c6c419f57, type: 3}
+  m_Name: Spell_Water
+  m_EditorClassIdentifier: 
+  id: spell.water
+  displayName: Water Creation
+  description: Conjures water where you aim it. Fills what will hold it and puts out what will not.
+  castMode: 0
+  manaCost: 12
+  manaPerSecond: 0.0
+  channelTickInterval: 0.1
+  maxChannelSeconds: 0
+  holdsActionLock: 1
+  castTime: 0.5
+  cooldown: 1.0
+  targeting: 1
+  range: 16
+  effects:
+  - {fileID: 11400000, guid: d090904c76873e59bcf65329869326f3, type: 2}
+  castAnimation: 5

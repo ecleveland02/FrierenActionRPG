@@ -34,6 +34,9 @@ namespace Frieren.Core.Magic
         Restoration = 5,
 
         /// <summary>Undoes bindings: locks, seals, wards.</summary>
-        Unbinding = 6
+        Unbinding = 6,
+
+        /// <summary>Raises defences. The barrier magic every mage in this setting learns first.</summary>
+        Warding = 7
     }
 }

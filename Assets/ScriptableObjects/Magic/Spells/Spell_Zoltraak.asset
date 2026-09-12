@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 344d7fa350bdab4d4403cf8c6c419f57, type: 3}
+  m_Name: Spell_Zoltraak
+  m_EditorClassIdentifier: 
+  id: spell.zoltraak
+  displayName: Zoltraak
+  description: A lance of ordinary offensive magic. It does not stop at the first thing it hits.
+  castMode: 0
+  manaCost: 35
+  manaPerSecond: 0.0
+  channelTickInterval: 0.1
+  maxChannelSeconds: 0
+  holdsActionLock: 1
+  castTime: 0.75
+  cooldown: 2.5
+  targeting: 1
+  range: 40
+  effects:
+  - {fileID: 11400000, guid: 3965920f9cc0884e45e1014cab33a6ff, type: 2}
+  castAnimation: 5

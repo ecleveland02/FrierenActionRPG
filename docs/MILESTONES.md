@@ -8,8 +8,8 @@ Each milestone must produce something playable or testable, and be verified befo
 | 2 | Placeholder third-person player | **Complete**, playable in the editor |
 | 3 | Modular character architecture | **Complete**, not yet run in the editor |
 | 4 | Data-driven magic framework + 3 spells | **Complete**, confirmed in the editor |
-| 5 | First enemy and basic combat | Not started |
-| 6 | Reusable environmental interaction systems | Contract landed in M4; breadth remaining |
+| 5 | First enemy and basic combat, plus the remaining spells | **Complete**, not yet run in the editor |
+| 6 | Reusable environmental interaction systems | Contract landed in M4; three more receivers landed in M5; breadth remaining |
 | 7 | Gray-box vertical slice | Not started |
 
 Outside the milestone sequence, a **Kael character spike** exists in its own prefab and scene, built
@@ -246,23 +246,120 @@ spell carrying Heat will light it with no change to the crate.
 
 ---
 
-**Next: Milestone 5 - the first enemy**
+## Milestone 5 - First enemy, and the rest of the spells (complete, unverified in the editor)
 
-Scope: one enemy with detection, navigation, targeting, attack, damage, stagger and death.
+**Build stamp: `m5 enemies and the full spell set`.** The debug overlay prints this. If it says
+anything else, the build being looked at is not this one and nothing observed in it is evidence.
 
-**A scope note worth raising before starting.** The plan has Milestone 4 build eight spells and
-Milestone 6 build the environmental interaction system those spells act on. For at least Fire, Ice,
-Levitation, Repair and Unlock that is backwards: those spells are *defined* by what they do to world
-objects, so building them first means five spells with nothing to affect, then rewriting them.
+### Architecture, before the detail
 
-The suggestion is to bring the Milestone 6 interfaces forward into Milestone 4 - the contract for
-"this object responds to a spell effect of type X" - and build one example object per effect
-alongside its spell. Milestone 6 then becomes breadth (more object kinds, more combinations) rather
-than the first attempt.
+**The enemy gets its own assembly and its own state machine.** `Frieren.Enemies` sits beside
+`Frieren.Player`, referencing Core, Characters and Data but not Player and not Magic. An enemy is a
+character driven by a decision-maker instead of a keyboard, which is precisely the split that
+Milestone 3 was built for - so the enemy reuses `CharacterMotor`, `CharacterHealth`,
+`CharacterStats` and `CharacterActionLock` unchanged, and adds only the deciding.
 
-One thing to settle at the start:
+`EnemyBrain` is a five-state machine (Idle, Chase, Attack, Stagger, Dead), deliberately not the
+application-level `GameStateMachine`. Sharing them would put "the game is loading" and "this
+sentinel is reeling" in one enum.
 
-- **How a spell composes its behaviour.** A `SpellDefinition` holding a list of effect
-  ScriptableObjects, or one class per spell. Recommendation: the effect list, because it is the only
-  version where "fire that also lights torches" is authored rather than coded, and because the brief
-  explicitly asks for multiple solutions to environmental problems.
+**No NavMesh.** Steering is direct: the brain points a direction at `CharacterMotor` and the motor
+does the rest. A NavMesh needs baking, baking needs real level geometry, and a gray-box arena has
+none. When there is a level, an agent that writes to the same motor drops in with no change to the
+brain's decisions.
+
+**Barrier needed a damage pipeline, which combat wanted anyway.** `IDamageModifier` is a seam on
+`CharacterHealth`: implementers get a chance to reduce an incoming hit before it lands, in a defined
+order. `CharacterBarrier` is the first, at order 0. Armour, resistances and damage-over-time
+reduction are later implementations of the same interface, and health never learns about any of
+them - it applies whatever reaches it.
+
+**Zoltraak is an effect, not a class.** Its defining property is that it does not stop at the first
+body, so it is a `PiercingDamageEffect` in a spell's effect list. Any spell can be made piercing by
+swapping which damage effect it carries.
+
+**Delivered**
+
+- `Frieren.Enemies`: `EnemyPerception` (range, then field of view, then line of sight - cheapest
+  first, with hysteresis so a pillar does not reset the fight), `EnemyMelee` (wind-up, strike,
+  recovery, cooldown - the wind-up is the dodge window), `EnemyBrain`, `EnemySpawner`.
+- `IDamageModifier` and the ordered modifier pass in `CharacterHealth`, with a `DamageReduced` event.
+- `CharacterBarrier`: raised by a Warding pulse, refreshed rather than stacked, lapses shortly after
+  the pulses stop.
+- `MagicElement.Warding`.
+- Three new world receivers: `WaterBasin` (Water fills it, Cold freezes it into a standable surface,
+  Heat thaws then boils it), `RepairableObject` (Restoration mends it, progress decays), and
+  `LockedObject` (Unbinding picks it, enough Force breaks it, a key opens it - all through one path).
+- `PiercingDamageEffect`, which clips its beam at solid geometry with a thin ray so a grazing shot
+  does not stop on the floor.
+- Six new spells: **Zoltraak** (piercing, 45 damage, 40m), **Barrier** (channelled self-ward), Ice,
+  Water Creation, Mending (channelled) and Unbinding. With the existing three that is nine, in the
+  order 1-9 on the number row.
+- `GameLayers`: the project's layer indices and masks in one place, with an editor check that they
+  still name the layers `ProjectSettings` says they do.
+- `Tools/Validation/check_unity_yaml.py`: anchor uniqueness, unresolved references, GameObject and
+  component agreement, transform parent/child bidirectionality, missing and orphan `.meta` files.
+- `Enemy_Sentinel.prefab` and its `Stats_Sentinel` archetype (80 health - two Zoltraaks).
+- Test scene: an enemy spawn, a trough between two ledges, a broken pillar, and a locked door.
+- 26 new EditMode tests (179 total).
+
+**A fix worth naming.** `MagicPulseEffect` delivered a pulse to the *first* `IMagicReceiver` it
+found on an object. The player now carries two - levitation and the barrier - which would have made
+behaviour depend on inspector component order. It now offers the pulse to every receiver it finds.
+
+**Known limitations**
+
+1. **Nothing here has been run in the editor.** It compiles by static analysis and the YAML
+   validates, which is not the same thing. Milestone 4 shipped three defects that only running it
+   found.
+2. Combat tuning is guesswork: 80 enemy health, 12 melee damage, a 0.55s wind-up, 45 for Zoltraak.
+   These are first numbers, not measured ones.
+3. The player can die and nothing happens - no death screen, no respawn. F3 revives.
+4. Enemy attacks cannot be interrupted by the player except through the stagger, and the stagger has
+   a 0.9s cooldown so it cannot be chained into a stun-lock. Whether that is the right number is
+   unknown until it is played.
+5. Steering is direct, so an enemy will walk into a wall if the player stands behind one.
+6. No VFX, no audio, no hit reaction beyond the placeholder tint. A Zoltraak looks like nothing.
+7. `EnemyBrain`, `EnemyMelee` and `EnemyPerception` have no automated tests: all three need a
+   running clock and a physics scene, which is a play-mode test setup that does not exist yet. The
+   barrier, the basin and the lock are covered, because their decisions are frame-free.
+8. World receivers still do not persist. A mended pillar is broken again after a load.
+9. Barrier does not stop the melee swing's *knock*, because there is no knockback yet.
+10. `LevitatableObject` and `Effect_Pulse_Force` remain unreachable, still waiting for a telekinesis
+   spell.
+
+**How to test it in the editor**
+
+Open `Boot`, press Play. Check the overlay reads `m5 enemies and the full spell set` before trusting
+anything below.
+
+1. **The enemy.** Walk north (`+Z`). At about 14m the Stone Sentinel notices you, closes, and swings.
+   The console narrates each state change. Take a hit or two and watch the health bar; press `F3` to
+   heal.
+2. **Zoltraak.** Press `2`, aim at the sentinel, cast. 45 damage, so two kill it. Line up the
+   sentinel and the target dummy and one cast hits both, the second for 80% - that is the piercing.
+3. **Barrier.** Press `3` and **hold**. The vitals panel shows the barrier and its remaining
+   strength. Let the sentinel hit you while holding: the barrier absorbs it and the panel drops
+   rather than your health. Release and it lapses in a third of a second.
+4. **Water and Ice, the pillar of the whole design.** Go west to the two ledges with a trough
+   between them. Press `7` and cast Water twice into the trough - it fills. Press `5` and cast Ice -
+   it freezes, and you can walk across. Now do it the other way: select Levitation (`6`), hold, and
+   float over. Two answers, neither scripted, neither knowing about the other.
+5. **The locked door.** Further west. Walk up to it and press Interact: it says Locked. Press `9`
+   and cast Unbinding: it opens. Or reload, press `4`, and burn it down with Fire instead - the door
+   panel is flammable. Two answers again, and the second one is free: `FlammableObject` was written
+   in Milestone 4 and knows nothing about doors.
+6. **Mending.** The broken stump south-east of spawn. Press `8` and **hold** - it takes about two
+   seconds of sustained casting. Let go early and the progress decays away.
+
+Items 4 and 5 are the ones that matter. Nothing in the trough knows what Ice is; nothing in the door
+knows what Fire is. Each reacts to an element, which is why new spells keep working on old objects.
+
+---
+
+**Next: Milestone 6 - environmental interaction, in breadth**
+
+The contract landed in Milestone 4 and now has five receivers. Milestone 6 is no longer about
+building the system; it is about having enough object kinds and enough combinations that a room can
+be designed around them, plus the thing all five currently lack: persistence. A burnt crate, a
+mended pillar and an opened door should still be burnt, mended and open after a load.

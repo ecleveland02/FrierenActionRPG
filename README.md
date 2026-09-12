@@ -12,11 +12,11 @@ The design principle everything else serves: **magic is a tool, not merely a wea
 expected to interact with the world - burning, freezing, lifting, flooding, repairing, unlocking -
 and most environmental problems should have more than one solution.
 
-> Status: **Milestones 1-4 complete.** 1 and 2 are confirmed in the editor: a controllable
-> placeholder capsule with camera, jump, dodge and interaction. Milestones 3 and 4 add health and
-> mana, and a data-driven magic system with three spells that damage characters and set the world on
-> fire or lift it. Neither has been run yet. There are no enemies.
-> See [docs/MILESTONES.md](docs/MILESTONES.md).
+> Status: **Milestones 1-5 complete.** 1 through 4 are confirmed in the editor: a controllable
+> placeholder capsule with camera, jump, dodge, interaction, health, mana, and a data-driven magic
+> system. Milestone 5 adds the first enemy - detection, chasing, a telegraphed swing, stagger and
+> death - and the remaining six spells, including Zoltraak and a channelled Barrier. It has not been
+> run in the editor yet. See [docs/MILESTONES.md](docs/MILESTONES.md).
 
 ---
 
@@ -52,7 +52,7 @@ If the Console reports that Active Input Handling is wrong, set
 **Project Settings > Player > Active Input Handling** to *Input System Package (New)* and restart
 the editor. It should already be set - `ProjectSettings.asset` is committed with it.
 
-## Running and testing Milestone 1
+## Running and testing
 
 Press Play from `Boot.unity`. Boot loads `TestScene` additively and hands control to the
 `Playing` state, then `PlayerSpawner` drops a capsule in and points the camera at it.
@@ -66,7 +66,7 @@ Press Play from `Boot.unity`. Boot loads `TestScene` additively and hands contro
 | Dodge | `Ctrl` | B / circle |
 | Interact | `E` | X / square |
 | Cast | Left mouse (hold for channelled spells) | Right trigger |
-| Select spell | `1` bolt, `2` fire, `3` levitate | - |
+| Select spell | `1`-`9`: bolt, Zoltraak, barrier, fire, ice, levitate, water, mending, unbinding | - |
 | Pause | `Esc` | Start |
 
 Debug keys: `F1` overlay, `F2` damage 15, `F3` heal or revive, `F4` spend 15 mana, `F5` quick save,
@@ -87,9 +87,17 @@ shows the JSON that was written.
 pulls the Boot scene in behind it so services exist, and suppresses the first-scene load so the
 scene under test is not immediately replaced.
 
-**Automated tests:** `Window > General > Test Runner > EditMode > Run All`. 153 tests cover the service
+**Combat and the spells:** walk north-east until the Stone Sentinel notices you. Press `2` and cast
+Zoltraak twice to kill it, or press `3` and hold to raise a barrier while it swings. West of spawn,
+two ledges with a trough between them: fill the trough with Water (`7`), freeze it with Ice (`5`),
+and walk across - or hold Levitation (`6`) and float over instead. Further west, a locked door that
+Unbinding (`9`) opens and Fire (`4`) burns down. South-east, a broken stump that Mending (`8`) puts
+back together if you hold it long enough.
+
+**Automated tests:** `Window > General > Test Runner > EditMode > Run All`. 179 tests cover the service
 locator, the game state machine, the save system, jump timing, motor maths, camera orbit maths,
-interaction scoring, the character resource pool, spell cooldowns and burn state. They do not touch the disk and need no scene.
+interaction scoring, the character resource pool, spell cooldowns, burn state, the damage barrier,
+the water basin and the lock. They do not touch the disk and need no scene.
 
 ## Layout
 
@@ -107,8 +115,9 @@ Assets/
     Save/         Save service, storage backends, file format
     ScriptableObjects/  Shared base types for authored content
     Magic/        Spell definitions, effects, and the component that casts them
-    World/        Objects magic acts on: flammable, levitatable
-    Combat/ Enemies/ Inventory/ Equipment/ Quests/ Dialogue/   (empty - later milestones)
+    World/        Objects magic acts on: flammable, levitatable, water basin, repairable, locked
+    Enemies/      Perception, behaviour state machine, melee, spawning
+    Combat/ Inventory/ Equipment/ Quests/ Dialogue/   (empty - later milestones)
     Tests/EditMode/
 docs/
 ```

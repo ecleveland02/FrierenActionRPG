@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 344d7fa350bdab4d4403cf8c6c419f57, type: 3}
+  m_Name: Spell_Unlock
+  m_EditorClassIdentifier: 
+  id: spell.unlock
+  displayName: Unbinding
+  description: Undoes a lock. Not the only way through a locked door, but the quiet one.
+  castMode: 0
+  manaCost: 14
+  manaPerSecond: 0.0
+  channelTickInterval: 0.1
+  maxChannelSeconds: 0
+  holdsActionLock: 1
+  castTime: 0.6
+  cooldown: 1.5
+  targeting: 1
+  range: 6
+  effects:
+  - {fileID: 11400000, guid: 5656267f1fe7e17efa0843993c04b8d3, type: 2}
+  castAnimation: 5

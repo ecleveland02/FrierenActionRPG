@@ -294,3 +294,74 @@ It also corrects an earlier mistake of mine. In Milestone 2 I removed `Frieren.D
 again, and the resulting error surfaced as `'Magic' does not exist in the namespace 'Frieren'` in a
 different file - which points at the wrong problem entirely. An assembly reference is not unused
 just because no type from it appears by name.
+
+
+---
+
+## Milestone 5
+
+### 22. Defence is a damage pipeline, not a check inside health
+
+The barrier could have been three lines inside `CharacterHealth.TakeDamage`. It is instead an
+`IDamageModifier` that health knows nothing about, because the barrier is the first of at least
+five: armour, elemental resistance, the dodge's invulnerability window, damage-over-time reduction,
+and whatever equipment turns out to do.
+
+Written the cheap way, the second one is a rewrite of health and the fifth is a method with five
+branches in it that every future mechanic has to be threaded through. Written this way, each is a
+component that implements one interface and declares where in the order it runs, and health keeps
+its single job: apply what reaches it.
+
+The cost is one array and a sort at `Awake`. That is not a real cost.
+
+### 23. No NavMesh for the first enemy
+
+Movement is a direction handed to `CharacterMotor`, the same component the player drives. The
+obvious alternative, `NavMeshAgent`, was rejected for one reason: it needs a baked NavMesh, a bake
+needs real level geometry, and the only level that exists is a gray-box arena that will be deleted.
+Baking against geometry that is about to be thrown away, in an editor I cannot open, is work that
+verifies nothing.
+
+Direct steering has a real cost - an enemy will walk into a wall if the player stands behind one -
+and that cost is visible and acceptable in a test arena. When there is a level, an agent that writes
+to the same motor replaces the steering without touching a single decision in `EnemyBrain`, because
+the brain never touches the transform.
+
+### 24. Layer numbers live in `GameLayers`, not in literals
+
+A `LayerMask` is an integer. Insert a layer in Project Settings and every mask built from a literal
+silently points somewhere else: no compile error, no exception, no log line - enemies simply stop
+seeing the player. That failure is nearly undiagnosable from the symptom.
+
+So the indices and the common masks are constants in one file, and `ProjectSetupValidator` asserts
+at editor load that each index still names the layer it claims. This also resolves the awkwardness
+in decision 17: serialized `LayerMask` fields are still never hand-written into YAML, but they can
+now take a meaningful default from a C# initializer instead of `~0`.
+
+### 25. A magic pulse reaches every receiver on an object
+
+`MagicPulseEffect` originally delivered to the first `IMagicReceiver` found on the target. That was
+fine while no object had two. The player now carries `CharacterLevitation` and `CharacterBarrier`,
+and the first-wins rule would have made which one worked depend on the order components sit in the
+inspector - a rule nobody would guess and no error would report.
+
+Every receiver on the object is now offered the pulse, and each decides for itself. The buffer is
+shared and therefore not re-entrant: a receiver must not cast a spell from inside `ReceiveMagic`.
+Receivers are meant to be passive, so that is a rule worth keeping rather than an allocation worth
+paying for.
+
+### 26. Hand-authored Unity YAML is validated by a script too
+
+`Tools/Validation/check_unity_yaml.py` joins `check_assemblies.py` as a pre-push gate. The scenes,
+prefabs and assets in this project are written by generator scripts rather than by the editor, so
+the usual safety net - the editor refusing to save something malformed - does not exist.
+
+Every check in it is a mistake already made at least once here: duplicate anchors, a `fileID` naming
+nothing, a GUID no asset owns, a GameObject and its component disagreeing about who owns whom, a
+transform listing a child that does not list it back, an orphan `.meta`, a missing `.meta`. It also
+found a real one on its first run: a `TextArea` string containing a colon, which is not a legal
+plain YAML scalar and would have imported as a broken asset.
+
+It only inspects the files this project hand-authors. The URP settings and the Kael art spike's
+prefabs were written by Unity and use prefab-variant and stripped-object forms it deliberately does
+not model.

@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 344d7fa350bdab4d4403cf8c6c419f57, type: 3}
+  m_Name: Spell_Ice
+  m_EditorClassIdentifier: 
+  id: spell.ice
+  displayName: Ice
+  description: A wave of cold. Puts fires out, and turns standing water into something you can walk on.
+  castMode: 0
+  manaCost: 16
+  manaPerSecond: 0.0
+  channelTickInterval: 0.1
+  maxChannelSeconds: 0
+  holdsActionLock: 1
+  castTime: 0.5
+  cooldown: 1.2
+  targeting: 1
+  range: 18
+  effects:
+  - {fileID: 11400000, guid: 96aa169419107acee0dd8dc728b969e8, type: 2}
+  - {fileID: 11400000, guid: 04544dbc1ab32c3ca3cb43ea4d6854fc, type: 2}
+  castAnimation: 5

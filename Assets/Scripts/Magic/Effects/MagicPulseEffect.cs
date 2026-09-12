@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Frieren.Core.Magic;
 using UnityEngine;
 
@@ -33,6 +34,8 @@ namespace Frieren.Magic
 
         private static readonly Collider[] Overlap = new Collider[MaxReceivers];
 
+        private static readonly List<IMagicReceiver> Receivers = new List<IMagicReceiver>(4);
+
         public MagicElement Element => element;
 
         public float Magnitude => magnitude;
@@ -65,6 +68,16 @@ namespace Frieren.Magic
         /// Looks up the hierarchy from the collider, so a receiver can put its colliders on children
         /// without every world object needing its collider on the same object as its script.
         /// </summary>
+        /// <remarks>
+        /// Offers the pulse to every receiver it finds, not just the first. One object legitimately
+        /// has several - the player carries both a barrier and levitation - and delivering only to
+        /// whichever component happens to sit highest in the inspector would make behaviour depend
+        /// on component order.
+        ///
+        /// The buffer is shared and therefore not re-entrant: a receiver must not cast a spell from
+        /// inside <c>ReceiveMagic</c>. Receivers are meant to be passive, so that is a rule worth
+        /// keeping rather than an allocation worth paying for.
+        /// </remarks>
         private static bool TryDeliver(GameObject candidate, in MagicPulse pulse)
         {
             if (candidate == null)
@@ -72,8 +85,20 @@ namespace Frieren.Magic
                 return false;
             }
 
-            var receiver = candidate.GetComponentInParent<IMagicReceiver>();
-            return receiver != null && receiver.ReceiveMagic(pulse);
+            Receivers.Clear();
+            candidate.GetComponentsInParent(true, Receivers);
+            bool affected = false;
+
+            for (int i = 0; i < Receivers.Count; i++)
+            {
+                if (Receivers[i] != null && Receivers[i].ReceiveMagic(pulse))
+                {
+                    affected = true;
+                }
+            }
+
+            Receivers.Clear();
+            return affected;
         }
     }
 }

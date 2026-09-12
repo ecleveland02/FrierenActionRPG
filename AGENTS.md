@@ -20,7 +20,9 @@ and quests are authored content, never hardcoded branches.
 |---|---|
 | 1 - Foundation: bootstrap, scenes, save, input, debug | Verified in the editor |
 | 2 - Placeholder third-person player | Verified in the editor, character is playable |
-| 3 - Modular character architecture | Written, not yet run in the editor |
+| 3 - Modular character architecture | Verified in the editor |
+| 4 - Magic framework, 3 spells | Verified in the editor |
+| 5 - First enemy, plus the remaining 6 spells | Written, not yet run in the editor |
 
 Running alongside the milestones is a **Kael character spike** built by Codex: a Meshy-derived
 skinned character with Unity `Cloth`, its own prefab and scene, plus a separate animated prototype.
@@ -128,6 +130,7 @@ trusting any report.
 
 ```
 python3 Tools/Validation/check_assemblies.py
+python3 Tools/Validation/check_unity_yaml.py
 ```
 
 It catches, cheaply, the mistakes that are invisible on inspection: an inheritance chain crossing an
@@ -138,6 +141,12 @@ The first of those is the subtle one and it has already cost a round trip. Using
 class* lives in another assembly requires referencing that assembly too, even though the base is
 never named in the file. `SpellDefinition` derives from `IdentifiableScriptableObject` in
 `Frieren.Data`, so `Frieren.Player` must reference `Frieren.Data` despite never mentioning it.
+
+The second script does the same job for the hand-authored `.unity`, `.prefab` and `.asset` files:
+duplicate anchors, a `fileID` naming nothing, a GUID no asset owns, a GameObject and its component
+disagreeing about who owns whom, a transform listing a child that does not list it back, and missing
+or orphan `.meta` files. It caught a `TextArea` string containing a colon on its first run, which is
+not legal plain YAML and would have imported as a broken asset.
 
 The corollary: **an assembly reference is not unused just because no type from it appears by name.**
 Check with the script before removing one.

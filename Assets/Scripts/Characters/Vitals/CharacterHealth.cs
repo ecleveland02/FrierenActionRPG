@@ -27,6 +27,13 @@ namespace Frieren.Characters
 
         public bool IsAlive { get; private set; } = true;
 
+        private IDamageModifier[] modifiers;
+
+        /// <summary>
+        /// Raised when a modifier soaked part or all of a hit, with the original and what landed.
+        /// </summary>
+        public event Action<DamageInfo, float> DamageReduced;
+
         protected override float MaxFromStats => Stats != null ? Stats.MaxHealth : 0f;
 
         protected override float RegenPerSecond => Stats != null ? Stats.HealthRegenPerSecond : 0f;
@@ -34,6 +41,22 @@ namespace Frieren.Characters
         protected override float RegenDelaySeconds => Stats != null ? Stats.HealthRegenDelay : 0f;
 
         protected override bool CanRegenerate => IsAlive;
+
+        protected override void Awake()
+        {
+            base.Awake();
+            CacheModifiers();
+        }
+
+        /// <summary>
+        /// Re-reads the damage modifiers on this character. Call after adding or removing one at
+        /// runtime; equipment will need it.
+        /// </summary>
+        public void CacheModifiers()
+        {
+            modifiers = GetComponents<IDamageModifier>();
+            Array.Sort(modifiers, (a, b) => a.ModifierOrder.CompareTo(b.ModifierOrder));
+        }
 
         /// <summary>Applies damage. Returns how much health was actually lost.</summary>
         public float TakeDamage(DamageInfo damage)
@@ -43,7 +66,21 @@ namespace Frieren.Characters
                 return 0f;
             }
 
-            float taken = Drain(damage.Amount);
+            float amount = ApplyModifiers(damage);
+
+            if (amount <= 0f)
+            {
+                // Fully absorbed. Not a miss, and worth reporting so feedback can say so.
+                DamageReduced?.Invoke(damage, 0f);
+                return 0f;
+            }
+
+            if (amount < damage.Amount)
+            {
+                DamageReduced?.Invoke(damage, amount);
+            }
+
+            float taken = Drain(amount);
 
             if (taken <= 0f)
             {
@@ -60,6 +97,23 @@ namespace Frieren.Characters
             }
 
             return taken;
+        }
+
+        private float ApplyModifiers(in DamageInfo damage)
+        {
+            float amount = damage.Amount;
+
+            if (modifiers == null)
+            {
+                CacheModifiers();
+            }
+
+            for (int i = 0; i < modifiers.Length && amount > 0f; i++)
+            {
+                amount = Mathf.Max(0f, modifiers[i].ModifyIncomingDamage(damage, amount));
+            }
+
+            return amount;
         }
 
         /// <summary>Restores health. Does nothing to the dead; reviving is a separate decision.</summary>

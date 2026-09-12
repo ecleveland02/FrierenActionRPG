@@ -58,6 +58,45 @@ namespace Frieren.Core.EditorTools
                     $"[Setup] Boot scene missing at {ProjectPaths.BootScene}. " +
                     "Use Frieren > Setup > Regenerate Core Scenes.");
             }
+
+            ValidateLayers();
+        }
+
+        /// <summary>
+        /// Confirms the layer indices in <see cref="GameLayers"/> still name the layers they claim.
+        /// </summary>
+        /// <remarks>
+        /// Layer masks are integers, so inserting a layer in Project Settings silently repoints
+        /// every mask built from those constants. Nothing throws; enemies simply stop seeing the
+        /// player and spells stop hitting anything, with no error to follow. This is the check that
+        /// turns that into one line in the console.
+        /// </remarks>
+        private static void ValidateLayers()
+        {
+            (int index, string expected)[] expectations =
+            {
+                (GameLayers.Player, "Player"),
+                (GameLayers.Enemy, "Enemy"),
+                (GameLayers.Npc, "NPC"),
+                (GameLayers.Ground, "Ground"),
+                (GameLayers.Interactable, "Interactable"),
+                (GameLayers.MagicTarget, "MagicTarget"),
+                (GameLayers.Projectile, "Projectile"),
+                (GameLayers.Trigger, "Trigger"),
+            };
+
+            foreach ((int index, string expected) in expectations)
+            {
+                string actual = LayerMask.LayerToName(index);
+
+                if (actual != expected)
+                {
+                    Debug.LogError(
+                        $"[Setup] Layer {index} is \"{actual}\" but GameLayers calls it \"{expected}\". " +
+                        "Fix ProjectSettings > Tags and Layers, or GameLayers.cs - masks built from " +
+                        "these constants are now pointing at the wrong things.");
+                }
+            }
         }
 
         /// <summary>
