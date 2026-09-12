@@ -22,7 +22,7 @@ namespace Frieren.Core.Debugging
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const float SampleInterval = 0.25f;
 
-        private static readonly Rect PanelRect = new Rect(10f, 10f, 420f, 235f);
+        private static readonly Rect PanelRect = new Rect(10f, 10f, 420f, 255f);
 
         private GUIStyle panelStyle;
         private float accumulatedTime;
@@ -94,6 +94,7 @@ namespace Frieren.Core.Debugging
             panelStyle ??= new GUIStyle(GUI.skin.box) { alignment = TextAnchor.UpperLeft, padding = new RectOffset(10, 10, 10, 10) };
 
             GUILayout.BeginArea(PanelRect, panelStyle);
+            GUILayout.Label($"BUILD  {BuildStamp.Current}");
             GUILayout.Label($"FPS {framesPerSecond:0.0}   ({millisecondsPerFrame:0.0} ms)");
             GUILayout.Label($"State: {DescribeGameState()}   timeScale {Time.timeScale:0.##}");
             GUILayout.Label($"Scenes: {DescribeScenes()}");

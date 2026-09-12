@@ -26,11 +26,15 @@ namespace Frieren.Characters
 
         private CharacterHealth health;
         private CharacterMana mana;
+        private CharacterLevitation levitation;
+        private CharacterMotor motor;
 
         private void Awake()
         {
             health = GetComponent<CharacterHealth>();
             mana = GetComponent<CharacterMana>();
+            levitation = GetComponent<CharacterLevitation>();
+            motor = GetComponent<CharacterMotor>();
         }
 
         private void Update()
@@ -67,7 +71,8 @@ namespace Frieren.Characters
 
         private void OnGUI()
         {
-            var area = new Rect(10f, 255f, 420f, showKeys ? 76f : 56f);
+            float height = (showKeys ? 76f : 56f) + (levitation != null ? 18f : 0f);
+            var area = new Rect(10f, 275f, 420f, height);
             GUILayout.BeginArea(area, GUI.skin.box);
 
             if (health != null)
@@ -79,6 +84,13 @@ namespace Frieren.Characters
             if (mana != null)
             {
                 GUILayout.Label($"Mana   {mana.Current:0}/{mana.Max:0}   ({mana.Normalized:P0})");
+            }
+
+            if (levitation != null)
+            {
+                GUILayout.Label($"Levitating {(levitation.IsLevitating ? "YES" : "no")}" +
+                                $"   vertical {(motor != null ? motor.VerticalVelocity : 0f):0.0} m/s" +
+                                $"   gravity {(motor != null && motor.GravityEnabled ? "on" : "OFF")}");
             }
 
             if (showKeys)
