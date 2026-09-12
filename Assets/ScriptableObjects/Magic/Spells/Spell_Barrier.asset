@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 344d7fa350bdab4d4403cf8c6c419f57, type: 3}
   m_Name: Spell_Barrier
   m_EditorClassIdentifier: 
+  icon: {fileID: 21300000, guid: 8a96b38c76be79946a150249547b07bc, type: 3}
+  wheelTint: {r: 0.45, g: 0.78, b: 0.88, a: 1}
   id: spell.barrier
   displayName: Barrier
   description: Hold to keep a ward up. It absorbs what would have hurt you, and drops the moment you stop.
@@ -27,4 +29,5 @@ MonoBehaviour:
   range: 0
   effects:
   - {fileID: 11400000, guid: 3ab43e3e0f6c6a3e46d760a0f6a98917, type: 2}
+  - {fileID: 11400000, guid: 4d3e5a8af13b1984450e42840c6eded9, type: 2}
   castAnimation: 5

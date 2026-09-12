@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 344d7fa350bdab4d4403cf8c6c419f57, type: 3}
   m_Name: Spell_Unlock
   m_EditorClassIdentifier: 
+  icon: {fileID: 21300000, guid: 03e6f50b7a998ed46a4c3f9f8cb0855e, type: 3}
+  wheelTint: {r: 0.8, g: 0.72, b: 0.45, a: 1}
   id: spell.unlock
   displayName: Unbinding
   description: Undoes a lock. Not the only way through a locked door, but the quiet one.
@@ -27,4 +29,5 @@ MonoBehaviour:
   range: 6
   effects:
   - {fileID: 11400000, guid: 5656267f1fe7e17efa0843993c04b8d3, type: 2}
+  - {fileID: 11400000, guid: 88a8d25ba15977fb35d87586ddf0e25a, type: 2}
   castAnimation: 5

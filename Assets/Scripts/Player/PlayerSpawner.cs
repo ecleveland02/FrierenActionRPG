@@ -67,8 +67,75 @@ namespace Frieren.Player
 
             ConnectCamera();
             GameLog.Info(LogChannel.Player, $"Player spawned at {point.position}.", this);
+            ReportBody();
 
             return SpawnedPlayer;
+        }
+
+        /// <summary>
+        /// Says what the spawned player actually looks like, once, at spawn.
+        /// </summary>
+        /// <remarks>
+        /// "The character is not there" has several causes that look identical from the outside: a
+        /// model that failed to import, a visual child that was never instantiated, a mesh scaled to
+        /// nothing, a body spawned inside the floor. Each of them is one number away from the
+        /// others, and none of them is distinguishable by looking at the screen. One line at spawn
+        /// separates them, and costs nothing after the frame it runs on.
+        /// </remarks>
+        private void ReportBody()
+        {
+            Renderer[] renderers = SpawnedPlayer.GetComponentsInChildren<Renderer>(true);
+
+            if (renderers.Length == 0)
+            {
+                GameLog.Error(LogChannel.Player,
+                    $"{SpawnedPlayer.name} spawned with no renderers at all. The visual child is " +
+                    "missing from the prefab, or its model failed to import.", this);
+                return;
+            }
+
+            Bounds bounds = renderers[0].bounds;
+            int hidden = 0;
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                bounds.Encapsulate(renderers[i].bounds);
+
+                if (!renderers[i].enabled || !renderers[i].gameObject.activeInHierarchy)
+                {
+                    hidden++;
+                }
+            }
+
+            var animator = SpawnedPlayer.GetComponentInChildren<Animator>();
+            string rig = animator == null
+                ? "no Animator"
+                : animator.runtimeAnimatorController == null
+                    ? "Animator with no controller"
+                    : $"Animator running {animator.runtimeAnimatorController.name}";
+
+            // The placeholder body was a built-in primitive with no rig. Naming that case outright
+            // is worth the six lines: an out-of-date prefab and a broken model look identical from
+            // the player's chair, and the usual cause is a pull that failed while Unity had the
+            // prefab open and quietly kept the old one.
+            if (animator == null && UsesPrimitiveMesh(renderers))
+            {
+                GameLog.Error(LogChannel.Player,
+                    "This is the placeholder capsule, not the rigged character. The Player prefab " +
+                    "on disk is out of date: run Update.bat, check it reports success, and let " +
+                    "Unity finish importing before pressing play.", this);
+            }
+
+            GameLog.Info(LogChannel.Player,
+                $"{SpawnedPlayer.name} body: {renderers.Length} renderers ({hidden} hidden), " +
+                $"bounds size {bounds.size}, centre {bounds.center}, {rig}.", this);
+
+            if (bounds.size.y < 0.2f)
+            {
+                GameLog.Warn(LogChannel.Player,
+                    $"The player's body is {bounds.size.y:0.###}m tall, which is too small to see. " +
+                    "Check the model's import scale.", this);
+            }
         }
 
         /// <summary>Moves the existing player back to a spawn point.</summary>
@@ -94,6 +161,36 @@ namespace Frieren.Player
             {
                 actionLock.ForceRelease();
             }
+        }
+
+        /// <summary>
+        /// Whether the body is one of Unity's built-in primitives, which only the placeholder was.
+        /// </summary>
+        /// <remarks>
+        /// Matched on the mesh name rather than on a component, because the check has to survive
+        /// the placeholder being assembled differently than it was; every built-in primitive is
+        /// named for its shape and nothing in the real character is.
+        /// </remarks>
+        private static bool UsesPrimitiveMesh(Renderer[] renderers)
+        {
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (!renderers[i].TryGetComponent(out MeshFilter filter) || filter.sharedMesh == null)
+                {
+                    continue;
+                }
+
+                switch (filter.sharedMesh.name)
+                {
+                    case "Capsule":
+                    case "Cube":
+                    case "Sphere":
+                    case "Cylinder":
+                        return true;
+                }
+            }
+
+            return false;
         }
 
         private void ConnectCamera()

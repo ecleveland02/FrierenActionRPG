@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 344d7fa350bdab4d4403cf8c6c419f57, type: 3}
   m_Name: Spell_Levitate
   m_EditorClassIdentifier: 
+  icon: {fileID: 21300000, guid: 21df9195ed43b004394e6d7913b03149, type: 3}
+  wheelTint: {r: 0.72, g: 0.6, b: 0.9, a: 1}
   id: spell.levitate
   displayName: Levitation
   description: Hold to lift yourself off the ground. Release and you settle back down.
@@ -27,4 +29,5 @@ MonoBehaviour:
   range: 0
   effects:
   - {fileID: 11400000, guid: 665c07926d2689bf3f0fc5b8454de354, type: 2}
+  - {fileID: 11400000, guid: 4b2d43d2261cf9e8ef6697d4c5d860bc, type: 2}
   castAnimation: 5

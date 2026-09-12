@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 344d7fa350bdab4d4403cf8c6c419f57, type: 3}
   m_Name: Spell_ArcaneBolt
   m_EditorClassIdentifier: 
+  icon: {fileID: 21300000, guid: 4029a9cfeb86f134c9c5af05993eaac8, type: 3}
+  wheelTint: {r: 0.55, g: 0.6, b: 0.92, a: 1}
   id: spell.arcane_bolt
   displayName: Arcane Bolt
   description: A quick bolt of raw magic. Cheap, fast, and does nothing clever.
@@ -23,4 +25,5 @@ MonoBehaviour:
   effects:
   - {fileID: 11400000, guid: e65c117055b028933f661d3c1cab96e1, type: 2}
   - {fileID: 11400000, guid: 3401e5cafbe8c6d7ebe46483baf55142, type: 2}
+  - {fileID: 11400000, guid: 98a1ad478440b4fedda6e074f5f78239, type: 2}
   castAnimation: 5

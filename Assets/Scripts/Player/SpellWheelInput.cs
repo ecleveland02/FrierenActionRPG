@@ -317,8 +317,13 @@ namespace Frieren.Player
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private const float IconSize = 62f;
+
         private GUIStyle slotStyle;
         private GUIStyle centreStyle;
+
+        private static Rect Grow(Rect rect, float by) =>
+            new Rect(rect.x - by, rect.y - by, rect.width + by * 2f, rect.height + by * 2f);
 
         private void OnGUI()
         {
@@ -344,18 +349,50 @@ namespace Frieren.Player
 
                 // Screen y grows downwards, so the offset's y is subtracted to put slot 0 on top.
                 Vector2 offset = SlotOffset(i, count, radius);
-                var slot = new Rect(centre.x + offset.x - 62f, centre.y - offset.y - 20f, 124f, 40f);
+                bool highlighted = i == Highlighted;
+                float size = highlighted ? IconSize * 1.18f : IconSize;
+                var box = new Rect(centre.x + offset.x - size * 0.5f,
+                                   centre.y - offset.y - size * 0.5f, size, size);
 
                 Color previous = GUI.color;
-                GUI.color = i == Highlighted ? new Color(1f, 0.9f, 0.5f) : new Color(1f, 1f, 1f, 0.75f);
-                GUI.Box(slot, $"{i + 1}. {spell.DisplayName}\n{spell.ManaCost:0} mana", slotStyle);
+
+                if (spell.Icon != null)
+                {
+                    // The tint plate sits behind the art rather than on it. Multiplying a painted
+                    // icon by a colour turns every spell into a wash of that colour and throws away
+                    // the thing that made it recognisable.
+                    GUI.color = highlighted
+                        ? new Color(spell.WheelTint.r, spell.WheelTint.g, spell.WheelTint.b, 0.95f)
+                        : new Color(spell.WheelTint.r * 0.45f, spell.WheelTint.g * 0.45f,
+                                    spell.WheelTint.b * 0.45f, 0.7f);
+                    GUI.DrawTexture(Grow(box, 4f), Texture2D.whiteTexture);
+
+                    GUI.color = highlighted ? Color.white : new Color(1f, 1f, 1f, 0.72f);
+                    GUI.DrawTexture(box, spell.Icon.texture, ScaleMode.ScaleToFit, true);
+                }
+                else
+                {
+                    // No art yet. The name still has to be readable, or an unillustrated spell
+                    // becomes an empty square nobody can identify.
+                    GUI.color = highlighted ? new Color(1f, 0.9f, 0.5f) : new Color(1f, 1f, 1f, 0.75f);
+                    GUI.Box(box, spell.DisplayName, slotStyle);
+                }
+
+                GUI.color = highlighted ? Color.white : new Color(1f, 1f, 1f, 0.8f);
+                GUI.Label(new Rect(box.x, box.yMax + 1f, box.width, 16f), $"{i + 1}", slotStyle);
                 GUI.color = previous;
             }
 
-            string label = Highlighted >= 0 && Highlighted < count && spells.KnownSpells[Highlighted] != null
-                ? spells.KnownSpells[Highlighted].DisplayName
+            // The centre carries the name and cost of whatever is selected, so the ring can be
+            // pictures without the player having to memorise which picture costs what.
+            SpellDefinition chosen = Highlighted >= 0 && Highlighted < count
+                ? spells.KnownSpells[Highlighted]
+                : null;
+
+            string label = chosen != null
+                ? $"{chosen.DisplayName}\n{chosen.ManaCost:0} mana"
                 : "no spell";
-            GUI.Label(new Rect(centre.x - 90f, centre.y - 10f, 180f, 20f), label, centreStyle);
+            GUI.Label(new Rect(centre.x - 90f, centre.y - 18f, 180f, 36f), label, centreStyle);
         }
 #endif
     }
