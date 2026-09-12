@@ -65,3 +65,7 @@ crashlytics-build.properties
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# Python bytecode from the validation scripts.
+__pycache__/
+*.pyc
