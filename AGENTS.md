@@ -114,6 +114,24 @@ third-party dependencies. No premature optimization.
 
 Match the surrounding style. It is consistent on purpose.
 
+## Before pushing C# neither of us can compile
+
+```
+python3 Tools/Validation/check_assemblies.py
+```
+
+It catches, cheaply, the mistakes that are invisible on inspection: an inheritance chain crossing an
+unreferenced assembly (CS0012), a `using` whose assembly is not referenced (CS0234), the Input System
+or UnityEditor used without the right reference, reference cycles, unbalanced braces.
+
+The first of those is the subtle one and it has already cost a round trip. Using a type whose *base
+class* lives in another assembly requires referencing that assembly too, even though the base is
+never named in the file. `SpellDefinition` derives from `IdentifiableScriptableObject` in
+`Frieren.Data`, so `Frieren.Player` must reference `Frieren.Data` despite never mentioning it.
+
+The corollary: **an assembly reference is not unused just because no type from it appears by name.**
+Check with the script before removing one.
+
 ## Verifying a change
 
 - `Window > General > Test Runner > EditMode > Run All`. 130 tests, no scene or disk needed.

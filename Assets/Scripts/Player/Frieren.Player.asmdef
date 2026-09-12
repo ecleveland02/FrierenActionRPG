@@ -5,6 +5,7 @@
         "Frieren.Core",
         "Frieren.Characters",
         "Frieren.Magic",
+        "Frieren.Data",
         "Unity.InputSystem"
     ],
     "includePlatforms": [],

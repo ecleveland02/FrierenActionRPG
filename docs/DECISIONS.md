@@ -273,3 +273,24 @@ changes control scheme follows the same shape.
 `Update` still runs at a zero time scale, so pausing does not prevent the code that unpauses from
 running. That is worth knowing before anything else is moved into a coroutine or `FixedUpdate`,
 where it would not.
+
+
+---
+
+### 21. Assembly references are validated by a script, not by eye
+
+Both assistants on this project write C# they cannot compile, so mistakes that a compiler catches in
+milliseconds otherwise survive until a human opens the editor. `Tools/Validation/check_assemblies.py`
+runs the checks that are worth having without Unity.
+
+The one that justified writing it is CS0012. Using a type whose base class lives in another assembly
+requires referencing that assembly, even though the base class is never named in the file.
+`SpellDefinition` derives from `IdentifiableScriptableObject` in `Frieren.Data`, so `Frieren.Player`
+needs `Frieren.Data` despite never mentioning it. Nothing about reading `PlayerSpellInput.cs`
+suggests that.
+
+It also corrects an earlier mistake of mine. In Milestone 2 I removed `Frieren.Data` from
+`Frieren.Player` as an unused reference, which was true at the time. Milestone 4 made it necessary
+again, and the resulting error surfaced as `'Magic' does not exist in the namespace 'Frieren'` in a
+different file - which points at the wrong problem entirely. An assembly reference is not unused
+just because no type from it appears by name.
