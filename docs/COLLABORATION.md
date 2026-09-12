@@ -1,5 +1,11 @@
 # Codex / Claude handoff
 
+> **Roles of the two documents.** [`AGENTS.md`](../AGENTS.md) in the repository root holds the
+> standing conventions and hard rules for any assistant working here, and is the one to read first.
+> This file is the running handoff log: who did what, what is verified, what is outstanding. Where
+> they disagree about a rule, `AGENTS.md` wins; where they disagree about project status, whichever
+> is more recent does.
+
 ## Current handoff: 2026-09-11
 
 Owner subsequently confirmed Milestone 2 works well and requested character/animation work. Codex

@@ -21,6 +21,20 @@ and quests are authored content, never hardcoded branches.
 | 1 - Foundation: bootstrap, scenes, save, input, debug | Verified in the editor |
 | 2 - Placeholder third-person player | Verified in the editor, character is playable |
 | 3 - Modular character architecture | Written, not yet run in the editor |
+
+Running alongside the milestones is a **Kael character spike** built by Codex: a Meshy-derived
+skinned character with Unity `Cloth`, its own prefab and scene, plus a separate animated prototype.
+It is deliberately isolated - it does not touch `Player.prefab` or `TestScene.unity` - and is
+unverified in the editor. See [`docs/KAEL_CLOTH.md`](docs/KAEL_CLOTH.md),
+[`docs/KAEL_CHARACTER.md`](docs/KAEL_CHARACTER.md) and
+[`docs/COLLABORATION.md`](docs/COLLABORATION.md).
+
+**Before Kael can replace the placeholder capsule**, it needs the components Milestone 3 added to
+the player after the spike was branched: `CharacterStats` (with a stats definition assigned),
+`CharacterHealth`, `CharacterMana`, `CharacterPersistence`, and an `ICharacterAnimation`
+implementation - `MecanimCharacterAnimation` once there is an animator controller, since
+`PlaceholderCharacterAnimation` squashes a primitive and is wrong for a real mesh. Do not promote it
+until the vertical slice works; that is the brief's constraint and it still holds.
 | 4-7 | Not started, see `docs/MILESTONES.md` |
 
 Milestones 1 and 2 were authored with no Unity installed, and have since been run. The project

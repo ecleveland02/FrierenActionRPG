@@ -12,6 +12,11 @@ Each milestone must produce something playable or testable, and be verified befo
 | 6 | Reusable environmental interaction systems | Not started |
 | 7 | Gray-box vertical slice | Not started |
 
+Outside the milestone sequence, a **Kael character spike** exists in its own prefab and scene, built
+by Codex. It proves the Blender-to-Unity path for a skinned, clothed character early, which is real
+de-risking, and it touches nothing the milestones own. It is unverified in the editor and is not a
+replacement for the placeholder capsule - see `AGENTS.md` for what it would need first.
+
 > **Note on status.** Both milestones are now confirmed in the editor on Unity 6000.0 (Windows).
 > The project compiles with zero errors, boots, loads the test scene, spawns the player, and the
 > character moves under player control with a following camera. Pause and resume work, and the save
