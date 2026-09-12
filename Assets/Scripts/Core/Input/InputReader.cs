@@ -75,6 +75,9 @@ namespace Frieren.Core.Input
 
         public event Action CastPerformed;
 
+        /// <summary>Raised when the cast button is released. Ends a channelled spell.</summary>
+        public event Action CastReleased;
+
         public event Action PausePerformed;
 
         /// <summary>
@@ -116,7 +119,7 @@ namespace Frieren.Core.Input
             Bind(sprintAction, OnSprintStarted, OnSprintCanceled);
             Bind(dodgeAction, OnDodge);
             Bind(interactAction, OnInteract);
-            Bind(castAction, OnCast);
+            Bind(castAction, OnCast, OnCastReleased);
             Bind(pauseAction, OnPause);
 
             IsInitialized = true;
@@ -166,7 +169,7 @@ namespace Frieren.Core.Input
             Unbind(sprintAction, OnSprintStarted, OnSprintCanceled);
             Unbind(dodgeAction, OnDodge);
             Unbind(interactAction, OnInteract);
-            Unbind(castAction, OnCast);
+            Unbind(castAction, OnCast, OnCastReleased);
             Unbind(pauseAction, OnPause);
 
             gameplayMap?.Disable();
@@ -191,6 +194,7 @@ namespace Frieren.Core.Input
             DodgePerformed = null;
             InteractPerformed = null;
             CastPerformed = null;
+            CastReleased = null;
             PausePerformed = null;
 
             ResetValues();
@@ -283,6 +287,8 @@ namespace Frieren.Core.Input
         private void OnInteract(InputAction.CallbackContext context) => InteractPerformed?.Invoke();
 
         private void OnCast(InputAction.CallbackContext context) => CastPerformed?.Invoke();
+
+        private void OnCastReleased(InputAction.CallbackContext context) => CastReleased?.Invoke();
 
         private void OnPause(InputAction.CallbackContext context) => PausePerformed?.Invoke();
     }

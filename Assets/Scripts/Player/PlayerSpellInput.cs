@@ -62,6 +62,7 @@ namespace Frieren.Player
             if (inputReader != null)
             {
                 inputReader.CastPerformed += OnCastPressed;
+                inputReader.CastReleased += OnCastReleased;
             }
         }
 
@@ -70,7 +71,11 @@ namespace Frieren.Player
             if (inputReader != null)
             {
                 inputReader.CastPerformed -= OnCastPressed;
+                inputReader.CastReleased -= OnCastReleased;
             }
+
+            // Releasing on disable stops a channel surviving the component being switched off.
+            spellcaster.ReleaseChannel();
         }
 
         private void Update() => ReadSelectionKeys();
@@ -122,6 +127,8 @@ namespace Frieren.Player
             spellcaster.TryCast(SelectedSpell);
         }
 
+        private void OnCastReleased() => spellcaster.ReleaseChannel();
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void OnGUI()
         {
@@ -140,8 +147,13 @@ namespace Frieren.Player
 
                 float cooldown = spellcaster != null ? spellcaster.CooldownRemaining(spell) : 0f;
                 string marker = i == SelectedIndex ? ">" : " ";
-                string state = cooldown > 0f ? $"  cooling {cooldown:0.0}s" : string.Empty;
-                GUILayout.Label($"{marker} {i + 1}. {spell.DisplayName}   {spell.ManaCost:0} mana{state}");
+                string cost = spell.IsChannelled
+                    ? $"{spell.ManaCost:0} + {spell.ManaPerSecond:0}/s (hold)"
+                    : $"{spell.ManaCost:0} mana";
+                string state = spellcaster != null && spellcaster.IsChannelling && spellcaster.CurrentSpell == spell
+                    ? "  CHANNELLING"
+                    : cooldown > 0f ? $"  cooling {cooldown:0.0}s" : string.Empty;
+                GUILayout.Label($"{marker} {i + 1}. {spell.DisplayName}   {cost}{state}");
             }
 
             GUILayout.EndArea();

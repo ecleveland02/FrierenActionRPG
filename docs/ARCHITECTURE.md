@@ -236,6 +236,12 @@ when the cast *begins*: spending on release would let a player cancel a frame ea
 **Targeting resolves instantly.** A travelling bolt is presentation - a visual played along the
 resolved line - so adding one later changes when effects fire, not how targeting works.
 
+**Channelled spells are a cast mode, not a spell.** `SpellCastMode.Channelled` holds the action lock,
+drains mana per second and re-applies the effect list on a tick until released, out of mana, or past
+a duration cap. Levitation uses it and needed no code of its own; a sustained beam or a held shield
+would be the same mode with different effects. Targeting re-resolves every tick, which is what makes
+holding a spell on an object feel like holding it rather than having thrown something at it.
+
 **Input stays in the player layer.** `CharacterSpellcaster.TryCast` reads no input;
 `PlayerSpellInput` calls it. An enemy in Milestone 5 casts the same spells through the same
 component with a behaviour tree driving it.

@@ -19,9 +19,15 @@ namespace Frieren.Magic
     [CreateAssetMenu(menuName = "Frieren/Magic/Spell", fileName = "Spell_", order = 0)]
     public sealed class SpellDefinition : IdentifiableScriptableObject
     {
+        [Header("Mode")]
+        [SerializeField]
+        [Tooltip("Instant resolves once. Channelled keeps working while the cast input is held.")]
+        private SpellCastMode castMode = SpellCastMode.Instant;
+
         [Header("Cost and timing")]
         [SerializeField]
         [Min(0f)]
+        [Tooltip("Paid once when the cast begins. For a channelled spell this is the cost to start it.")]
         private float manaCost = 10f;
 
         [SerializeField]
@@ -32,6 +38,22 @@ namespace Frieren.Magic
         [SerializeField]
         [Min(0f)]
         private float cooldown = 0.5f;
+
+        [Header("Channelling")]
+        [SerializeField]
+        [Min(0f)]
+        [Tooltip("Mana drained per second while channelling. Ignored by instant spells.")]
+        private float manaPerSecond = 8f;
+
+        [SerializeField]
+        [Min(0.02f)]
+        [Tooltip("How often the effect list re-applies while channelling. Shorter is smoother and costs more.")]
+        private float channelTickInterval = 0.1f;
+
+        [SerializeField]
+        [Min(0f)]
+        [Tooltip("Longest a single channel may run. Zero means until released or out of mana.")]
+        private float maxChannelSeconds;
 
         [Header("Targeting")]
         [SerializeField] private SpellTargeting targeting = SpellTargeting.Ray;
@@ -55,7 +77,17 @@ namespace Frieren.Magic
         [Tooltip("Animation played when the cast completes.")]
         private CharacterAction castAnimation = CharacterAction.CastRelease;
 
+        public SpellCastMode CastMode => castMode;
+
+        public bool IsChannelled => castMode == SpellCastMode.Channelled;
+
         public float ManaCost => manaCost;
+
+        public float ManaPerSecond => manaPerSecond;
+
+        public float ChannelTickInterval => Mathf.Max(0.02f, channelTickInterval);
+
+        public float MaxChannelSeconds => maxChannelSeconds;
 
         public float CastTime => castTime;
 

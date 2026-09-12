@@ -232,7 +232,14 @@ namespace Frieren.Core.EditorTools
         {
             GameObject box = CreateBox(name, position, new Vector3(1.6f, 1f, 1.6f), layer);
             box.tag = "MagicTarget";
-            box.AddComponent<LevitatableObject>();
+            LevitatableObject levitatable = box.AddComponent<LevitatableObject>();
+
+            // Tuned for a held cast: the target height climbs at about the rise speed, so how high
+            // it goes tracks how long the button is held, and the hold lapses shortly after release.
+            var serialized = new SerializedObject(levitatable);
+            serialized.FindProperty("liftPerPulse").floatValue = 0.2f;
+            serialized.FindProperty("holdDuration").floatValue = 0.35f;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         /// <summary>A character built from the Milestone 3 components, so damage spells have a subject.</summary>

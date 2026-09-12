@@ -65,7 +65,7 @@ Press Play from `Boot.unity`. Boot loads `TestScene` additively and hands contro
 | Jump | `Space` | A / cross |
 | Dodge | `Ctrl` | B / circle |
 | Interact | `E` | X / square |
-| Cast | Left mouse | Right trigger |
+| Cast | Left mouse (hold for channelled spells) | Right trigger |
 | Select spell | `1` `2` `3` | - |
 | Pause | `Esc` | Start |
 

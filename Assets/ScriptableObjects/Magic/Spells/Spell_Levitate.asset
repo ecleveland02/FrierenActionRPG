@@ -14,10 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: spell.levitate
   displayName: Levitation
-  description: Lifts what it touches. Harms nothing; this one is purely a tool.
-  manaCost: 15
-  castTime: 0.4
-  cooldown: 0.8
+  description: Hold to lift what you are aiming at. Release and it settles back down.
+  castMode: 1
+  manaCost: 5
+  manaPerSecond: 12
+  channelTickInterval: 0.1
+  maxChannelSeconds: 0
+  castTime: 0.15
+  cooldown: 0.4
   targeting: 1
   range: 20
   effects:

@@ -40,6 +40,7 @@ namespace Frieren.Magic
         private ICharacterAnimation characterAnimation;
         private readonly SpellCooldownTracker cooldowns = new SpellCooldownTracker();
         private Coroutine castRoutine;
+        private bool channelReleaseRequested;
 
         /// <summary>Raised when a cast begins, before mana is spent.</summary>
         public event Action<SpellDefinition> CastStarted;
@@ -51,6 +52,15 @@ namespace Frieren.Magic
         public event Action<SpellDefinition, string> CastRefused;
 
         public bool IsCasting => castRoutine != null;
+
+        /// <summary>True while a channelled spell is running and has not yet been released.</summary>
+        public bool IsChannelling { get; private set; }
+
+        /// <summary>Raised each time a channelled spell re-applies its effects.</summary>
+        public event Action<SpellDefinition> ChannelTicked;
+
+        /// <summary>Raised when a channel ends, with why: released, out of mana, or timed out.</summary>
+        public event Action<SpellDefinition, string> ChannelEnded;
 
         public SpellDefinition CurrentSpell { get; private set; }
 
@@ -118,6 +128,16 @@ namespace Frieren.Magic
             return true;
         }
 
+        /// <summary>
+        /// Asks a channelled spell to stop at its next tick. Called when the cast input is released.
+        /// </summary>
+        /// <remarks>
+        /// A request rather than an immediate stop, so the channel always unwinds through one path -
+        /// releasing the action lock, clearing state, raising its event - no matter whether it ended
+        /// because of the player, the mana running out or the duration cap.
+        /// </remarks>
+        public void ReleaseChannel() => channelReleaseRequested = true;
+
         /// <summary>Stops a cast in progress. The mana is not refunded; it was spent to begin.</summary>
         public void CancelCast()
         {
@@ -128,6 +148,8 @@ namespace Frieren.Magic
             }
 
             CurrentSpell = null;
+            IsChannelling = false;
+            channelReleaseRequested = false;
             actionLock.Release(this);
         }
 
@@ -140,7 +162,77 @@ namespace Frieren.Magic
 
             characterAnimation?.PlayAction(spell.CastAnimation);
 
-            SpellContext context = BuildContext(spell);
+            bool affectedSomething = spell.IsChannelled
+                ? false
+                : ApplyEffects(spell, BuildContext(spell), log: true);
+
+            if (spell.IsChannelled)
+            {
+                yield return Channel(spell);
+                affectedSomething = true;
+            }
+
+            castRoutine = null;
+            CurrentSpell = null;
+            IsChannelling = false;
+            channelReleaseRequested = false;
+            actionLock.Release(this);
+            CastCompleted?.Invoke(spell, affectedSomething);
+        }
+
+        /// <summary>
+        /// Runs a channelled spell until the player releases, the mana runs out, or the cap is hit.
+        /// </summary>
+        /// <remarks>
+        /// Targeting is re-resolved every tick rather than locked in at the start, so a channelled
+        /// spell follows the aim - which is what makes holding levitation on a block feel like
+        /// holding it rather than having thrown something at it.
+        ///
+        /// Mana is charged per tick from a per-second rate, and a tick that cannot be paid for ends
+        /// the channel instead of running free. TrySpend is all-or-nothing, so there is no partial
+        /// tick to reason about.
+        /// </remarks>
+        private IEnumerator Channel(SpellDefinition spell)
+        {
+            IsChannelling = true;
+            channelReleaseRequested = false;
+
+            float started = Time.time;
+            float tick = spell.ChannelTickInterval;
+            float costPerTick = spell.ManaPerSecond * tick;
+            string reason = "released";
+
+            while (!channelReleaseRequested)
+            {
+                if (spell.MaxChannelSeconds > 0f && Time.time - started >= spell.MaxChannelSeconds)
+                {
+                    reason = "reached its duration limit";
+                    break;
+                }
+
+                if (costPerTick > 0f && !mana.TrySpend(costPerTick))
+                {
+                    reason = "ran out of mana";
+                    break;
+                }
+
+                ApplyEffects(spell, BuildContext(spell), log: false);
+                ChannelTicked?.Invoke(spell);
+
+                yield return new WaitForSeconds(tick);
+            }
+
+            // The cooldown starts when the channel ends, not when it began; otherwise a long channel
+            // would come off cooldown while still running.
+            cooldowns.Begin(spell.Id, Time.time, spell.Cooldown);
+
+            GameLog.Info(LogChannel.Magic,
+                $"{name} stopped channelling {spell.Id} after {Time.time - started:0.0}s: {reason}.", this);
+            ChannelEnded?.Invoke(spell, reason);
+        }
+
+        private bool ApplyEffects(SpellDefinition spell, SpellContext context, bool log)
+        {
             bool affectedSomething = false;
 
             foreach (SpellEffect effect in spell.Effects)
@@ -163,18 +255,18 @@ namespace Frieren.Magic
                 }
             }
 
-            string outcome = affectedSomething
-                ? "something responded"
-                : context.Target != null
-                    ? $"'{context.Target.name}' does not respond to this spell"
-                    : "nothing was hit";
+            if (log)
+            {
+                string outcome = affectedSomething
+                    ? "something responded"
+                    : context.Target != null
+                        ? $"'{context.Target.name}' does not respond to this spell"
+                        : "nothing was hit";
 
-            GameLog.Info(LogChannel.Magic, $"{name} cast {spell.Id} at {context.Point}: {outcome}.", this);
+                GameLog.Info(LogChannel.Magic, $"{name} cast {spell.Id} at {context.Point}: {outcome}.", this);
+            }
 
-            castRoutine = null;
-            CurrentSpell = null;
-            actionLock.Release(this);
-            CastCompleted?.Invoke(spell, affectedSomething);
+            return affectedSomething;
         }
 
         private SpellContext BuildContext(SpellDefinition spell)

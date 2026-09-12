@@ -1472,11 +1472,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceThreshold: 5
-  liftPerPulse: 2.5
+  liftPerPulse: 0.2
   maximumLift: 5
   riseSpeed: 4
   fallSpeed: 2.5
-  holdDuration: 4
+  holdDuration: 0.35
 --- !u!1 &440
 GameObject:
   m_ObjectHideFlags: 0

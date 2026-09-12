@@ -212,6 +212,11 @@ That last one is the milestone's real test: it proves stats, vitals and persiste
    Unlock need new effect types and new receivers.
 3. No VFX at all. A cast is a log line, a colour change and a moving block.
 4. Targeting is instant. No travelling projectile, no arc, no area preview.
+9. Channelling is not covered by edit-mode tests. Like regeneration, it needs a running clock, so it
+   belongs in a play-mode test once one is worth setting up.
+10. A channelled cast holds the action lock, so the character cannot move while holding a spell.
+   That reads as concentration and suits the setting, but if it turns out to feel bad the fix is a
+   flag on the spell rather than a change to the framework.
 5. Casting cannot be interrupted by damage, because nothing yet interrupts anything.
 6. Cooldowns are not saved. `SpellCooldownTracker` is keyed by id so they can be, but
    `CharacterPersistence` does not write them.
@@ -226,10 +231,10 @@ Open `Boot`, press Play. A spell list appears under the vitals panel.
 2. Aim at the tall dummy and cast Bolt. Its health drops; mana drops; the spell greys out briefly.
 3. Aim at a crate and cast Fire. It warms toward orange, catches, burns, then blackens and vanishes.
    One Fire cast reaches both crates if you stand so they are within 2.5m of the impact.
-4. Aim at the **pale blue** block and cast Levitation. It rises and holds, then sinks; cast again
-   while it is up to raise it further, then jump onto it. The large grey `Platform` nearby is
-   ordinary scenery and will correctly ignore the spell - magic-reactive objects are tinted,
-   everything else is default grey.
+4. Aim at the **pale blue** block and **hold** the cast button. It rises for as long as you hold,
+   stops at five metres, and settles back once you let go. Hold it up and jump on. The large grey
+   `Platform` nearby is scenery and will correctly ignore the spell - magic-reactive objects are
+   tinted, everything else is default grey.
 5. Cast until mana runs out: the console explains the refusal rather than nothing happening.
 
 Item 3 is the one that matters. The crate has no idea Fire exists - it reacts to Heat - so any later
