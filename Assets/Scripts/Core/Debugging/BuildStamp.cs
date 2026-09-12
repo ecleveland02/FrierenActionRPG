@@ -16,6 +16,6 @@ namespace Frieren.Core.Debugging
     public static class BuildStamp
     {
         /// <summary>Bump this whenever behaviour changes. Shown in the debug overlay.</summary>
-        public const string Current = "m7.4 built-in only, urp removed";
+        public const string Current = "m7.5 kael is the player";
     }
 }

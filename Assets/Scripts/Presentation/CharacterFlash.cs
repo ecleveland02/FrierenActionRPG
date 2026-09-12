@@ -20,6 +20,14 @@ namespace Frieren.Presentation
     /// hit - and expires on its own. <see cref="SetSustained"/> is a state - it is winding up a
     /// swing - and lasts until cleared. A flash wins while it is running, so being hit mid-wind-up
     /// still reads.
+    ///
+    /// A skinned character takes the other path, and has to. The shell is a static mesh scaled by
+    /// its transform, and a <c>SkinnedMeshRenderer</c> takes its vertex positions from bones and
+    /// ignores its own scale, so a duplicated skinned shell would sit exactly inside the character
+    /// and never be seen. Those characters are tinted directly instead. The objection that ruled
+    /// that out above - that the placeholder animation rewrote the same colour every frame - does
+    /// not apply to them: a rigged character is driven by an Animator, which does not touch
+    /// renderer colour at all.
     /// </remarks>
     [DisallowMultipleComponent]
     public sealed class CharacterFlash : MonoBehaviour
@@ -35,7 +43,14 @@ namespace Frieren.Presentation
 
         private const float FlashPunch = 0.22f;
 
+        [SerializeField]
+        [Tooltip("Skinned renderers to tint when there is no mesh to build a shell from. " +
+                 "Defaults to every one found in children.")]
+        private SkinnedMeshRenderer[] skinned;
+
         private MeshRenderer shell;
+        private bool tintingDirectly;
+        private bool tintApplied;
         private MaterialPropertyBlock properties;
         private int baseColorId;
         private int colorId;
@@ -59,7 +74,25 @@ namespace Frieren.Presentation
                 source = GetComponentInChildren<MeshFilter>();
             }
 
-            BuildShell();
+            if (source != null)
+            {
+                BuildShell();
+                return;
+            }
+
+            if (skinned == null || skinned.Length == 0)
+            {
+                skinned = GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            }
+
+            tintingDirectly = skinned != null && skinned.Length > 0;
+
+            if (!tintingDirectly)
+            {
+                Debug.LogWarning(
+                    $"{name}: CharacterFlash found neither a mesh to shell nor a skinned renderer " +
+                    "to tint, so hits will not read on this character.", this);
+            }
         }
 
         private void BuildShell()
@@ -116,6 +149,12 @@ namespace Frieren.Presentation
 
         private void LateUpdate()
         {
+            if (tintingDirectly)
+            {
+                TintSkinned();
+                return;
+            }
+
             if (shell == null)
             {
                 return;
@@ -159,5 +198,68 @@ namespace Frieren.Presentation
             shell.SetPropertyBlock(properties);
         }
 
+        /// <summary>
+        /// Colours a rigged character's own renderers.
+        /// </summary>
+        /// <remarks>
+        /// The shell conveys a flash by collapsing, because it is opaque and cannot fade. This one
+        /// can: the tint blends from the character's own colour to the flash colour and back, so
+        /// the same event reads without needing a second copy of a skinned mesh.
+        ///
+        /// Clearing sets a null property block rather than writing white, which restores whatever
+        /// the material actually says instead of assuming it was untinted to begin with.
+        /// </remarks>
+        private void TintSkinned()
+        {
+            bool flashing = IsFlashing;
+
+            if (!flashing && !hasSustained)
+            {
+                if (tintApplied)
+                {
+                    for (int i = 0; i < skinned.Length; i++)
+                    {
+                        if (skinned[i] != null)
+                        {
+                            skinned[i].SetPropertyBlock(null);
+                        }
+                    }
+
+                    tintApplied = false;
+                }
+
+                return;
+            }
+
+            Color colour = sustainedColour;
+
+            if (flashing)
+            {
+                float remaining = flashDuration <= 0f
+                    ? 0f
+                    : Mathf.Clamp01((flashEndsAt - Time.time) / flashDuration);
+
+                // Fade the flash out over its life, falling back to the sustained colour underneath
+                // it rather than to nothing, so a hit during a wind-up leaves the wind-up showing.
+                colour = hasSustained
+                    ? Color.Lerp(sustainedColour, flashColour, remaining)
+                    : Color.Lerp(Color.white, flashColour, remaining);
+            }
+
+            for (int i = 0; i < skinned.Length; i++)
+            {
+                if (skinned[i] == null)
+                {
+                    continue;
+                }
+
+                skinned[i].GetPropertyBlock(properties);
+                properties.SetColor(baseColorId, colour);
+                properties.SetColor(colorId, colour);
+                skinned[i].SetPropertyBlock(properties);
+            }
+
+            tintApplied = true;
+        }
     }
 }

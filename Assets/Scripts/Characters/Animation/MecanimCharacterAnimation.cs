@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Frieren.Characters.Animation
@@ -10,6 +11,11 @@ namespace Frieren.Characters.Animation
     /// Milestone 3 does not have to match names chosen here. Every parameter is resolved to a hash
     /// once and checked for existence, so a controller missing "Dodge" logs once and carries on
     /// instead of throwing every frame.
+    ///
+    /// An action with no matching trigger is silently ignored, which is the right default for a
+    /// character that genuinely cannot do something. Kael has no Attack or Death clip: he is a
+    /// caster, and his death is handled by <c>DeathSink</c> tipping the body rather than by an
+    /// animation. Adding either later means adding a trigger to the controller and nothing here.
     /// </remarks>
     [DisallowMultipleComponent]
     public sealed class MecanimCharacterAnimation : MonoBehaviour, ICharacterAnimation
@@ -34,6 +40,14 @@ namespace Frieren.Characters.Animation
         private int verticalVelocityHash;
         private int groundedHash;
         private bool warnedMissingAnimator;
+
+        // Animator.parameters allocates a fresh array on every access, and this component touched
+        // it four times a frame per character. Cached once against the controller it was built
+        // from, so a controller swapped at runtime still rebuilds it.
+        private readonly Dictionary<int, AnimatorControllerParameterType> parameterTypes =
+            new Dictionary<int, AnimatorControllerParameterType>();
+
+        private RuntimeAnimatorController cachedFor;
 
         private void Awake()
         {
@@ -120,17 +134,26 @@ namespace Frieren.Characters.Animation
 
         private bool HasParameter(int hash, AnimatorControllerParameterType type)
         {
+            if (cachedFor != animator.runtimeAnimatorController)
+            {
+                CacheParameters();
+            }
+
+            return parameterTypes.TryGetValue(hash, out AnimatorControllerParameterType found)
+                   && found == type;
+        }
+
+        private void CacheParameters()
+        {
+            parameterTypes.Clear();
+            cachedFor = animator.runtimeAnimatorController;
+
             AnimatorControllerParameter[] parameters = animator.parameters;
 
             for (int i = 0; i < parameters.Length; i++)
             {
-                if (parameters[i].nameHash == hash)
-                {
-                    return parameters[i].type == type;
-                }
+                parameterTypes[parameters[i].nameHash] = parameters[i].type;
             }
-
-            return false;
         }
     }
 }

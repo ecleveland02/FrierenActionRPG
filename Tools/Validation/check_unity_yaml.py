@@ -110,20 +110,56 @@ def blocks(text):
 
 
 def check_hierarchy(path, text, anchors):
-    """A Transform's children must each name it back as their father."""
+    """A Transform's children must each name it back as their father.
+
+    Stripped transforms are the exception, and modelling them is the whole reason this function is
+    longer than it looks like it should be. A nested prefab - an imported FBX dropped into a hand
+    authored prefab - appears as a stub carrying only m_CorrespondingSourceObject and
+    m_PrefabInstance. It has no m_Father at all: its parent is named by m_TransformParent on the
+    PrefabInstance that owns it. Treating a missing m_Father as "father 0" reported every correctly
+    nested prefab as broken, so the same invariant is checked against the instance instead.
+    """
     fathers = {}
     children = {}
+    stripped_owner = {}
+
     for class_id, anchor, body in blocks(text):
         if class_id != "4":
             continue
+
+        instance = re.search(r"^  m_PrefabInstance: \{fileID: (\d+)\}", body, re.M)
+
+        if instance and int(instance.group(1)) != 0:
+            stripped_owner[anchor] = int(instance.group(1))
+            continue
+
         father = re.search(r"^  m_Father: \{fileID: (\d+)\}", body, re.M)
         fathers[anchor] = int(father.group(1)) if father else 0
         listed = re.search(r"^  m_Children:\n((?:  - \{fileID: \d+\}\n?)*)", body + "\n", re.M)
         children[anchor] = [int(m) for m in LOCAL_REF.findall(listed.group(1))] if listed else []
 
+    # Where each PrefabInstance says it hangs.
+    instance_parent = {}
+    for class_id, anchor, body in blocks(text):
+        if class_id != "1001":
+            continue
+        parent = re.search(r"^    m_TransformParent: \{fileID: (\d+)\}", body, re.M)
+        instance_parent[anchor] = int(parent.group(1)) if parent else 0
+
     for parent, kids in children.items():
         for kid in kids:
-            if kid not in fathers:
+            if kid in stripped_owner:
+                owner = stripped_owner[kid]
+
+                if owner not in instance_parent:
+                    problems.append(
+                        f"{path}: transform {parent} lists stripped child {kid}, whose "
+                        f"m_PrefabInstance {owner} is not a PrefabInstance in this file")
+                elif instance_parent[owner] != parent:
+                    problems.append(
+                        f"{path}: transform {parent} lists stripped child {kid}, but its "
+                        f"PrefabInstance {owner} is parented to {instance_parent[owner]}")
+            elif kid not in fathers:
                 problems.append(f"{path}: transform {parent} lists child {kid}, which is not a Transform")
             elif fathers[kid] != parent:
                 problems.append(
@@ -132,6 +168,17 @@ def check_hierarchy(path, text, anchors):
     for child, father in fathers.items():
         if father != 0 and child not in children.get(father, []):
             problems.append(f"{path}: transform {child} claims father {father}, which does not list it")
+
+    # A nested prefab nobody lists is invisible in the hierarchy, which is the mirror of the check
+    # above and just as silent a failure.
+    for instance, parent in instance_parent.items():
+        if parent == 0:
+            continue
+        if not any(kid in stripped_owner and stripped_owner[kid] == instance
+                   for kid in children.get(parent, [])):
+            problems.append(
+                f"{path}: PrefabInstance {instance} is parented to transform {parent}, "
+                f"which does not list any of its stripped transforms as a child")
 
 
 def check_components(path, text, anchors):
