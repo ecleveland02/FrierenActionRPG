@@ -67,8 +67,63 @@ namespace Frieren.Player
 
             ConnectCamera();
             GameLog.Info(LogChannel.Player, $"Player spawned at {point.position}.", this);
+            ReportBody();
 
             return SpawnedPlayer;
+        }
+
+        /// <summary>
+        /// Says what the spawned player actually looks like, once, at spawn.
+        /// </summary>
+        /// <remarks>
+        /// "The character is not there" has several causes that look identical from the outside: a
+        /// model that failed to import, a visual child that was never instantiated, a mesh scaled to
+        /// nothing, a body spawned inside the floor. Each of them is one number away from the
+        /// others, and none of them is distinguishable by looking at the screen. One line at spawn
+        /// separates them, and costs nothing after the frame it runs on.
+        /// </remarks>
+        private void ReportBody()
+        {
+            Renderer[] renderers = SpawnedPlayer.GetComponentsInChildren<Renderer>(true);
+
+            if (renderers.Length == 0)
+            {
+                GameLog.Error(LogChannel.Player,
+                    $"{SpawnedPlayer.name} spawned with no renderers at all. The visual child is " +
+                    "missing from the prefab, or its model failed to import.", this);
+                return;
+            }
+
+            Bounds bounds = renderers[0].bounds;
+            int hidden = 0;
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                bounds.Encapsulate(renderers[i].bounds);
+
+                if (!renderers[i].enabled || !renderers[i].gameObject.activeInHierarchy)
+                {
+                    hidden++;
+                }
+            }
+
+            var animator = SpawnedPlayer.GetComponentInChildren<Animator>();
+            string rig = animator == null
+                ? "no Animator"
+                : animator.runtimeAnimatorController == null
+                    ? "Animator with no controller"
+                    : $"Animator running {animator.runtimeAnimatorController.name}";
+
+            GameLog.Info(LogChannel.Player,
+                $"{SpawnedPlayer.name} body: {renderers.Length} renderers ({hidden} hidden), " +
+                $"bounds size {bounds.size}, centre {bounds.center}, {rig}.", this);
+
+            if (bounds.size.y < 0.2f)
+            {
+                GameLog.Warn(LogChannel.Player,
+                    $"The player's body is {bounds.size.y:0.###}m tall, which is too small to see. " +
+                    "Check the model's import scale.", this);
+            }
         }
 
         /// <summary>Moves the existing player back to a spawn point.</summary>

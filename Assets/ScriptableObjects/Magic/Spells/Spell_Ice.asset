@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 344d7fa350bdab4d4403cf8c6c419f57, type: 3}
   m_Name: Spell_Ice
   m_EditorClassIdentifier: 
+  icon: {fileID: 21300000, guid: 2bccd332882fcd14b9e4c377e432c587, type: 3}
+  wheelTint: {r: 0.55, g: 0.82, b: 0.95, a: 1}
   id: spell.ice
   displayName: Ice
   description: A wave of cold. Puts fires out, and turns standing water into something you can walk on.
@@ -28,4 +30,5 @@ MonoBehaviour:
   effects:
   - {fileID: 11400000, guid: 96aa169419107acee0dd8dc728b969e8, type: 2}
   - {fileID: 11400000, guid: 04544dbc1ab32c3ca3cb43ea4d6854fc, type: 2}
+  - {fileID: 11400000, guid: 27b05d969550097f9c357f9cd16e6029, type: 2}
   castAnimation: 5

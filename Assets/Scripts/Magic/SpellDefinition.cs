@@ -19,6 +19,16 @@ namespace Frieren.Magic
     [CreateAssetMenu(menuName = "Frieren/Magic/Spell", fileName = "Spell_", order = 0)]
     public sealed class SpellDefinition : IdentifiableScriptableObject
     {
+        [Header("Presentation")]
+        [SerializeField]
+        [Tooltip("Shown on the spell wheel. A wheel of eight text labels is a list; a wheel of " +
+                 "eight pictures is something the hand learns.")]
+        private Sprite icon;
+
+        [SerializeField]
+        [Tooltip("Tint behind the icon on the wheel, for telling spells apart at a glance.")]
+        private Color wheelTint = new Color(0.65f, 0.72f, 0.85f, 1f);
+
         [Header("Mode")]
         [SerializeField]
         [Tooltip("Instant resolves once. Channelled keeps working while the cast input is held.")]
@@ -80,6 +90,11 @@ namespace Frieren.Magic
         [SerializeField]
         [Tooltip("Animation played when the cast completes.")]
         private CharacterAction castAnimation = CharacterAction.CastRelease;
+
+        /// <summary>Wheel artwork, or <c>null</c> to fall back to the name.</summary>
+        public Sprite Icon => icon;
+
+        public Color WheelTint => wheelTint;
 
         public SpellCastMode CastMode => castMode;
 

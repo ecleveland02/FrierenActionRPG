@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 344d7fa350bdab4d4403cf8c6c419f57, type: 3}
   m_Name: Spell_Water
   m_EditorClassIdentifier: 
+  icon: {fileID: 21300000, guid: 25126c248902e8347a4a2f96259cb92b, type: 3}
+  wheelTint: {r: 0.35, g: 0.62, b: 0.85, a: 1}
   id: spell.water
   displayName: Water Creation
   description: Conjures water where you aim it. Fills what will hold it and puts out what will not.
@@ -27,4 +29,5 @@ MonoBehaviour:
   range: 16
   effects:
   - {fileID: 11400000, guid: d090904c76873e59bcf65329869326f3, type: 2}
+  - {fileID: 11400000, guid: 189290d8cebc0b5d88e58bbfe7f234b7, type: 2}
   castAnimation: 5

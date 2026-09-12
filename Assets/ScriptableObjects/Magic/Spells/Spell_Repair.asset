@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 344d7fa350bdab4d4403cf8c6c419f57, type: 3}
   m_Name: Spell_Repair
   m_EditorClassIdentifier: 
+  icon: {fileID: 21300000, guid: feb8709f10385a94095b55fe8d0f625c, type: 3}
+  wheelTint: {r: 0.85, g: 0.8, b: 0.5, a: 1}
   id: spell.repair
   displayName: Mending
   description: Hold to put something broken back together. Let go early and the work comes apart.
@@ -27,4 +29,5 @@ MonoBehaviour:
   range: 8
   effects:
   - {fileID: 11400000, guid: 6dcc5b78bf81ecfe9d98610f0d03c822, type: 2}
+  - {fileID: 11400000, guid: c4ede45d8aeb2a353b803836a6d0e385, type: 2}
   castAnimation: 5

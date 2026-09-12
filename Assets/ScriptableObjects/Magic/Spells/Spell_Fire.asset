@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 344d7fa350bdab4d4403cf8c6c419f57, type: 3}
   m_Name: Spell_Fire
   m_EditorClassIdentifier: 
+  icon: {fileID: 21300000, guid: dd3885098198d104888439be4c590aba, type: 3}
+  wheelTint: {r: 0.92, g: 0.45, b: 0.25, a: 1}
   id: spell.fire
   displayName: Fire
   description: A burst of heat. Harms what stands in it and sets alight what will burn.
@@ -23,4 +25,5 @@ MonoBehaviour:
   effects:
   - {fileID: 11400000, guid: c33cfc6b0ef6e4265a53e0b99c4f8bfc, type: 2}
   - {fileID: 11400000, guid: 6db3932d7d20fa443b632bf5f9885844, type: 2}
+  - {fileID: 11400000, guid: 9c4bc29bfafbe811a3e25a35fe8ce511, type: 2}
   castAnimation: 5

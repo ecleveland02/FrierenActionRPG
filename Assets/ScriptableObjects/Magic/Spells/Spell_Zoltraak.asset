@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 344d7fa350bdab4d4403cf8c6c419f57, type: 3}
   m_Name: Spell_Zoltraak
   m_EditorClassIdentifier: 
+  icon: {fileID: 21300000, guid: cdec13907ffc75749ab2ed436bec6b14, type: 3}
+  wheelTint: {r: 0.72, g: 0.4, b: 0.85, a: 1}
   id: spell.zoltraak
   displayName: Zoltraak
   description: A lance of ordinary offensive magic. It does not stop at the first thing it hits.
@@ -27,4 +29,5 @@ MonoBehaviour:
   range: 40
   effects:
   - {fileID: 11400000, guid: 3965920f9cc0884e45e1014cab33a6ff, type: 2}
+  - {fileID: 11400000, guid: ef66db4068497ed5bfcd8f228981003c, type: 2}
   castAnimation: 5
