@@ -166,7 +166,15 @@ fields it was meant for. Ask for both when reporting a change.
 
 It catches, cheaply, the mistakes that are invisible on inspection: an inheritance chain crossing an
 unreferenced assembly (CS0012), a `using` whose assembly is not referenced (CS0234), the Input System
-or UnityEditor used without the right reference, reference cycles, unbalanced braces.
+or UnityEditor used without the right reference, reference cycles, unbalanced braces, and a
+`using UnityEngine.X` whose engine module is missing from `Packages/manifest.json`.
+
+That last one is newer than the rest and cost a build. `using UnityEngine.AI` with no
+`com.unity.modules.ai` in the manifest is a CS0234 that no amount of asmdef checking finds, because
+the missing reference is to an engine module rather than to a project assembly - and it took down
+three assemblies at once. **Adding a `using UnityEngine.X` means checking the manifest carries its
+module.** The check scans vendor scripts too: anything under `Assets/` without an `.asmdef` compiles
+into Assembly-CSharp and breaks the build just as thoroughly as our own code does.
 
 The first of those is the subtle one and it has already cost a round trip. Using a type whose *base
 class* lives in another assembly requires referencing that assembly too, even though the base is
