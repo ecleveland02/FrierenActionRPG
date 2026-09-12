@@ -200,7 +200,8 @@ That last one is the milestone's real test: it proves stats, vitals and persiste
 - `PlayerSpellInput`: cast input and number-key selection, with an on-screen list.
 - `FlammableObject` (Heat lights it, Cold and Water put it out, it burns out and disables) and
   `LevitatableObject` (Force lifts it, it holds, then sinks).
-- Three spells: Arcane Bolt, Fire, Levitation. Fire and Bolt share nothing but the effect types.
+- Three spells: Arcane Bolt, Fire, Levitation. Levitation lifts the caster; the machinery for
+  lifting objects exists and is unused, waiting for a telekinesis spell.
 - Scene props: two crates, a liftable block, and a target dummy built from the Milestone 3 components.
 - 23 new EditMode tests (153 total).
 
@@ -222,6 +223,10 @@ That last one is the milestone's real test: it proves stats, vitals and persiste
    `CharacterPersistence` does not write them.
 7. Known spells are a list on the prefab. Spell discovery is a later milestone.
 8. `FlammableObject` and `LevitatableObject` do not persist. A burnt crate is unburnt after a load.
+11. `LevitatableObject`, the pale blue block in the test scene, and `Effect_Pulse_Force` are
+   currently unreachable. They work, and any future spell emitting Force at a point will drive
+   them, but no spell does today. They are kept rather than deleted because that spell - a
+   telekinesis or a shockwave - is clearly coming.
 
 **How to test it in the editor**
 
@@ -231,10 +236,8 @@ Open `Boot`, press Play. A spell list appears under the vitals panel.
 2. Aim at the tall dummy and cast Bolt. Its health drops; mana drops; the spell greys out briefly.
 3. Aim at a crate and cast Fire. It warms toward orange, catches, burns, then blackens and vanishes.
    One Fire cast reaches both crates if you stand so they are within 2.5m of the impact.
-4. Aim at the **pale blue** block and **hold** the cast button. It rises for as long as you hold,
-   stops at five metres, and settles back once you let go. Hold it up and jump on. The large grey
-   `Platform` nearby is scenery and will correctly ignore the spell - magic-reactive objects are
-   tinted, everything else is default grey.
+4. Select Levitation and **hold** the cast button. You rise for as long as you hold, up to eight
+   metres, and settle back down when you let go. You keep control of your movement while aloft.
 5. Cast until mana runs out: the console explains the refusal rather than nothing happening.
 
 Item 3 is the one that matters. The crate has no idea Fire exists - it reacts to Heat - so any later

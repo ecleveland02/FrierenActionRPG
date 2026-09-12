@@ -66,7 +66,7 @@ Press Play from `Boot.unity`. Boot loads `TestScene` additively and hands contro
 | Dodge | `Ctrl` | B / circle |
 | Interact | `E` | X / square |
 | Cast | Left mouse (hold for channelled spells) | Right trigger |
-| Select spell | `1` `2` `3` | - |
+| Select spell | `1` bolt, `2` fire, `3` levitate | - |
 | Pause | `Esc` | Start |
 
 Debug keys: `F1` overlay, `F2` damage 15, `F3` heal or revive, `F4` spend 15 mana, `F5` quick save,

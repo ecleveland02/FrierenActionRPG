@@ -236,6 +236,12 @@ when the cast *begins*: spending on release would let a player cancel a frame ea
 **Targeting resolves instantly.** A travelling bolt is presentation - a visual played along the
 resolved line - so adding one later changes when effects fire, not how targeting works.
 
+**A character is a magic receiver like anything else.** `CharacterLevitation` implements
+`IMagicReceiver` and answers Force, exactly as a crate answers Heat. Levitation therefore does not
+need to know whether it is aimed at a person or a block, and "lift yourself onto the ledge" and
+"lift the block onto the ledge" are two solutions to one problem rather than two features. Today
+only the self-cast version is bound to a spell; the object side works and waits for one.
+
 **Channelled spells are a cast mode, not a spell.** `SpellCastMode.Channelled` holds the action lock,
 drains mana per second and re-applies the effect list on a tick until released, out of mana, or past
 a duration cap. Levitation uses it and needed no code of its own; a sustained beam or a held shield

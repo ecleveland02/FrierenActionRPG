@@ -76,7 +76,11 @@ namespace Frieren.Core.EditorTools
             root.AddComponent<CharacterPersistence>();
             root.AddComponent<CharacterVitalsReadout>();
             root.AddComponent<CharacterSpellcaster>();
-            root.AddComponent<CharacterLevitation>();
+            CharacterLevitation levitation = root.AddComponent<CharacterLevitation>();
+            var levitationSerialized = new SerializedObject(levitation);
+            levitationSerialized.FindProperty("maximumRise").floatValue = 8f;
+            levitationSerialized.FindProperty("riseSpeed").floatValue = 4f;
+            levitationSerialized.ApplyModifiedPropertiesWithoutUndo();
 
             PlayerSpellInput spellInput = root.AddComponent<PlayerSpellInput>();
             AssignReference(spellInput, "inputReader", reader);
@@ -202,11 +206,7 @@ namespace Frieren.Core.EditorTools
             SerializedProperty spells = serialized.FindProperty("knownSpells");
             spells.ClearArray();
 
-            string[] paths =
-            {
-                ProjectPaths.SpellArcaneBolt, ProjectPaths.SpellFire,
-                ProjectPaths.SpellLevitate, ProjectPaths.SpellFloat
-            };
+            string[] paths = { ProjectPaths.SpellArcaneBolt, ProjectPaths.SpellFire, ProjectPaths.SpellLevitate };
 
             foreach (string path in paths)
             {

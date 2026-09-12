@@ -14,16 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: spell.levitate
   displayName: Levitation
-  description: Hold to lift what you are aiming at. Release and it settles back down.
+  description: Hold to lift yourself off the ground. Release and you settle back down.
   castMode: 1
   manaCost: 5
   manaPerSecond: 12
   channelTickInterval: 0.1
   maxChannelSeconds: 0
-  castTime: 0.15
+  holdsActionLock: 0
+  castTime: 0.1
   cooldown: 0.4
-  targeting: 1
-  range: 20
+  targeting: 0
+  range: 0
   effects:
-  - {fileID: 11400000, guid: 86fb1045a3def7a675cd977a1cb3c16e, type: 2}
+  - {fileID: 11400000, guid: 665c07926d2689bf3f0fc5b8454de354, type: 2}
   castAnimation: 5
