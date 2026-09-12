@@ -11,8 +11,8 @@ Each milestone must produce something playable or testable, and be verified befo
 | 5 | First enemy and basic combat, plus the remaining spells | **Complete**, not yet run in the editor |
 | 5.5 | Combat feel: placeholder feedback so the loop can be judged | **Complete**, not yet run in the editor |
 | 5.6 | Play-mode tests, so Milestones 5 and 5.5 can be verified by pressing Run | **Complete**, not yet run in the editor |
-| 6 | Reusable environmental interaction systems | Contract landed in M4; three more receivers landed in M5; breadth remaining |
-| 7 | Gray-box vertical slice | Not started |
+| 6 | Persistence: the world remembers what you did to it | **Complete**, not yet run in the editor |
+| 7 | Gray-box vertical slice (absorbs the briefed M6 breadth) | Not started |
 
 Outside the milestone sequence, a **Kael character spike** exists in its own prefab and scene, built
 by Codex. It proves the Blender-to-Unity path for a skinned, clothed character early, which is real
@@ -533,9 +533,96 @@ failure anywhere else is code.
 
 ---
 
-**Next: Milestone 6 - environmental interaction, in breadth**
+## Milestone 6 - Persistence (complete, not yet run)
 
-The contract landed in Milestone 4 and now has five receivers. Milestone 6 is no longer about
-building the system; it is about having enough object kinds and enough combinations that a room can
-be designed around them, plus the thing all five currently lack: persistence. A burnt crate, a
-mended pillar and an opened door should still be burnt, mended and open after a load.
+**Build stamp: `m6 persistence`.**
+
+A change to the plan, argued rather than assumed. The briefed Milestone 6 was "reusable
+environmental interaction systems" - breadth: more receiver kinds. That contract landed early in
+Milestone 4 and has five receivers now, and a sixth would teach us nothing the first five did not.
+What it *does* have is a hole: **none of them survived a save.** The save system built in Milestone 1
+quietly claimed to cover the world and covered only the player's health and mana.
+
+So Milestone 6 became persistence, and the briefed breadth folds into Milestone 7, where more object
+kinds can be designed around an actual space instead of added abstractly.
+
+### Architecture
+
+**The hard part of persistence is identity, not serialisation.** Every tempting answer is wrong: a
+hierarchy path breaks on a reparent, an instance id changes every run, a sibling index changes when
+someone inserts a prop. So ids are authored, on a `SceneObjectId` component, and an editor check
+refuses the two ways an authored id fails - blank and duplicate - because both are silent. A blank
+id means the object never registers; a duplicate means two objects share an entry and a door opens
+because a crate burned.
+
+**Gameplay does not know the save system exists.** A burning crate should no more know about save
+files than it knows what Fire is. So world objects implement `IPersistentState` - a Core interface
+with a key, a capture and a restore - and `PersistentObject` is the single adapter that speaks
+`ISaveable` on their behalf. One save entry per GameObject, however many persistent components it
+carries: a door that is locked, burnable and interactive is one thing in the world and one thing in
+the file.
+
+**This finally answers a question left open in Milestone 3.** `CharacterPersistence` was written with
+a note saying runtime-spawned enemies would need ids derived from their spawner, "a problem to solve
+when there is a spawner". There is one now. `EnemySpawner` names each spawn `<its own id>.<index>` -
+stable across sessions because it comes from the spawn point's position in the list, not from the
+order things happened to be created - and `SaveService` already restored late registrations, which
+is what makes a spawned object work at all.
+
+**Death is recorded by the spawner, not the corpse.** Restoring a dead enemy means restoring a body,
+an animation state and a disabled collider so the player can look at something they already killed.
+Not spawning it is the same outcome for none of the work.
+
+**Delivered**
+
+- `IPersistentState`, `SceneObjectId`, `PersistentObject` in `Frieren.Core.Persistence`.
+- `FlammableObject`, `WaterBasin`, `RepairableObject` and `LockedObject` all persist - including
+  partial progress, so a half-filled trough and a half-picked lock survive a load.
+- `CharacterPersistence` rewritten onto the new contract, and now saves position as well as vitals,
+  optionally: the player should come back where they were, an enemy is better placed by its spawner
+  than by a file that might put it inside geometry that has since moved.
+- `CharacterSpellcaster` persists cooldowns - as *seconds remaining*, never as an absolute expiry,
+  because `Time.time` restarts each session and a saved expiry has either already passed or sits
+  hours in the future.
+- `EnemySpawner` assigns ids and remembers which spawns are dead.
+- `SceneObjectIdValidator`, an editor check on save and on demand.
+- 7 new play-mode tests (55 play-mode, 251 in total).
+- Two more classes of mistake caught by `check_usings.py`, which grew a check for generic BCL types
+  after `CharacterSpellcaster` shipped a `List<string>` with no `using System.Collections.Generic;`.
+
+**Known limitations**
+
+1. Not run in the editor.
+2. A crate restored mid-burn comes back alight with a full duration rather than part-way through. A
+   fraction of a burn is not worth a field and nobody can tell.
+3. Nothing persists which scene you were in. There is one scene; this becomes real in Milestone 7.
+4. The barrier is not persisted. It lapses in a third of a second, so saving it would be saving
+   something that has already expired.
+5. Enemy positions are not saved, by choice. Reloading mid-fight puts the sentinel back at its spawn
+   point rather than where it had chased you to.
+6. Save slots exist in the API but nothing in the game chooses between them.
+
+**How to test it**
+
+1. Burn a crate, freeze the trough, mend the pillar, open the door, kill the sentinel. Walk
+   somewhere distinctive.
+2. `F5` to save, then break everything: put out fires, `F3` to heal, wander off.
+3. `F9` to load. Every one of those should snap back - and you should be standing where you saved.
+4. The sharp one: **kill the sentinel, save, load.** It should stay dead rather than respawning.
+5. `Frieren > Saves > Open Save Folder` shows the JSON, one entry per object, keyed by the ids in
+   `SceneObjectId`.
+
+---
+
+**Next: Milestone 7 - the gray-box vertical slice**
+
+The systems are now well ahead of the content. Nine spells, an enemy, five world receivers,
+feedback, persistence and 251 tests - and no *place*. The test scene is a scatter of props on a
+plane, which is enough to prove a mechanism works and not enough to prove any of it is worth
+playing.
+
+Milestone 7 absorbs the briefed Milestone 6. More receiver kinds earn their keep when they are
+designed into a space with a reason to exist, not added to a list. The slice wants: a small area
+with a route through it, an objective, one fight that matters, and at least two problems whose
+solutions the player finds rather than is told - which is the pillar the whole project is built to
+demonstrate, and the one thing that has never actually been tested on a person.

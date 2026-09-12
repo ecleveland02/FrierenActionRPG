@@ -396,6 +396,45 @@ scene, because it is the only automated check that the hand-authored YAML deseri
 fields it was meant for. `check_unity_yaml.py` proves a reference resolves; only Unity proves that
 `castMode: 1` reached `castMode`.
 
+## Persistence (Milestone 6)
+
+```
+world object                         Frieren.Core.Persistence
+  FlammableObject   --.
+  WaterBasin        --+--> IPersistentState --> PersistentObject --> ISaveable --> SaveService
+  RepairableObject  --|      key, capture,        one entry per
+  LockedObject      --|      restore              GameObject
+  CharacterPersistence |            ^
+  CharacterSpellcaster-'            |
+                              SceneObjectId (the save key)
+```
+
+**Identity is the hard part, not serialisation.** Every convenient answer is wrong: a hierarchy path
+breaks on a reparent, an instance id changes every run, a sibling index changes when someone inserts
+a prop. Ids are therefore authored on `SceneObjectId`, and an editor check refuses blanks and
+duplicates - the two ways an authored id fails, both silent. A blank id means the object never
+registers and simply does not persist; a duplicate means two objects share an entry, so a door opens
+because a crate burned.
+
+**Gameplay does not know the save system exists.** World objects implement `IPersistentState`, a
+Core interface with a key, a capture and a restore, exactly as they implement `IMagicReceiver`.
+`PersistentObject` is the only class that speaks `ISaveable`. A burning crate should no more know
+about save files than it knows what Fire is.
+
+**One entry per GameObject, not per component.** A door that is locked, burnable and interactive is
+one thing in the world; adding a fourth behaviour to it should not add a fourth key. An entry naming
+a component that has since been deleted is skipped rather than treated as an error, so removing a
+behaviour does not invalidate everyone's saves.
+
+**Runtime-spawned objects get their ids from whatever spawned them.** `EnemySpawner` names each
+spawn `<its own id>.<index>`, stable across sessions because it comes from the spawn point's
+position in the list rather than from creation order. `SaveService` already restored late
+registrations, which is what makes an object that appears after a load work at all.
+
+**Cooldowns are stored as seconds remaining, never as an absolute expiry.** `Time.time` restarts
+every session, so a saved expiry has either already passed or sits hours in the future. The same
+trap waits for any future timer that gets persisted.
+
 ## Where the next milestones attach
 
 | Milestone | Attaches via |
@@ -403,8 +442,8 @@ fields it was meant for. `check_unity_yaml.py` proves a reference resolves; only
 | 3 - Character architecture | Done. The rigged character still needs to replace `PlaceholderCharacterAnimation` with `MecanimCharacterAnimation`. |
 | 4 - Magic framework | Done, with nine spells. New spells are assets; only a genuinely new *kind* of effect needs code. |
 | 5 - Enemy | Done. Steering is direct; a navigation agent writing to the same motor replaces it when there is a level to bake. `PlayerDodge.IsInvulnerable` is still not read by anything - it wants to be an `IDamageModifier`. |
-| 6 - Environmental interaction | The contract landed in Milestone 4 and has five receivers after Milestone 5: flammable, levitatable, basin, repairable, locked. What remains is breadth and persistence - none of the five survives a save. New receivers still need no change to any spell. |
-| 7 - Vertical slice | `GameSceneDefinition` per area, added to `SceneCatalog` and Build Settings. `PlayerSpawner` handles arrival in each. |
+| 6 - Persistence | Done. Any new object persists by implementing `IPersistentState` and carrying a `SceneObjectId` plus a `PersistentObject`. Nothing else changes. |
+| 7 - Vertical slice | Absorbs the briefed Milestone 6 breadth. `GameSceneDefinition` per area, added to `SceneCatalog` and Build Settings; `PlayerSpawner` handles arrival in each. Which scene the player was in is the one thing persistence does not yet record. |
 
 ## Conventions
 

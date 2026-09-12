@@ -1112,6 +1112,8 @@ GameObject:
   - component: {fileID: 403}
   - component: {fileID: 404}
   - component: {fileID: 405}
+  - component: {fileID: 700}
+  - component: {fileID: 701}
   m_Layer: 13
   m_Name: Flammable_Crate_1
   m_TagString: MagicTarget
@@ -1238,6 +1240,8 @@ GameObject:
   - component: {fileID: 413}
   - component: {fileID: 414}
   - component: {fileID: 415}
+  - component: {fileID: 710}
+  - component: {fileID: 711}
   m_Layer: 13
   m_Name: Flammable_Crate_2
   m_TagString: MagicTarget
@@ -1494,6 +1498,9 @@ GameObject:
   - component: {fileID: 446}
   - component: {fileID: 447}
   - component: {fileID: 448}
+  - component: {fileID: 720}
+  - component: {fileID: 721}
+  - component: {fileID: 722}
   m_Layer: 13
   m_Name: TargetDummy
   m_TagString: MagicTarget
@@ -1681,6 +1688,8 @@ GameObject:
   m_Component:
   - component: {fileID: 511}
   - component: {fileID: 512}
+  - component: {fileID: 730}
+  - component: {fileID: 731}
   m_Layer: 0
   m_Name: EnemySpawner
   m_TagString: Untagged
@@ -1945,6 +1954,8 @@ GameObject:
   m_Component:
   - component: {fileID: 541}
   - component: {fileID: 542}
+  - component: {fileID: 740}
+  - component: {fileID: 741}
   m_Layer: 13
   m_Name: Trough
   m_TagString: MagicTarget
@@ -2322,6 +2333,8 @@ GameObject:
   m_Component:
   - component: {fileID: 581}
   - component: {fileID: 582}
+  - component: {fileID: 750}
+  - component: {fileID: 751}
   m_Layer: 12
   m_Name: LockedDoor
   m_TagString: Interactable
@@ -2501,6 +2514,8 @@ GameObject:
   m_Component:
   - component: {fileID: 601}
   - component: {fileID: 602}
+  - component: {fileID: 760}
+  - component: {fileID: 761}
   m_Layer: 13
   m_Name: BrokenPillar
   m_TagString: MagicTarget
@@ -2772,3 +2787,191 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maximumStrength: 0.45
   frequency: 26
+--- !u!114 &700
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c22cb4111d5578b9646c4f1f6979a4a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  id: world.crate_1
+--- !u!114 &701
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42271b4ee42c24d5d65dc043de02a273, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &710
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 410}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c22cb4111d5578b9646c4f1f6979a4a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  id: world.crate_2
+--- !u!114 &711
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 410}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42271b4ee42c24d5d65dc043de02a273, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &720
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 440}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c22cb4111d5578b9646c4f1f6979a4a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  id: world.target_dummy
+--- !u!114 &721
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 440}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42271b4ee42c24d5d65dc043de02a273, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 440}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 104e54f6e86dbfa0989dc12f1bdb644e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  persistPosition: 0
+--- !u!114 &730
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c22cb4111d5578b9646c4f1f6979a4a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  id: world.enemy_spawner
+--- !u!114 &731
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42271b4ee42c24d5d65dc043de02a273, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &740
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 540}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c22cb4111d5578b9646c4f1f6979a4a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  id: world.trough
+--- !u!114 &741
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 540}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42271b4ee42c24d5d65dc043de02a273, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &750
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 580}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c22cb4111d5578b9646c4f1f6979a4a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  id: world.locked_door
+--- !u!114 &751
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 580}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42271b4ee42c24d5d65dc043de02a273, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &760
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 600}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c22cb4111d5578b9646c4f1f6979a4a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  id: world.broken_pillar
+--- !u!114 &761
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 600}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42271b4ee42c24d5d65dc043de02a273, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

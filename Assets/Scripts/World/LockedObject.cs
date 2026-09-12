@@ -2,6 +2,7 @@ using System;
 using Frieren.Core.Debugging;
 using Frieren.Core.Interaction;
 using Frieren.Core.Magic;
+using Frieren.Core.Persistence;
 using UnityEngine;
 
 namespace Frieren.World
@@ -21,8 +22,16 @@ namespace Frieren.World
     /// still shut.
     /// </remarks>
     [DisallowMultipleComponent]
-    public sealed class LockedObject : MonoBehaviour, IMagicReceiver, IInteractable
+    public sealed class LockedObject : MonoBehaviour, IMagicReceiver, IInteractable, IPersistentState
     {
+        [System.Serializable]
+        private sealed class LockSave
+        {
+            public bool locked = true;
+            public bool open;
+            public float pickProgress;
+        }
+
         [Header("Lock")]
         [SerializeField]
         [Min(0.01f)]
@@ -151,6 +160,34 @@ namespace Frieren.World
             ApplyForm();
             Opened?.Invoke();
             return true;
+        }
+
+        public string StateKey => "lock";
+
+        public string CaptureState() => JsonUtility.ToJson(new LockSave
+        {
+            locked = IsLocked,
+            open = IsOpen,
+            pickProgress = pickProgress,
+        });
+
+        /// <summary>
+        /// An opened door stays open. Restoring the pick progress too means a half-picked lock is
+        /// still half-picked, which matters because Unbinding takes more than one cast.
+        /// </summary>
+        public void RestoreState(string json)
+        {
+            var saved = JsonUtility.FromJson<LockSave>(json);
+
+            if (saved == null)
+            {
+                return;
+            }
+
+            IsLocked = saved.locked;
+            IsOpen = saved.open;
+            pickProgress = saved.pickProgress;
+            ApplyForm();
         }
 
         private void ApplyForm()

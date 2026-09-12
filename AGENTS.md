@@ -25,6 +25,7 @@ and quests are authored content, never hardcoded branches.
 | 5 - First enemy, plus the remaining 6 spells | Written, not yet run in the editor |
 | 5.5 - Combat feel: placeholder feedback | Written, not yet run in the editor |
 | 5.6 - Play-mode tests | Written, not yet run in the editor |
+| 6 - Persistence for the world | Written, not yet run in the editor |
 
 Running alongside the milestones is a **Kael character spike** built by Codex: a Meshy-derived
 skinned character with Unity `Cloth`, its own prefab and scene, plus a separate animated prototype.

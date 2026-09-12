@@ -1,6 +1,7 @@
 using System;
 using Frieren.Core.Debugging;
 using Frieren.Core.Magic;
+using Frieren.Core.Persistence;
 using UnityEngine;
 
 namespace Frieren.World
@@ -18,8 +19,15 @@ namespace Frieren.World
     /// healing spell, a repair rune or an NPC's magic all mend the same walkway.
     /// </remarks>
     [DisallowMultipleComponent]
-    public sealed class RepairableObject : MonoBehaviour, IMagicReceiver
+    public sealed class RepairableObject : MonoBehaviour, IMagicReceiver, IPersistentState
     {
+        [System.Serializable]
+        private sealed class RepairSave
+        {
+            public bool intact;
+            public float progress;
+        }
+
         [Header("Mending")]
         [SerializeField]
         [Min(0.01f)]
@@ -118,6 +126,29 @@ namespace Frieren.World
             ProgressChanged?.Invoke(0f);
             Broken?.Invoke();
             return true;
+        }
+
+        public string StateKey => "repair";
+
+        public string CaptureState() => JsonUtility.ToJson(new RepairSave
+        {
+            intact = IsIntact,
+            progress = progress,
+        });
+
+        public void RestoreState(string json)
+        {
+            var saved = JsonUtility.FromJson<RepairSave>(json);
+
+            if (saved == null)
+            {
+                return;
+            }
+
+            IsIntact = saved.intact;
+            progress = saved.progress;
+            ApplyForm();
+            ProgressChanged?.Invoke(NormalizedProgress);
         }
 
         private void ApplyForm()

@@ -23,6 +23,9 @@ GameObject:
   - component: {fileID: 162}
   - component: {fileID: 163}
   - component: {fileID: 164}
+  - component: {fileID: 170}
+  - component: {fileID: 171}
+  - component: {fileID: 172}
   m_Layer: 9
   m_Name: Enemy_Sentinel
   m_TagString: Enemy
@@ -452,3 +455,41 @@ MonoBehaviour:
   tipDegrees: 82
   sinkMetres: 1.6
   duration: 1.4
+--- !u!114 &170
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c22cb4111d5578b9646c4f1f6979a4a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  id: 
+--- !u!114 &171
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42271b4ee42c24d5d65dc043de02a273, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &172
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 104e54f6e86dbfa0989dc12f1bdb644e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  persistPosition: 0

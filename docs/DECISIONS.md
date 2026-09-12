@@ -459,3 +459,57 @@ Unity can, and the cost of it not having is a spell that casts and silently does
 So it asserts content, not just existence: nine spells, unique ids, every one with a non-empty effect
 list, Zoltraak a ray, Barrier channelled and draining. And that the door is both lockable and
 burnable, which is the multiple-solutions pillar reduced to a single assertion.
+
+
+---
+
+## Milestone 6
+
+### 33. Milestone 6 became persistence, and the briefed breadth moved to Milestone 7
+
+The brief's Milestone 6 was "reusable environmental interaction systems" - more receiver kinds. That
+contract landed early, in Milestone 4, and has five implementations. A sixth would demonstrate
+nothing the first five did not.
+
+Meanwhile the save system built in Milestone 1 claimed to persist the game and persisted the
+player's health and mana. Burn a crate, freeze a trough, open a door, kill an enemy, save, load, and
+every one of them is undone. That is a foundation crack, and it gets worse with every receiver
+added - retrofitting persistence across designed content is far more expensive than adding it for
+five props.
+
+So the breadth moves into Milestone 7, where more object kinds can be designed around a real space
+with a reason to exist rather than added to a list abstractly.
+
+### 34. Save identity is authored, and validated in the editor
+
+Every convenient source of identity is wrong. A hierarchy path breaks the moment something is
+reparented or renamed. An instance id is different every run. A sibling index changes when anyone
+inserts a prop above it. A name is not unique.
+
+So ids are authored on `SceneObjectId`, and because an authored id has exactly two failure modes -
+blank and duplicate - and both are completely silent, an editor check runs on scene save and refuses
+them. A blank id means the object never registers and quietly does not persist. A duplicate means
+two objects share one save entry, and the symptom is a door that opens because a crate burned, which
+is close to undiagnosable from the outside.
+
+### 35. World objects implement a Core interface, not `ISaveable`
+
+`ISaveable` belongs to `Frieren.Save`. Having a burning crate implement it would mean the crate
+knows a save system exists, which is the same coupling the whole magic design exists to avoid - a
+crate does not know what Fire is either.
+
+So gameplay implements `IPersistentState` in Core, and `PersistentObject` is the single adapter that
+speaks `ISaveable` on everyone's behalf. It also gives one entry per GameObject rather than per
+component: a door that is locked, burnable and interactive is one thing in the world and should be
+one thing in the file. An entry naming a component that has since been deleted is skipped rather
+than treated as an error, so dropping a behaviour does not invalidate saves that mention it.
+
+### 36. Timers persist as remaining, never as expiry
+
+`SpellCooldownTracker` stores absolute `readyAt` times against `Time.time`, which is correct at
+runtime and wrong on disk: `Time.time` restarts every session, so a saved expiry has either already
+passed or sits hours in the future. Cooldowns are written as seconds remaining and rebuilt against
+the new clock on load.
+
+Worth writing down because it is not specific to cooldowns. Every timer this project persists later
+- a buff, a respawn, a door that closes itself - has the same trap waiting.

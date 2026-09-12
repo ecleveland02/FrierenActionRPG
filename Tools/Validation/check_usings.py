@@ -40,6 +40,32 @@ EXTERNAL = {
     "InputSystem": "UnityEngine.InputSystem",
 }
 
+# Generic BCL types, checked only where a type argument follows, which is the one position the word
+# can only be the type. Their non-generic namesakes live in System.Collections, so the angle bracket
+# is what makes the check unambiguous.
+GENERIC = {
+    "List": "System.Collections.Generic",
+    "Dictionary": "System.Collections.Generic",
+    "HashSet": "System.Collections.Generic",
+    "Queue": "System.Collections.Generic",
+    "Stack": "System.Collections.Generic",
+    "SortedSet": "System.Collections.Generic",
+    "SortedDictionary": "System.Collections.Generic",
+    "KeyValuePair": "System.Collections.Generic",
+    "IList": "System.Collections.Generic",
+    "IDictionary": "System.Collections.Generic",
+    "ISet": "System.Collections.Generic",
+    "IReadOnlyList": "System.Collections.Generic",
+    "IReadOnlyCollection": "System.Collections.Generic",
+    "IReadOnlyDictionary": "System.Collections.Generic",
+    "ICollection": "System.Collections.Generic",
+    "IComparer": "System.Collections.Generic",
+    "IEqualityComparer": "System.Collections.Generic",
+    "Func": "System",
+    "Action": "System",
+    "Predicate": "System",
+}
+
 
 def strip(text):
     """Remove strings and comments, so a word in a doc comment is not mistaken for a type."""
@@ -107,6 +133,12 @@ def main():
                     continue
                 problems.append(
                     f"{path}: '{token}' lives in {sorted(homes)} and no using here reaches it")
+                continue
+
+            if token in GENERIC and GENERIC[token] not in visible:
+                # Not preceded by a dot: a fully qualified System.Func<> needs no using.
+                if re.search(r"(?<![.\w])" + re.escape(token) + r"\s*<", body):
+                    problems.append(f"{path}: '{token}<...>' needs 'using {GENERIC[token]};'")
                 continue
 
             if token in EXTERNAL and EXTERNAL[token] not in visible:

@@ -1,28 +1,31 @@
 using System;
-using Frieren.Core.Debugging;
-using Frieren.Core.Services;
-using Frieren.Save;
-using Frieren.Save.Serialization;
+using Frieren.Core.Persistence;
 using UnityEngine;
 
 namespace Frieren.Characters
 {
     /// <summary>
-    /// Persists a character's vitals across a save and load.
+    /// Persists a character's vitals and where it was standing.
     /// </summary>
     /// <remarks>
-    /// One component owns saving for the whole character rather than each vital implementing
-    /// <see cref="ISaveable"/> itself. That keeps health and mana as pure gameplay with no
-    /// knowledge of the save system, gives the character a single save key instead of one per
-    /// component, and means adding stamina later is a field in <see cref="VitalsState"/> rather
-    /// than another registration.
+    /// One component owns saving for the whole character rather than each vital doing it itself.
+    /// That keeps health and mana as pure gameplay with no knowledge of persistence, and means
+    /// adding stamina later is a field in <see cref="VitalsState"/> rather than another
+    /// registration.
     ///
-    /// <see cref="saveId"/> must be unique per character. That is fine for the player and for
-    /// hand-placed characters; the enemies arriving in Milestone 5 are spawned at runtime and will
-    /// need ids derived from their spawner, which is a problem to solve when there is a spawner.
+    /// It implements <see cref="IPersistentState"/> rather than <c>ISaveable</c>, and identity now
+    /// comes from <see cref="SceneObjectId"/> on the same object. That replaces the hand-typed save
+    /// key this component used to carry, and it is what finally answers the question left open when
+    /// it was written: enemies are spawned at runtime, so their ids have to come from their
+    /// spawner. A spawner knows which of its spawns is which; a prefab field cannot.
+    ///
+    /// Position is optional because it is not always wanted. Reloading should put the player back
+    /// where they were; an enemy is better placed by its spawner, so that it cannot be saved into
+    /// a wall that has since moved.
     /// </remarks>
+    [RequireComponent(typeof(CharacterHealth))]
     [DisallowMultipleComponent]
-    public sealed class CharacterPersistence : MonoBehaviour, ISaveable
+    public sealed class CharacterPersistence : MonoBehaviour, IPersistentState
     {
         [Serializable]
         private sealed class VitalsState
@@ -30,54 +33,46 @@ namespace Frieren.Characters
             public float health;
             public float mana;
             public bool alive = true;
+            public bool hasPosition;
+            public Vector3 position;
+            public float yaw;
         }
 
         [SerializeField]
-        [Tooltip("Unique save key for this character. Changing it after saves exist orphans their data.")]
-        private string saveId = "character.player";
+        [Tooltip("Save where this character was standing. On for the player; off for anything a spawner places.")]
+        private bool persistPosition = true;
 
         private CharacterHealth health;
         private CharacterMana mana;
-        private SaveService saveService;
+        private CharacterMotor motor;
 
-        public string SaveId => saveId;
+        public string StateKey => "vitals";
 
         private void Awake()
         {
             health = GetComponent<CharacterHealth>();
             mana = GetComponent<CharacterMana>();
+            motor = GetComponent<CharacterMotor>();
         }
 
-        private void Start()
+        public string CaptureState()
         {
-            // Registration happens in Start, not Awake: the character may be spawned before the
-            // services exist in an unusual load order, and SaveService restores late registrations
-            // itself, so arriving after a load is already handled.
-            if (!ServiceLocator.TryGet(out saveService))
-            {
-                GameLog.Warn(LogChannel.Save,
-                    $"{name}: no SaveService, so vitals will not persist. Is the Boot scene loaded?", this);
-                return;
-            }
-
-            saveService.Register(this);
-        }
-
-        private void OnDestroy() => saveService?.Unregister(this);
-
-        public SaveEntry Capture()
-        {
-            return SaveEntry.Create(saveId, new VitalsState
+            return JsonUtility.ToJson(new VitalsState
             {
                 health = health != null ? health.Current : 0f,
                 mana = mana != null ? mana.Current : 0f,
-                alive = health == null || health.IsAlive
+                alive = health == null || health.IsAlive,
+                hasPosition = persistPosition,
+                position = transform.position,
+                yaw = transform.eulerAngles.y,
             });
         }
 
-        public void Restore(SaveEntry entry)
+        public void RestoreState(string json)
         {
-            if (!entry.TryRead(out VitalsState state))
+            var state = JsonUtility.FromJson<VitalsState>(json);
+
+            if (state == null)
             {
                 return;
             }
@@ -92,8 +87,23 @@ namespace Frieren.Characters
                 mana.SetCurrent(state.mana);
             }
 
-            GameLog.Info(LogChannel.Save,
-                $"{name} restored: health {state.health:0.#}, mana {state.mana:0.#}, alive {state.alive}.", this);
+            if (!persistPosition || !state.hasPosition)
+            {
+                return;
+            }
+
+            var rotation = Quaternion.Euler(0f, state.yaw, 0f);
+
+            if (motor != null)
+            {
+                // Through the motor, not the transform: a CharacterController caches its own
+                // position and would snap straight back on the next move.
+                motor.Teleport(state.position, rotation);
+            }
+            else
+            {
+                transform.SetPositionAndRotation(state.position, rotation);
+            }
         }
     }
 }

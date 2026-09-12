@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Frieren.Characters;
 using Frieren.Characters.Animation;
 using Frieren.Core.Debugging;
+using Frieren.Core.Persistence;
 using UnityEngine;
 
 namespace Frieren.Magic
@@ -25,8 +27,15 @@ namespace Frieren.Magic
     [RequireComponent(typeof(CharacterMana))]
     [RequireComponent(typeof(CharacterActionLock))]
     [DisallowMultipleComponent]
-    public sealed class CharacterSpellcaster : MonoBehaviour
+    public sealed class CharacterSpellcaster : MonoBehaviour, IPersistentState
     {
+        [Serializable]
+        private sealed class CooldownState
+        {
+            public List<string> spellIds = new List<string>();
+            public List<float> remaining = new List<float>();
+        }
+
         [SerializeField]
         [Tooltip("Where casts originate and aim from. Falls back to the main camera, then to this transform.")]
         private Transform aimSource;
@@ -379,6 +388,51 @@ namespace Frieren.Magic
             GameLog.Info(LogChannel.Magic, $"{name} could not cast {(spell != null ? spell.Id : "nothing")}: {reason}.", this);
             CastRefused?.Invoke(spell, reason);
             return false;
+        }
+
+        public string StateKey => "cooldowns";
+
+        /// <summary>
+        /// Cooldowns are written as seconds remaining, never as the absolute time they expire.
+        /// <c>Time.time</c> restarts every session, so a saved expiry would either have already
+        /// passed or sit hours in the future.
+        /// </summary>
+        public string CaptureState()
+        {
+            var state = new CooldownState();
+            float now = Time.time;
+
+            foreach (string spellId in cooldowns.TrackedSpells)
+            {
+                float left = cooldowns.RemainingFor(spellId, now);
+
+                if (left > 0f)
+                {
+                    state.spellIds.Add(spellId);
+                    state.remaining.Add(left);
+                }
+            }
+
+            return JsonUtility.ToJson(state);
+        }
+
+        public void RestoreState(string json)
+        {
+            var state = JsonUtility.FromJson<CooldownState>(json);
+
+            if (state?.spellIds == null || state.remaining == null)
+            {
+                return;
+            }
+
+            cooldowns.Clear();
+            float now = Time.time;
+            int count = Mathf.Min(state.spellIds.Count, state.remaining.Count);
+
+            for (int i = 0; i < count; i++)
+            {
+                cooldowns.Begin(state.spellIds[i], now, state.remaining[i]);
+            }
         }
     }
 }

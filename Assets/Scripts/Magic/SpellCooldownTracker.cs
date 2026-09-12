@@ -56,6 +56,12 @@ namespace Frieren.Magic
             readyAt[spellId] = now + cooldown;
         }
 
+        /// <summary>
+        /// Spell ids with a cooldown recorded, ready or not. For persistence, which has to write
+        /// every entry rather than ask about one it already knows the name of.
+        /// </summary>
+        public IReadOnlyCollection<string> TrackedSpells => readyAt.Keys;
+
         public void Clear() => readyAt.Clear();
 
         public void Clear(string spellId)

@@ -1,6 +1,7 @@
 using System;
 using Frieren.Core.Debugging;
 using Frieren.Core.Magic;
+using Frieren.Core.Persistence;
 using UnityEngine;
 
 namespace Frieren.World
@@ -25,8 +26,17 @@ namespace Frieren.World
     /// enum makes that unrepresentable.
     /// </remarks>
     [DisallowMultipleComponent]
-    public sealed class WaterBasin : MonoBehaviour, IMagicReceiver
+    public sealed class WaterBasin : MonoBehaviour, IMagicReceiver, IPersistentState
     {
+        [System.Serializable]
+        private sealed class BasinSave
+        {
+            public int state;
+            public float water;
+            public float chill;
+            public float warmth;
+        }
+
         [Header("Filling")]
         [SerializeField]
         [Min(0.01f)]
@@ -177,6 +187,36 @@ namespace Frieren.World
             ApplyForm();
             GameLog.Info(LogChannel.Interaction, $"{name}: {previous} -> {next}.", this);
             StateChanged?.Invoke(previous, next);
+        }
+
+        public string StateKey => "basin";
+
+        public string CaptureState() => JsonUtility.ToJson(new BasinSave
+        {
+            state = (int)State,
+            water = water,
+            chill = chill,
+            warmth = warmth,
+        });
+
+        /// <summary>
+        /// Partial progress is kept as well as the state. A player who filled the trough halfway,
+        /// saved, and came back should not have to start the puzzle over.
+        /// </summary>
+        public void RestoreState(string json)
+        {
+            var saved = JsonUtility.FromJson<BasinSave>(json);
+
+            if (saved == null)
+            {
+                return;
+            }
+
+            water = saved.water;
+            chill = saved.chill;
+            warmth = saved.warmth;
+            State = (BasinState)saved.state;
+            ApplyForm();
         }
 
         private void ApplyForm()

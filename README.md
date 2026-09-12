@@ -16,7 +16,8 @@ and most environmental problems should have more than one solution.
 > placeholder capsule with camera, jump, dodge, interaction, health, mana, and a data-driven magic
 > system. Milestone 5 adds the first enemy - detection, chasing, a telegraphed swing, stagger and
 > death - and the remaining six spells, including Zoltraak and a channelled Barrier. It has not been
-> run in the editor yet. A follow-on pass adds placeholder combat feedback - a wind-up telegraph,
+> run in the editor yet. Milestone 6 makes the world remember what you did to it - a burnt crate
+> stays burnt, an opened door stays open, a dead enemy stays dead. A follow-on pass adds placeholder combat feedback - a wind-up telegraph,
 > spell beams, damage numbers, screen shake and hit-stop - so the loop can actually be judged.
 > See [docs/MILESTONES.md](docs/MILESTONES.md).
 
@@ -102,10 +103,11 @@ locator, the game state machine, the save system, jump timing, motor maths, came
 interaction scoring, the character resource pool, spell cooldowns, burn state, the damage barrier,
 the water basin, the lock and the time scale.
 
-**PlayMode** runs 48 more and takes about a minute: the enemy end to end (detection, chasing, the
+**PlayMode** runs 55 more and takes about a minute: the enemy end to end (detection, chasing, the
 wind-up landing no damage, escaping it, stagger, death), channelling and mana drain, regeneration
 delays, the barrier lapsing, levitation lifting the body, the trough draining, and a smoke test that
-boots the real project and checks all nine spells are wired up. Read failures top down: a smoke-test
+boots the real project and checks all nine spells are wired up, plus save-and-load round trips for
+every world object. Read failures top down: a smoke-test
 failure means the scene or asset YAML is wrong, and everything below it builds its own objects.
 
 ## Layout

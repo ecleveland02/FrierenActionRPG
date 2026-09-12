@@ -1,24 +1,43 @@
+using System;
 using System.Collections.Generic;
+using Frieren.Characters;
 using Frieren.Core.Debugging;
+using Frieren.Core.Persistence;
 using UnityEngine;
 
 namespace Frieren.Enemies
 {
     /// <summary>
-    /// Places enemies in a scene from a prefab, and puts them back when asked.
+    /// Places enemies in a scene from a prefab, names them so they can be saved, and remembers
+    /// which of them are already dead.
     /// </summary>
     /// <remarks>
     /// Mirrors <c>PlayerSpawner</c> for the same reason: one prefab stays the single definition of
-    /// what an enemy is, and scene copies cannot drift from it. It also gives combat a way to start
-    /// over during testing without reloading the scene, which matters a great deal when tuning how
-    /// hard something hits.
+    /// what an enemy is, and scene copies cannot drift from it.
     ///
-    /// Deliberately not a wave system, an encounter director or a pool. Those are worth building
-    /// when there is a reason to; this is the spawn step every one of them would need underneath.
+    /// It also settles the identity problem that <c>CharacterPersistence</c> flagged when it was
+    /// written and could not solve: a runtime-spawned object has no authored save id, and nothing
+    /// but its spawner knows which spawn it is. Each spawn is named "<this spawner's id>.<index>",
+    /// which is stable across sessions because it comes from the spawn point's position in the
+    /// list rather than from the order things happened to be created.
+    ///
+    /// Death is recorded by the spawner rather than on the enemy. Restoring a corpse means
+    /// restoring a body, an animation state and a disabled collider, all so the player can look at
+    /// something they already killed. Not spawning it is the same outcome for none of the work.
+    ///
+    /// Deliberately not a wave system, an encounter director or a pool. This is the spawn step
+    /// every one of those would need underneath.
     /// </remarks>
+    [RequireComponent(typeof(SceneObjectId))]
     [DisallowMultipleComponent]
-    public sealed class EnemySpawner : MonoBehaviour
+    public sealed class EnemySpawner : MonoBehaviour, IPersistentState
     {
+        [Serializable]
+        private sealed class SpawnerState
+        {
+            public List<int> defeated = new List<int>();
+        }
+
         [SerializeField] private GameObject enemyPrefab;
 
         [SerializeField]
@@ -28,8 +47,17 @@ namespace Frieren.Enemies
         [SerializeField] private bool spawnOnStart = true;
 
         private readonly List<GameObject> spawned = new List<GameObject>();
+        private readonly HashSet<int> defeated = new HashSet<int>();
+        private SceneObjectId objectId;
 
         public IReadOnlyList<GameObject> Spawned => spawned;
+
+        /// <summary>Spawn indices whose enemy has been killed and should not come back.</summary>
+        public IReadOnlyCollection<int> Defeated => defeated;
+
+        public string StateKey => "spawner";
+
+        private void Awake() => objectId = GetComponent<SceneObjectId>();
 
         private void Start()
         {
@@ -47,35 +75,63 @@ namespace Frieren.Enemies
                 return;
             }
 
-            if (spawnPoints.Count == 0)
-            {
-                SpawnAt(transform);
-                return;
-            }
+            int count = Mathf.Max(1, spawnPoints.Count);
 
-            for (int i = 0; i < spawnPoints.Count; i++)
+            for (int i = 0; i < count; i++)
             {
-                if (spawnPoints[i] != null)
+                if (defeated.Contains(i))
                 {
-                    SpawnAt(spawnPoints[i]);
+                    continue;
+                }
+
+                Transform point = spawnPoints.Count == 0 ? transform : spawnPoints[i];
+
+                if (point != null)
+                {
+                    SpawnAt(point, i);
                 }
             }
         }
 
-        public GameObject SpawnAt(Transform point)
+        public GameObject SpawnAt(Transform point, int index)
         {
             GameObject enemy = Instantiate(enemyPrefab, point.position, point.rotation);
-            enemy.name = $"{enemyPrefab.name}_{spawned.Count + 1}";
+            enemy.name = $"{enemyPrefab.name}_{index + 1}";
+
+            // Named between Awake and Start, so its own PersistentObject has an id by the time it
+            // registers. The index is a parameter rather than a captured loop variable, so each
+            // handler closes over its own copy.
+            if (enemy.TryGetComponent(out SceneObjectId spawnedId))
+            {
+                spawnedId.Assign($"{SpawnerId}.{index}");
+            }
+
+            if (enemy.TryGetComponent(out CharacterHealth health))
+            {
+                health.Died += _ => OnSpawnDefeated(index);
+            }
+
             spawned.Add(enemy);
             GameLog.Info(LogChannel.AI, $"Spawned {enemy.name} at {point.position}.", this);
             return enemy;
         }
 
+        private string SpawnerId => objectId != null && objectId.HasId ? objectId.Id : name;
+
+        private void OnSpawnDefeated(int index) => defeated.Add(index);
+
         /// <summary>
-        /// Removes every enemy this spawner made and spawns a fresh set. Not named Reset,
-        /// which Unity calls by itself from the component's context menu.
+        /// Removes every enemy this spawner made and spawns a fresh set, forgetting the dead. Not
+        /// named Reset, which Unity calls by itself from the component's context menu.
         /// </summary>
         public void Respawn()
+        {
+            Clear();
+            defeated.Clear();
+            SpawnAll();
+        }
+
+        private void Clear()
         {
             for (int i = 0; i < spawned.Count; i++)
             {
@@ -86,6 +142,33 @@ namespace Frieren.Enemies
             }
 
             spawned.Clear();
+        }
+
+        public string CaptureState()
+        {
+            var state = new SpawnerState();
+            state.defeated.AddRange(defeated);
+            return JsonUtility.ToJson(state);
+        }
+
+        public void RestoreState(string json)
+        {
+            var state = JsonUtility.FromJson<SpawnerState>(json);
+
+            if (state?.defeated == null)
+            {
+                return;
+            }
+
+            defeated.Clear();
+
+            for (int i = 0; i < state.defeated.Count; i++)
+            {
+                defeated.Add(state.defeated[i]);
+            }
+
+            // Loading mid-fight should not leave the enemies from before the load standing.
+            Clear();
             SpawnAll();
         }
 

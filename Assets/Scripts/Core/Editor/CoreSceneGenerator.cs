@@ -4,6 +4,7 @@ using Frieren.Characters;
 using Frieren.Characters.Animation;
 using Frieren.Core.Bootstrap;
 using Frieren.Core.Debugging;
+using Frieren.Core.Persistence;
 using Frieren.Core.Input;
 using Frieren.Core.Scenes;
 using Frieren.Magic;
@@ -73,6 +74,9 @@ namespace Frieren.Core.EditorTools
                 AssetDatabase.LoadAssetAtPath<CharacterStatsDefinition>(ProjectPaths.PlayerStats));
             root.AddComponent<CharacterHealth>();
             root.AddComponent<CharacterMana>();
+            SceneObjectId objectId = root.AddComponent<SceneObjectId>();
+            objectId.Assign("character.player");
+            root.AddComponent<PersistentObject>();
             root.AddComponent<CharacterPersistence>();
             root.AddComponent<CharacterVitalsReadout>();
             root.AddComponent<CharacterSpellcaster>();

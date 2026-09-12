@@ -1,6 +1,7 @@
 using System;
 using Frieren.Core.Debugging;
 using Frieren.Core.Magic;
+using Frieren.Core.Persistence;
 using UnityEngine;
 
 namespace Frieren.World
@@ -16,8 +17,16 @@ namespace Frieren.World
     /// answers rather than one scripted one.
     /// </remarks>
     [DisallowMultipleComponent]
-    public sealed class FlammableObject : MonoBehaviour, IMagicReceiver
+    public sealed class FlammableObject : MonoBehaviour, IMagicReceiver, IPersistentState
     {
+        [System.Serializable]
+        private sealed class BurnSave
+        {
+            public float heat;
+            public bool burning;
+            public bool consumed;
+        }
+
         [Header("Ignition")]
         [SerializeField]
         [Min(0.01f)]
@@ -147,6 +156,58 @@ namespace Frieren.World
             propertyBlock.SetColor(baseColorId, colour);
             propertyBlock.SetColor(colorId, colour);
             tintTarget.SetPropertyBlock(propertyBlock);
+        }
+
+        public string StateKey => "burn";
+
+        public string CaptureState() => JsonUtility.ToJson(new BurnSave
+        {
+            heat = state != null ? state.Heat : 0f,
+            burning = IsBurning,
+            consumed = IsConsumed,
+        });
+
+        /// <summary>
+        /// A crate that burned away stays burned away. Restoring mid-burn is deliberately coarse -
+        /// it comes back alight with a full duration rather than part-way through, because a
+        /// fraction of a burn is not worth a field and nobody can tell.
+        /// </summary>
+        public void RestoreState(string json)
+        {
+            var saved = JsonUtility.FromJson<BurnSave>(json);
+
+            if (saved == null || state == null)
+            {
+                return;
+            }
+
+            state.Reset();
+
+            if (saved.consumed)
+            {
+                state.AddHeat(float.MaxValue);
+                state.Tick(float.MaxValue);
+                ApplyTint();
+
+                if (disableWhenConsumed)
+                {
+                    gameObject.SetActive(false);
+                }
+
+                return;
+            }
+
+            if (saved.burning)
+            {
+                state.AddHeat(float.MaxValue);
+            }
+            else if (saved.heat > 0f)
+            {
+                state.AddHeat(saved.heat);
+            }
+
+            gameObject.SetActive(true);
+            ApplyTint();
         }
     }
 }
