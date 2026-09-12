@@ -27,7 +27,9 @@ player code in with it.
 | `Frieren.Data` | `Scripts/ScriptableObjects` | Base types for authored content. Depends on nothing, so everything can depend on it. |
 | `Frieren.Save` | `Scripts/Save` | Save file format, storage backends, `SaveService`. Deliberately knows nothing about scenes, input or gameplay. |
 | `Frieren.Characters` | `Scripts/Characters` | What any character needs, player or enemy: motor, action lock, animation abstraction, stats, health, mana, persistence. |
-| `Frieren.Player` | `Scripts/Player` | Player-specific intent only: locomotion, dodge, interaction probe, camera rig, spawner. |
+| `Frieren.Player` | `Scripts/Player` | Player-specific intent only: locomotion, dodge, interaction probe, camera rig, spawner, spell input. |
+| `Frieren.Magic` | `Scripts/Magic` | Spell definitions, effects, and the component that casts them. |
+| `Frieren.World` | `Scripts/World` | Objects magic acts on. Depends only on Core, never on Magic. |
 | `Frieren.Core` | `Scripts/Core` | Bootstrap, service registry, scene loading, game state, input, debug tooling. |
 | `Frieren.Core.Editor` | `Scripts/Core/Editor` | Editor-only: setup validation, asset creation, scene regeneration, menus. |
 | `Frieren.Tests.EditMode` | `Scripts/Tests/EditMode` | Edit-mode tests. |
@@ -195,14 +197,57 @@ gameplay, and makes adding stamina a field rather than another registration.
 `Awake` in edit mode, so an eagerly built pool would be unreachable from an edit-mode test, and a
 character assembled by a spawner may have its stats set after its components exist.
 
+## Magic (Milestone 4)
+
+```
+SpellDefinition (asset)                world object (asset-free)
+  cost, cast time, targeting                    |
+  effects: [ ... ]  ------------.               |
+                                 v              v
+CharacterSpellcaster --> SpellEffect.Apply --> MagicPulse --> IMagicReceiver
+  takes CharacterActionLock       |             (element +      FlammableObject
+  spends CharacterMana            |              magnitude)     LevitatableObject
+  resolves targeting -> SpellContext
+```
+
+**A spell is a list, not a class.** `SpellDefinition` holds cost, timing, targeting and an ordered
+list of `SpellEffect` assets. "Fire that also lights torches" is authored by adding an effect, not by
+writing a subclass. Effects are ScriptableObjects with no per-cast state, so one damage effect can be
+shared by six spells and tuned once.
+
+**World objects react to elements, never to spells.** This is the mechanism behind the project's
+central promise. A crate burns because it received enough `Heat`, not because it was hit by "Fire" -
+so a later explosion, a lava pool or a burning arrow lights that same crate with no change to the
+crate. Ask "was this Fire?" anywhere in a receiver and the design is already broken.
+
+`MagicElement`, `MagicPulse` and `IMagicReceiver` live in `Frieren.Core` for the same reason as
+`IInteractable`: `Frieren.Magic` and `Frieren.World` both need the contract and neither may depend on
+the other.
+
+**Damage and world effects are separate.** `DealDamageEffect` acts on characters,
+`MagicPulseEffect` acts on the world. Keeping them apart allows a spell that burns crates without
+hurting anyone, or a bolt that hurts without setting anything alight. Fire simply carries both.
+
+**Casting reuses the Milestone 2 lock and the Milestone 3 pool.** A cast holds
+`CharacterActionLock` for its duration, so locomotion stands down and a dodge cannot interrupt it -
+the same lock the dodge takes, which is why it was worth building with one claimant. Mana is spent
+when the cast *begins*: spending on release would let a player cancel a frame early and never pay.
+
+**Targeting resolves instantly.** A travelling bolt is presentation - a visual played along the
+resolved line - so adding one later changes when effects fire, not how targeting works.
+
+**Input stays in the player layer.** `CharacterSpellcaster.TryCast` reads no input;
+`PlayerSpellInput` calls it. An enemy in Milestone 5 casts the same spells through the same
+component with a behaviour tree driving it.
+
 ## Where the next milestones attach
 
 | Milestone | Attaches via |
 |---|---|
 | 3 - Character architecture | Done. The rigged character still needs to replace `PlaceholderCharacterAnimation` with `MecanimCharacterAnimation`. |
-| 4 - Magic framework | `SpellDefinition : IdentifiableScriptableObject` with a list of effect objects. Casting takes `CharacterActionLock` and pays through `CharacterMana.TrySpend`. Damage effects build a `DamageInfo`. Environmental interaction is an effect type, not a special case. |
+| 4 - Magic framework | Done, with three spells. The remaining five are new assets plus, where needed, new `SpellEffect` subclasses. |
 | 5 - Enemy | Reuses `CharacterMotor` driven by a navigation agent instead of input. Its own behaviour state machine, not `GameStateMachine`, which is for application modes. `PlayerDodge.IsInvulnerable` is already exposed for damage to read. |
-| 6 - Environmental interaction | Components responding to spell effect *types*. Separate from `IInteractable`: pressing a lever and burning a crate are different verbs with different rules. |
+| 6 - Environmental interaction | The contract landed early in Milestone 4. What remains is breadth: more receiver kinds (freezable water, repairable mechanisms, locks) and puzzles combining them. New receivers need no change to any spell. |
 | 7 - Vertical slice | `GameSceneDefinition` per area, added to `SceneCatalog` and Build Settings. `PlayerSpawner` handles arrival in each. |
 
 ## Conventions

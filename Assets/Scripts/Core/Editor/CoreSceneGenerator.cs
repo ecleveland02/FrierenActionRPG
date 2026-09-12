@@ -6,7 +6,9 @@ using Frieren.Core.Bootstrap;
 using Frieren.Core.Debugging;
 using Frieren.Core.Input;
 using Frieren.Core.Scenes;
+using Frieren.Magic;
 using Frieren.Player;
+using Frieren.World;
 using Frieren.Player.Cameras;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -73,6 +75,11 @@ namespace Frieren.Core.EditorTools
             root.AddComponent<CharacterMana>();
             root.AddComponent<CharacterPersistence>();
             root.AddComponent<CharacterVitalsReadout>();
+            root.AddComponent<CharacterSpellcaster>();
+
+            PlayerSpellInput spellInput = root.AddComponent<PlayerSpellInput>();
+            AssignReference(spellInput, "inputReader", reader);
+            AssignSpellList(spellInput);
 
             PlayerLocomotion locomotion = root.AddComponent<PlayerLocomotion>();
             PlayerDodge dodge = root.AddComponent<PlayerDodge>();
@@ -158,6 +165,12 @@ namespace Frieren.Core.EditorTools
             var probe = new GameObject("SaveProbe");
             probe.AddComponent<SaveProbe>();
 
+            int magicTargetLayer = ResolveLayer("MagicTarget");
+            CreateFlammable("Flammable_Crate_1", new Vector3(-4.5f, 0.5f, 4.5f), magicTargetLayer);
+            CreateFlammable("Flammable_Crate_2", new Vector3(-3f, 0.5f, 4.5f), magicTargetLayer);
+            CreateLevitatable("Levitatable_Block", new Vector3(4f, 0.5f, 6.5f), magicTargetLayer);
+            CreateTargetDummy("TargetDummy", new Vector3(0f, 1f, 7f), magicTargetLayer);
+
             OrbitCameraRig rig = null;
             UnityEngine.Camera camera = Object.FindFirstObjectByType<UnityEngine.Camera>();
 
@@ -181,6 +194,64 @@ namespace Frieren.Core.EditorTools
         }
 
         // -------------------------------------------------------------------- utils
+
+        private static void AssignSpellList(PlayerSpellInput spellInput)
+        {
+            var serialized = new SerializedObject(spellInput);
+            SerializedProperty spells = serialized.FindProperty("knownSpells");
+            spells.ClearArray();
+
+            string[] paths = { ProjectPaths.SpellArcaneBolt, ProjectPaths.SpellFire, ProjectPaths.SpellLevitate };
+
+            foreach (string path in paths)
+            {
+                var spell = AssetDatabase.LoadAssetAtPath<SpellDefinition>(path);
+
+                if (spell == null)
+                {
+                    Debug.LogWarning($"[Setup] Spell asset missing, not added to the player: {path}");
+                    continue;
+                }
+
+                spells.InsertArrayElementAtIndex(spells.arraySize);
+                spells.GetArrayElementAtIndex(spells.arraySize - 1).objectReferenceValue = spell;
+            }
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void CreateFlammable(string name, Vector3 position, int layer)
+        {
+            GameObject box = CreateBox(name, position, Vector3.one, layer);
+            box.tag = "MagicTarget";
+            FlammableObject flammable = box.AddComponent<FlammableObject>();
+            AssignReference(flammable, "tintTarget", box.GetComponent<Renderer>());
+        }
+
+        private static void CreateLevitatable(string name, Vector3 position, int layer)
+        {
+            GameObject box = CreateBox(name, position, new Vector3(1.6f, 1f, 1.6f), layer);
+            box.tag = "MagicTarget";
+            box.AddComponent<LevitatableObject>();
+        }
+
+        /// <summary>A character built from the Milestone 3 components, so damage spells have a subject.</summary>
+        private static void CreateTargetDummy(string name, Vector3 position, int layer)
+        {
+            GameObject box = CreateBox(name, position, new Vector3(1f, 2f, 1f), layer);
+            box.tag = "MagicTarget";
+
+            CharacterStats stats = box.AddComponent<CharacterStats>();
+            AssignReference(stats, "definition",
+                AssetDatabase.LoadAssetAtPath<CharacterStatsDefinition>(ProjectPaths.PlayerStats));
+            box.AddComponent<CharacterHealth>();
+            box.AddComponent<CharacterMana>();
+
+            CharacterVitalsReadout readout = box.AddComponent<CharacterVitalsReadout>();
+            var serialized = new SerializedObject(readout);
+            serialized.FindProperty("showKeys").boolValue = false;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
 
         private static GameObject CreateBox(string name, Vector3 position, Vector3 scale, int layer)
         {

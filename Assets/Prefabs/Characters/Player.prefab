@@ -21,6 +21,8 @@ GameObject:
   - component: {fileID: 142}
   - component: {fileID: 143}
   - component: {fileID: 144}
+  - component: {fileID: 150}
+  - component: {fileID: 151}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -383,3 +385,34 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   showKeys: 1
+--- !u!114 &150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8610472a21f9f117b3a1b39c799d4b4f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  aimSource: {fileID: 0}
+  castHeight: 1.4
+--- !u!114 &151
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c518dcedad8ebbd6c904d3b57957e68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  inputReader: {fileID: 11400000, guid: 4abd5fac414a09822d2bbf6488bd6377, type: 2}
+  knownSpells:
+  - {fileID: 11400000, guid: 30d2e9d55088031c40ca647b9069b12f, type: 2}
+  - {fileID: 11400000, guid: f704c53443fbd0505ee80d59b2389868, type: 2}
+  - {fileID: 11400000, guid: 6566dac43b3b4adf31177fc429a09724, type: 2}

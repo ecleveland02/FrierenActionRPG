@@ -7,9 +7,9 @@ Each milestone must produce something playable or testable, and be verified befo
 | 1 | Project foundation | **Complete**, opens and runs in the editor |
 | 2 | Placeholder third-person player | **Complete**, playable in the editor |
 | 3 | Modular character architecture | **Complete**, not yet run in the editor |
-| 4 | Data-driven magic framework + 8 prototype spells | Not started |
+| 4 | Data-driven magic framework + 3 spells | **Complete**, not yet run in the editor |
 | 5 | First enemy and basic combat | Not started |
-| 6 | Reusable environmental interaction systems | Not started |
+| 6 | Reusable environmental interaction systems | Contract landed in M4; breadth remaining |
 | 7 | Gray-box vertical slice | Not started |
 
 Outside the milestone sequence, a **Kael character spike** exists in its own prefab and scene, built
@@ -183,9 +183,61 @@ That last one is the milestone's real test: it proves stats, vitals and persiste
 
 ---
 
-**Next: Milestone 4 - the magic framework**
+---
 
-Scope: a data-driven spell system, and prototypes for the eight starting spells.
+## Milestone 4 - Magic framework (complete, 3 spells)
+
+**Delivered**
+
+- `MagicElement`, `MagicPulse`, `IMagicReceiver` in Core: the contract between spells and the world,
+  pulled forward from Milestone 6 so the environmental spells have something to act on.
+- `SpellDefinition`: cost, cast time, cooldown, targeting, range, and an ordered list of effects.
+- `SpellEffect` with two implementations: `DealDamageEffect` (characters) and `MagicPulseEffect`
+  (the world). A spell carries whichever it needs.
+- `CharacterSpellcaster`: takes the action lock, spends mana at cast start, resolves targeting,
+  applies effects, reports refusals with a reason.
+- `SpellCooldownTracker`, keyed by spell id so cooldowns can be saved later.
+- `PlayerSpellInput`: cast input and number-key selection, with an on-screen list.
+- `FlammableObject` (Heat lights it, Cold and Water put it out, it burns out and disables) and
+  `LevitatableObject` (Force lifts it, it holds, then sinks).
+- Three spells: Arcane Bolt, Fire, Levitation. Fire and Bolt share nothing but the effect types.
+- Scene props: two crates, a liftable block, and a target dummy built from the Milestone 3 components.
+- 23 new EditMode tests (153 total).
+
+**Known limitations**
+
+1. Not yet run in the editor.
+2. Five of the eight briefed spells are missing: Ice, Barrier, Water, Repair, Unlock. Ice and Water
+   need only assets, since `FlammableObject` already answers Cold and Water. Barrier, Repair and
+   Unlock need new effect types and new receivers.
+3. No VFX at all. A cast is a log line, a colour change and a moving block.
+4. Targeting is instant. No travelling projectile, no arc, no area preview.
+5. Casting cannot be interrupted by damage, because nothing yet interrupts anything.
+6. Cooldowns are not saved. `SpellCooldownTracker` is keyed by id so they can be, but
+   `CharacterPersistence` does not write them.
+7. Known spells are a list on the prefab. Spell discovery is a later milestone.
+8. `FlammableObject` and `LevitatableObject` do not persist. A burnt crate is unburnt after a load.
+
+**How to test it in the editor**
+
+Open `Boot`, press Play. A spell list appears under the vitals panel.
+
+1. `1`, `2`, `3` select Arcane Bolt, Fire, Levitation. Cast with left mouse.
+2. Aim at the tall dummy and cast Bolt. Its health drops; mana drops; the spell greys out briefly.
+3. Aim at a crate and cast Fire. It warms toward orange, catches, burns, then blackens and vanishes.
+   One Fire cast reaches both crates if you stand so they are within 2.5m of the impact.
+4. Aim at the block and cast Levitation. It rises and holds, then sinks. Cast again while it is up
+   to raise it further, then jump onto it.
+5. Cast until mana runs out: the console explains the refusal rather than nothing happening.
+
+Item 3 is the one that matters. The crate has no idea Fire exists - it reacts to Heat - so any later
+spell carrying Heat will light it with no change to the crate.
+
+---
+
+**Next: Milestone 5 - the first enemy**
+
+Scope: one enemy with detection, navigation, targeting, attack, damage, stagger and death.
 
 **A scope note worth raising before starting.** The plan has Milestone 4 build eight spells and
 Milestone 6 build the environmental interaction system those spells act on. For at least Fire, Ice,

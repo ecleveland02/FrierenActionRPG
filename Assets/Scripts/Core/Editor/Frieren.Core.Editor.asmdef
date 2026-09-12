@@ -5,6 +5,8 @@
         "Frieren.Core",
         "Frieren.Characters",
         "Frieren.Player",
+        "Frieren.Magic",
+        "Frieren.World",
         "Frieren.Data",
         "Frieren.Save",
         "Unity.InputSystem"

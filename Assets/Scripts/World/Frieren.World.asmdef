@@ -1,11 +1,8 @@
 {
-    "name": "Frieren.Player",
-    "rootNamespace": "Frieren.Player",
+    "name": "Frieren.World",
+    "rootNamespace": "Frieren.World",
     "references": [
-        "Frieren.Core",
-        "Frieren.Characters",
-        "Frieren.Magic",
-        "Unity.InputSystem"
+        "Frieren.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

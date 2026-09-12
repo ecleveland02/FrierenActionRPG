@@ -1,5 +1,6 @@
 using Frieren.Characters;
 using Frieren.Core.Debugging;
+using Frieren.Magic;
 using Frieren.Player.Cameras;
 using UnityEngine;
 
@@ -109,6 +110,14 @@ namespace Frieren.Player
             if (SpawnedPlayer.TryGetComponent(out PlayerLocomotion locomotion))
             {
                 locomotion.SetCameraReference(cameraRig.transform);
+            }
+
+            // Spells aim where the camera looks, not where the body faces. The character turns
+            // toward its movement, so body-relative aiming would make it impossible to cast at
+            // something while running past it.
+            if (SpawnedPlayer.TryGetComponent(out CharacterSpellcaster spellcaster))
+            {
+                spellcaster.SetAimSource(cameraRig.transform);
             }
         }
 
