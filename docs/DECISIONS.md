@@ -558,3 +558,35 @@ The wheel takes the pointer from the camera while it is open, via `OrbitCameraRi
 property is deliberately general - a menu will want the same thing - and it clears the pending delta
 rather than banking it, so the camera does not lurch by everything the player moved while it was
 suspended.
+
+
+---
+
+## Milestone 6.2
+
+### 40. A held slow is not a long dip
+
+Slowing time while the spell wheel is open looked like a two-line change through the existing
+`RequestDip`. It was not. A dip is an event with a duration that expires by itself; a hold lasts
+until someone lets go. Faking the second with the first means re-requesting every frame, fighting
+the dip's "a harder dip wins" rule, and leaving time slow for however many frames the last request
+had left on it.
+
+So the state has three inputs now: a base that game state owns, a dip that expires, and a hold that
+is released. The base multiplies - a pause always wins outright - while the dip and the hold take
+the stronger of the two rather than multiplying. Compounding them would mean a hit landing while the
+wheel is open produces a near-freeze that neither system asked for.
+
+### 41. The time hold is a single-holder claim, like the action lock
+
+`TryHold(owner, factor)` and `ReleaseHold(owner)`, refusing a second claimant, with the owner checked
+on release. Deliberately the same shape as `CharacterActionLock`, and for the same reason written
+there: if two systems both want time slowed at once, that is a design decision someone should make
+deliberately rather than something that falls out of whichever one asked last.
+
+The owner check on release is the part that matters in practice. A hold anyone can cancel is a hold
+that eventually leaves the game running at a third speed with nothing to point at - and unlike most
+bugs, that one is invisible in a log.
+
+`Bootstrapper` force-clears it when a scene starts loading, because a holder that is being destroyed
+cannot release anything.

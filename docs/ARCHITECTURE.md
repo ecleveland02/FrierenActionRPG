@@ -353,12 +353,19 @@ derived from outside - and even then it hands over information the caster alread
 check. No shake service, no time service, no flash shell - each is skipped. A presentation layer
 that throws when the thing it wanted to decorate is absent has the dependency backwards.
 
-**One writer for `Time.timeScale`.** Pause wants time stopped indefinitely; hit-stop wants it dipped
-for four frames. Both writing the property directly means a dip expiring after a pause began sets
-the scale back to 1 and unpauses the game - the same shape as the Milestone 1 pause defect.
-`TimeScaleService` multiplies a base scale owned by game state with a self-expiring dip, so the two
-cannot interact wrongly. The arithmetic is in `TimeScaleState`, plain C# with no Unity types, and
-tested - the alternative test would have to write the editor's real clock and could leave it at zero.
+**One writer for `Time.timeScale`, with three inputs.** `Scale = BaseScale * min(DipFactor,
+HoldFactor)`. The base is game state - 0 paused, 1 playing - and multiplies, so a pause always wins
+outright. The dip is hit-stop: an event with a duration that expires by itself. The hold is a
+sustained slow released by whoever claimed it, which is what the spell wheel uses.
+
+Each writing `Time.timeScale` directly would be a defect waiting to happen: a dip expiring after a
+pause began would set the scale back to 1 and unpause the game, the same shape as the Milestone 1
+pause bug. Dip and hold take the stronger of the two rather than multiplying, so a hit landing while
+the wheel is open does not compound into a near-freeze.
+
+The hold is a single-holder claim with a named owner, the same shape as `CharacterActionLock`. The
+arithmetic is in `TimeScaleState`, plain C# with no Unity types, and tested - the alternative test
+would have to write the editor's real clock and could leave it at zero.
 
 **The flash cannot tint the character.** `PlaceholderCharacterAnimation` already owns that renderer
 and rewrites it every frame from speed and grounding. So `CharacterFlash` builds a shell - a copy of

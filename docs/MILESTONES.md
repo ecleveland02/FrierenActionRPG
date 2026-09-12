@@ -13,6 +13,7 @@ Each milestone must produce something playable or testable, and be verified befo
 | 5.6 | Play-mode tests, so Milestones 5 and 5.5 can be verified by pressing Run | **Complete**, not yet run in the editor |
 | 6 | Persistence: the world remembers what you did to it | **Complete**, not yet run in the editor |
 | 6.1 | Block on right mouse, spells on a radial wheel | **Complete**, not yet run in the editor |
+| 6.2 | Time slows while the wheel is open | **Complete**, not yet run in the editor |
 | 7 | Gray-box vertical slice (absorbs the briefed M6 breadth) | Not started |
 
 Outside the milestone sequence, a **Kael character spike** exists in its own prefab and scene, built
@@ -662,20 +663,76 @@ shared. `PlayerSpawner` wires it the same way it already wires locomotion and th
   `OrbitCameraRig.LookEnabled`.
 - The permanent nine-line spell list is gone; `PlayerSpellInput` now shows one line, since the wheel
   is a better place to look.
-- 13 edit-mode tests for the wheel geometry and 12 play-mode tests for both features
-  (209 + 67 = 276 in total).
+- 13 edit-mode tests for the wheel geometry and 12 play-mode tests for both features.
 
 **Known limitations**
 
 1. Not run in the editor.
 2. The wheel is IMGUI, like the rest of the placeholder UI. It is legible, not pretty.
-3. Time does not slow while the wheel is open. `TimeScaleService` makes that a two-line change if it
-   turns out to be wanted, and it deliberately is not there yet - it changes the pace of every fight.
+3. Time does not slow while the wheel is open. *(Added in 6.2 below - and it was not the two-line
+   change this line claimed. See there.)*
 4. The number row still works with the wheel closed, which is a superset of what was asked for and
    costs nothing.
 5. Gamepad wheel selection points with the left stick, which is also the movement stick. Playable,
    but it means you cannot walk while choosing.
 6. Blocking has no visual of its own beyond the barrier shell and the vitals readout.
+
+---
+
+## Milestone 6.2 - Time slows while the wheel is open (complete, not yet run)
+
+**Build stamp: `m6.2 wheel slows time`.** Requested directly.
+
+**A correction first.** I said this was a two-line change through `TimeScaleService`. It was not, and
+the reason is worth recording: `RequestDip` is *self-expiring* by design, so faking a held slow with
+it would mean re-requesting every frame, fighting the dip's own "harder wins" rule, and leaving time
+slow for a few frames after release. A hold is a different shape of thing from a dip and needed its
+own factor.
+
+### What changed
+
+`TimeScaleState` now has three inputs instead of two:
+
+```
+Scale = BaseScale * min(DipFactor, HoldFactor)
+```
+
+- **Base** is game state. 0 while paused, 1 while playing. It *multiplies*, so a pause always wins
+  outright no matter what else is slowing time.
+- **Dip** is hit-stop. An event with a duration that expires by itself.
+- **Hold** is a state with no end time, released by whoever claimed it.
+
+Dip and hold take the **stronger of the two rather than multiplying**. Two slows that compound are
+hard to reason about, and multiplying would mean a hit landing while the wheel is open produces a
+0.25 x 0.12 near-freeze that nobody asked for.
+
+**The hold is a single-holder claim with a named owner**, the same shape as `CharacterActionLock` and
+for the same reason: two systems both wanting time slowed at once is a design decision somebody
+should make deliberately, not something that falls out of whichever asked last. The owner matters on
+release, because a hold anyone can cancel is a hold that eventually leaves the game running at a
+third speed with nothing to blame.
+
+`Bootstrapper` force-clears the hold when a scene starts loading. A slow held open while its owner is
+being destroyed has nothing left to release it, and the next scene would start slow with no
+explanation.
+
+**Delivered**
+
+- `TimeScaleState.SetHold` / `ClearHold`; `TimeScaleService.TryHold(owner, factor)`,
+  `ReleaseHold(owner)`, `ForceClearHold()`.
+- `SpellWheelInput.timeScaleWhileOpen`, default **0.25**, serialized on the prefab so it is tunable
+  without code. Set it to 1 to turn the slow off entirely.
+- 7 edit-mode tests for the new arithmetic and 6 play-mode tests for the claim and the wheel
+  (216 + 73 = 289 in total).
+
+**Known limitations**
+
+1. Not run in the editor.
+2. The slow snaps in and out rather than easing. Easing a value that changes how fast time passes is
+   fiddly, and at a quarter speed the snap is not very visible - but it is the obvious next polish.
+3. Camera shake still runs on the unscaled clock, so a shake during a wheel-slow plays at full speed.
+   That is arguably right - impact should stay sharp - but it is a choice, not an accident.
+4. 0.25 is a guess. It is one serialized field on the player prefab.
 
 ---
 

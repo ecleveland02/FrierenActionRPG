@@ -1,5 +1,7 @@
 using Frieren.Core.Debugging;
 using Frieren.Core.Input;
+using Frieren.Core.Services;
+using Frieren.Core.Timing;
 using Frieren.Magic;
 using Frieren.Player.Cameras;
 using UnityEngine;
@@ -23,6 +25,12 @@ namespace Frieren.Player
     /// <see cref="OrbitCameraRig.LookEnabled"/>. Aiming a wheel and turning the camera with the
     /// same mouse movement is not a thing that can be shared.
     ///
+    /// It also slows time while it is open, through <c>TimeScaleService</c>. That is what makes the
+    /// wheel usable mid-fight rather than a thing you only open when nothing is happening - which
+    /// would defeat the point of putting eight spells behind one button. It is a claim with an
+    /// owner, so the wheel releases its own slow and never anybody else's, and a missing time
+    /// service simply means the wheel opens at normal speed.
+    ///
     /// Nothing is committed until release. Sweeping across the wheel does not fire seven spell
     /// changes on the way to the one you meant, and returning to the dead zone in the middle falls
     /// back to what was already selected, so opening the wheel and letting go changes nothing.
@@ -44,6 +52,11 @@ namespace Frieren.Player
         [SerializeField]
         [Tooltip("How far the pointer can travel from the centre. Beyond this it simply clamps.")]
         private float pointerRange = 220f;
+
+        [SerializeField]
+        [Range(0.05f, 1f)]
+        [Tooltip("How slowly time runs while the wheel is open. 1 disables the slow entirely.")]
+        private float timeScaleWhileOpen = 0.25f;
 
         private PlayerSpellInput spells;
         private OrbitCameraRig cameraRig;
@@ -118,6 +131,11 @@ namespace Frieren.Player
                 cameraLookWasEnabled = cameraRig.LookEnabled;
                 cameraRig.LookEnabled = false;
             }
+
+            if (timeScaleWhileOpen < 1f && ServiceLocator.TryGet(out TimeScaleService time))
+            {
+                time.TryHold(this, timeScaleWhileOpen);
+            }
         }
 
         /// <summary>Closes without changing the selection.</summary>
@@ -134,6 +152,12 @@ namespace Frieren.Player
             if (cameraRig != null)
             {
                 cameraRig.LookEnabled = cameraLookWasEnabled;
+            }
+
+            // By owner, so closing this wheel cannot cancel a slow that belongs to something else.
+            if (ServiceLocator.TryGet(out TimeScaleService time))
+            {
+                time.ReleaseHold(this);
             }
         }
 

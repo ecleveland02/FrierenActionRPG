@@ -159,5 +159,72 @@ namespace Frieren.Tests.EditMode
         {
             Assert.IsFalse(state.Tick(100f));
         }
+
+        [Test]
+        public void AHoldSlowsTimeAndDoesNotExpire()
+        {
+            state.SetHold(0.25f);
+
+            Assert.AreEqual(0.25f, state.Scale, 0.0001f);
+            Assert.IsFalse(state.Tick(1000f), "A hold has no end time; only releasing it ends it.");
+            Assert.AreEqual(0.25f, state.Scale, 0.0001f);
+        }
+
+        [Test]
+        public void ClearingTheHoldRestoresFullSpeed()
+        {
+            state.SetHold(0.25f);
+            state.ClearHold();
+
+            Assert.AreEqual(1f, state.Scale, 0.0001f);
+            Assert.IsFalse(state.IsHolding);
+        }
+
+        [Test]
+        public void AHoldAndADipTakeTheStrongerRatherThanCompounding()
+        {
+            state.SetHold(0.25f);
+            state.RequestDip(0.5f, 1f);
+
+            Assert.AreEqual(0.25f, state.Scale, 0.0001f,
+                "Two slows must not multiply into a near-freeze.");
+
+            state.RequestDip(0.1f, 1f);
+
+            Assert.AreEqual(0.1f, state.Scale, 0.0001f, "The harder of the two wins.");
+        }
+
+        [Test]
+        public void ADipExpiringUnderAHoldLeavesTheHoldRunning()
+        {
+            state.SetHold(0.3f);
+            state.RequestDip(0.05f, 1f);
+            state.Tick(2f);
+
+            Assert.AreEqual(0.3f, state.Scale, 0.0001f);
+            Assert.IsTrue(state.IsHolding);
+        }
+
+        [Test]
+        public void PausingBeatsAHold()
+        {
+            state.SetHold(0.25f);
+            state.BaseScale = 0f;
+
+            Assert.AreEqual(0f, state.Scale, 0.0001f, "The base multiplies, so a pause always wins.");
+
+            state.BaseScale = 1f;
+
+            Assert.AreEqual(0.25f, state.Scale, 0.0001f, "And unpausing gives the hold back.");
+        }
+
+        [TestCase(-1f, 0f)]
+        [TestCase(3f, 1f)]
+        public void HoldFactorsAreClamped(float requested, float expected)
+        {
+            state.SetHold(requested);
+
+            Assert.AreEqual(expected, state.HoldFactor, 0.0001f);
+        }
     }
 }

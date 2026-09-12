@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Frieren.Characters;
 using Frieren.Core;
 using Frieren.Core.Magic;
+using Frieren.Core.Services;
+using Frieren.Core.Timing;
 using Frieren.Magic;
 using Frieren.Player;
 using Frieren.Player.Cameras;
@@ -251,6 +253,58 @@ namespace Frieren.Tests.PlayMode
             yield return null;
 
             Assert.IsTrue(rig.LookEnabled, "A component switched off mid-wheel must not strand the camera.");
+        }
+
+        [UnityTest]
+        public IEnumerator TheWheelSlowsTimeWhileItIsOpen()
+        {
+            SpawnPlayer(spellCount: 4);
+            var time = new TimeScaleService();
+            ServiceLocator.Register(time);
+            yield return null;
+
+            Assert.AreEqual(1f, Time.timeScale, 0.001f);
+
+            wheel.Open();
+
+            Assert.Less(Time.timeScale, 0.9f, "Choosing a spell mid-fight is the whole point of the slow.");
+            Assert.AreSame(wheel, time.HoldOwner);
+
+            wheel.CloseAndCommit();
+
+            Assert.AreEqual(1f, Time.timeScale, 0.001f, "Committing must give time back.");
+            Assert.IsNull(time.HoldOwner);
+        }
+
+        [UnityTest]
+        public IEnumerator DisablingTheWheelMidOpenGivesTimeBack()
+        {
+            SpawnPlayer(spellCount: 4);
+            var time = new TimeScaleService();
+            ServiceLocator.Register(time);
+            yield return null;
+
+            wheel.Open();
+            Assert.Less(Time.timeScale, 0.9f);
+
+            wheel.enabled = false;
+            yield return null;
+
+            Assert.AreEqual(1f, Time.timeScale, 0.001f,
+                "A component switched off mid-wheel must not leave the game running slowly forever.");
+        }
+
+        [UnityTest]
+        public IEnumerator TheWheelOpensFineWithNoTimeService()
+        {
+            SpawnPlayer(spellCount: 4);
+            yield return null;
+
+            // Nothing registered: the slow is optional, like every other service this layer uses.
+            wheel.Open();
+
+            Assert.IsTrue(wheel.IsOpen);
+            Assert.AreEqual(1f, Time.timeScale, 0.001f);
         }
 
         [UnityTest]

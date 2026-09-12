@@ -596,3 +596,4 @@ MonoBehaviour:
   deadZone: 40
   radius: 150
   pointerRange: 220
+  timeScaleWhileOpen: 0.25

@@ -181,8 +181,14 @@ namespace Frieren.Core.Bootstrap
             stateMachine.Register(GameStateId.MainMenu, new DelegateGameState(
                 onEnter: EnableUIInput));
 
+            // A slow held open when a scene starts unloading has nothing left to release it, and
+            // the next scene would start at a third speed with nothing to blame.
             stateMachine.Register(GameStateId.Loading, new DelegateGameState(
-                onEnter: DisableInput));
+                onEnter: () =>
+                {
+                    timeScale.ForceClearHold();
+                    DisableInput();
+                }));
 
             stateMachine.Register(GameStateId.Playing, new DelegateGameState(
                 onEnter: () =>

@@ -95,6 +95,54 @@ namespace Frieren.Tests.PlayMode
                 "And unpausing must return to full speed, not to the dipped speed.");
         }
 
+        [UnityTest]
+        public IEnumerator AHoldSlowsTheRealTimeScaleUntilItsOwnerReleases()
+        {
+            var owner = new object();
+
+            Assert.IsTrue(service.TryHold(owner, 0.25f));
+            Assert.AreEqual(0.25f, Time.timeScale, 0.001f);
+
+            yield return WaitForRealtime(0.2f);
+            service.Tick();
+
+            Assert.AreEqual(0.25f, Time.timeScale, 0.001f, "A hold does not expire on its own.");
+
+            Assert.IsTrue(service.ReleaseHold(owner));
+            Assert.AreEqual(1f, Time.timeScale, 0.001f);
+        }
+
+        [UnityTest]
+        public IEnumerator OnlyTheOwnerCanReleaseAHold()
+        {
+            var owner = new object();
+            var someoneElse = new object();
+
+            service.TryHold(owner, 0.3f);
+
+            Assert.IsFalse(service.ReleaseHold(someoneElse));
+            Assert.AreEqual(0.3f, Time.timeScale, 0.001f,
+                "Anyone being able to cancel a hold is how time ends up stuck at a third speed.");
+
+            Assert.IsFalse(service.TryHold(someoneElse, 0.9f), "A second claimant is refused.");
+            Assert.AreEqual(0.3f, Time.timeScale, 0.001f);
+
+            service.ReleaseHold(owner);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator ForceClearHoldRecoversFromALostOwner()
+        {
+            service.TryHold(new object(), 0.2f);
+            service.ForceClearHold();
+
+            Assert.AreEqual(1f, Time.timeScale, 0.001f);
+            Assert.IsTrue(service.TryHold(new object(), 0.5f), "The claim is free again.");
+
+            yield return null;
+        }
+
         /// <summary>Waits on the unscaled clock, since these tests deliberately slow the scaled one.</summary>
         private static IEnumerator WaitForRealtime(float seconds)
         {
