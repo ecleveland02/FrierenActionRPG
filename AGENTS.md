@@ -18,21 +18,21 @@ and quests are authored content, never hardcoded branches.
 
 | Milestone | Status |
 |---|---|
-| 1 - Foundation: bootstrap, scenes, save, input, debug | Compiles and boots in the editor, 0 errors |
-| 2 - Placeholder third-person player | Compiles; gameplay not yet exercised |
-| 3 - Modular character architecture | Not started |
+| 1 - Foundation: bootstrap, scenes, save, input, debug | Verified in the editor |
+| 2 - Placeholder third-person player | Verified in the editor, character is playable |
+| 3 - Modular character architecture | Written, not yet run in the editor |
 | 4-7 | Not started, see `docs/MILESTONES.md` |
 
-Milestones 1 and 2 were authored with no Unity installed, so nothing was compiled while it was
-written. That has now changed: as of the first editor session on Unity 6000.0 (Windows), **all six
-assemblies compile and the game boots with zero errors and zero warnings.** Confirmed working at
-runtime: `Bootstrapper`, `ServiceLocator`, `GameStateMachine`, `SaveService`, `DebugOverlay`, the
-hand-authored scenes and ScriptableObject assets, and every `.meta` GUID.
+Milestones 1 and 2 were authored with no Unity installed, and have since been run. The project
+compiles with zero errors, boots, spawns the player, and the character is controllable with a
+following camera. Pause works and the save probe round-trips.
 
-So compile-level API errors are largely ruled out. What is **still unexercised** is everything that
-needs the player to actually be in the world: scene transitions, the save round-trip, movement,
-camera, jump, dodge and interaction. Runtime defects there - wrong parameter *values*, inverted
-signs, event subscriptions that never fire - remain likely, and finding them is high-value work.
+Running it found three defects that static analysis had missed, which is worth knowing before
+trusting any similar reasoning: a scene guard that suppressed the first-scene load, a pause that
+could not be released because the state change ran inside an Input System callback, and a mouse
+look delta that was summed when it should have been assigned. **Anything not actually exercised in
+the editor should still be treated as unverified**, including jump, dodge, interaction and scene
+transitions.
 
 ## Hard rules
 
@@ -63,9 +63,13 @@ reverse one; argue for the change instead.
    shadowing it breaks the namespace with a CS0118 that names the wrong cause.
 9. **The Input System package only.** No `UnityEngine.Input`. Input reaches gameplay through the
    `InputReader` ScriptableObject, not the generated C# wrapper.
-10. **Logic worth testing goes in a plain class.** MonoBehaviours cannot be unit-tested meaningfully.
-    `JumpGate`, `OrbitCameraSolver`, `InteractionSelector` and `MotorMath` exist because their logic
-    was extracted out of components.
+10. **Vitals are told their maximum by `CharacterStats`, never by a serialized field.** Two places
+    to set a maximum is one too many, and the one that loses is the one someone forgot to update.
+11. **Death is an event.** `CharacterHealth` reports that health hit zero; it does not decide what
+    happens next. The player and an enemy want opposite things there.
+12. **Logic worth testing goes in a plain class.** MonoBehaviours cannot be unit-tested meaningfully.
+    `JumpGate`, `OrbitCameraSolver`, `InteractionSelector`, `MotorMath` and `ResourcePool` exist
+    because their logic was extracted out of components.
 
 ## Layout
 
@@ -75,7 +79,7 @@ Assets/Scripts/
   Save/               Frieren.Save        save format, storage, service     (no deps)
   Core/               Frieren.Core        bootstrap, services, scenes, state, input, debug
   Core/Editor/        Frieren.Core.Editor setup validation, asset + scene generation, menus
-  Characters/         Frieren.Characters  motor, action lock, animation      (no deps)
+  Characters/         Frieren.Characters  motor, action lock, animation, stats, vitals
   Player/             Frieren.Player      locomotion, dodge, interactor, camera, spawner
   Tests/EditMode/     Frieren.Tests.EditMode
   Combat/ Magic/ Enemies/ Inventory/ Equipment/ Quests/ Dialogue/   empty, later milestones
@@ -98,7 +102,7 @@ Match the surrounding style. It is consistent on purpose.
 
 ## Verifying a change
 
-- `Window > General > Test Runner > EditMode > Run All`. 97 tests, no scene or disk needed.
+- `Window > General > Test Runner > EditMode > Run All`. 130 tests, no scene or disk needed.
 - `F7` opens the Boot scene; press Play.
 - Compile errors block Play mode entirely.
 

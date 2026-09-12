@@ -12,9 +12,10 @@ The design principle everything else serves: **magic is a tool, not merely a wea
 expected to interact with the world - burning, freezing, lifting, flooding, repairing, unlocking -
 and most environmental problems should have more than one solution.
 
-> Status: **Milestones 1-2 complete, neither verified in the editor.** There is a controllable
-> placeholder capsule with a camera, jump, dodge and interaction. There is no combat and no magic
-> yet. See [docs/MILESTONES.md](docs/MILESTONES.md).
+> Status: **Milestones 1-3 complete.** 1 and 2 are confirmed in the editor: a controllable
+> placeholder capsule with a camera, jump, dodge and interaction. Milestone 3 adds stats, health and
+> mana and has not been run yet. There is no combat and no magic.
+> See [docs/MILESTONES.md](docs/MILESTONES.md).
 
 ---
 
@@ -65,7 +66,8 @@ Press Play from `Boot.unity`. Boot loads `TestScene` additively and hands contro
 | Interact | `E` | X / square |
 | Pause | `Esc` | Start |
 
-Debug keys: `F1` overlay, `F5` quick save, `F6` change the `SaveProbe` counter, `F9` quick load.
+Debug keys: `F1` overlay, `F2` damage 15, `F3` heal or revive, `F4` spend 15 mana, `F5` quick save,
+`F6` change the `SaveProbe` counter, `F9` quick load.
 
 **Movement checks, in the order worth doing them:** the capsule spawns and the camera follows;
 movement is camera-relative; walking off the platform and jumping a frame late still jumps (coyote
@@ -82,9 +84,9 @@ shows the JSON that was written.
 pulls the Boot scene in behind it so services exist, and suppresses the first-scene load so the
 scene under test is not immediately replaced.
 
-**Automated tests:** `Window > General > Test Runner > EditMode > Run All`. 97 tests cover the service
-locator, the game state machine, the save system, jump timing, motor maths, camera orbit maths and
-interaction scoring. They do not touch the disk and need no scene.
+**Automated tests:** `Window > General > Test Runner > EditMode > Run All`. 130 tests cover the service
+locator, the game state machine, the save system, jump timing, motor maths, camera orbit maths,
+interaction scoring and the character resource pool. They do not touch the disk and need no scene.
 
 ## Layout
 
@@ -97,7 +99,7 @@ Assets/
   Settings/Input/ FrierenControls.inputactions
   Scripts/
     Core/         Bootstrap, Services, Scenes, StateMachine, Input, Interaction, Debugging, Editor
-    Characters/   Motor, action lock, animation abstraction - shared by player and enemies
+    Characters/   Motor, action lock, animation, stats, health, mana - shared by player and enemies
     Player/       Locomotion, dodge, interaction probe, camera rig, spawner
     Save/         Save service, storage backends, file format
     ScriptableObjects/  Shared base types for authored content

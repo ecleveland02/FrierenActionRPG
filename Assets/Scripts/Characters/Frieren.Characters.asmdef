@@ -1,7 +1,12 @@
 {
     "name": "Frieren.Characters",
     "rootNamespace": "Frieren.Characters",
-    "references": [],
+    "references": [
+        "Frieren.Core",
+        "Frieren.Data",
+        "Frieren.Save",
+        "Unity.InputSystem"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
