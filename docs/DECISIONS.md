@@ -414,3 +414,48 @@ Placeholder feedback is not art. It is the instrumentation that makes the fun qu
 all, and it is cheap - primitives, `LineRenderer`, `MaterialPropertyBlock` and IMGUI, no assets and
 no packages. It also turned out to be a diagnostic: the telegraph reports whether the brain reached
 its Attack state, which separates a perception bug from a melee-timing one without reading a log.
+
+
+---
+
+## Milestone 5.6
+
+### 30. Two test assemblies, split by what a test needs
+
+Edit mode takes decisions that resolve in one call; play mode takes anything that needs a frame to
+pass. The split is not about coverage taste - it is that edit-mode tests cannot advance time, and
+for two milestones running every limitation written down had the same wording: "needs a running
+clock, so it belongs in a play-mode test once one is worth setting up." It became worth setting up
+when 196 tests existed and none of them had ever seen the enemy exist.
+
+The real argument is not coverage. It is that verifying a milestone meant a six-step manual
+checklist ending in "and try to remember whether Ice took one cast or two". A Run button is a better
+instrument, and it belongs to whoever is at the keyboard rather than to me.
+
+### 31. Test fixtures are built from code, and assembled inactive
+
+Instantiating `Player.prefab` in a test would break whenever the prefab changed and would be testing
+the YAML rather than the behaviour. The YAML has its own checker and its own smoke test; everything
+else builds what it needs from scratch.
+
+The inactive part is not style. `CharacterStats.Awake` logs an error when it has no definition yet,
+and a logged error fails a Unity test - so adding components to a live GameObject collapses the
+whole fixture for a reason unrelated to what is being tested. `FlammableObject` is worse: it reads
+its thresholds once in `Awake` to build a `BurnState`, so configuring it afterwards leaves a test
+quietly measuring the defaults while claiming to measure something else.
+
+Private serialized fields are reached by reflection through `TestFields`, which throws on a
+misspelled name for exactly that reason. A silent no-op is the worst outcome available: a green test
+that checks nothing.
+
+### 32. One fixture loads the real scene on purpose
+
+`BootSceneSmokePlayModeTests` breaks every rule above - it boots the actual project - because it is
+the only automated check that the hand-authored YAML works. `check_unity_yaml.py` proves a GUID
+resolves and a component belongs to the GameObject that lists it. Neither it nor the C# compiler can
+say whether `castMode: 1`, typed by hand into an asset, landed in the field someone meant. Only
+Unity can, and the cost of it not having is a spell that casts and silently does nothing.
+
+So it asserts content, not just existence: nine spells, unique ids, every one with a non-empty effect
+list, Zoltraak a ray, Barrier channelled and draining. And that the door is both lockable and
+burnable, which is the multiple-solutions pillar reduced to a single assertion.

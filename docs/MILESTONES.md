@@ -10,6 +10,7 @@ Each milestone must produce something playable or testable, and be verified befo
 | 4 | Data-driven magic framework + 3 spells | **Complete**, confirmed in the editor |
 | 5 | First enemy and basic combat, plus the remaining spells | **Complete**, not yet run in the editor |
 | 5.5 | Combat feel: placeholder feedback so the loop can be judged | **Complete**, not yet run in the editor |
+| 5.6 | Play-mode tests, so Milestones 5 and 5.5 can be verified by pressing Run | **Complete**, not yet run in the editor |
 | 6 | Reusable environmental interaction systems | Contract landed in M4; three more receivers landed in M5; breadth remaining |
 | 7 | Gray-box vertical slice | Not started |
 
@@ -444,6 +445,91 @@ Everything in the Milestone 5 list, plus:
 4. **Pause during an impact.** Land a hit and press `Esc` inside the hit-stop. It should pause, and
    unpausing should return to full speed - not to the dipped speed, and not stay frozen. That is
    the interaction `TimeScaleState` exists to make impossible to get wrong.
+
+---
+
+## Milestone 5.6 - Play-mode tests (complete, not yet run)
+
+**Build stamp: `m5.6 play-mode tests`.**
+
+Not in the plan either, and it exists because of a pattern rather than a feature. Every limitation
+written for the last two milestones has the same shape: *"needs a running clock, so it belongs in a
+play-mode test once one is worth setting up."* Channelling. Regeneration. The barrier lapse.
+`EnemyBrain` in its entirety. Levitation actually lifting the motor. There were 196 tests and not
+one of them had ever seen the enemy exist.
+
+That gap is not really about coverage. It is that verifying two milestones meant walking a six-step
+manual checklist and remembering whether Ice took one cast or two. This turns that into a Run button.
+
+### Architecture
+
+**`Frieren.Tests.PlayMode`**, a second test assembly with `includePlatforms: []` and the same
+`UNITY_INCLUDE_TESTS` constraint as the edit-mode one. Edit mode keeps what it is good at - decisions
+that resolve in a single call - and play mode takes everything that needs a frame to pass.
+
+**Fixtures are built from code, not from the project's prefabs.** A test that instantiated
+`Player.prefab` would break every time the prefab changed and would be testing YAML rather than
+behaviour. `TestWorld` assembles characters, enemies, spells and effects from scratch.
+
+**Objects are assembled inactive and activated last.** This is not a style choice: adding
+`CharacterStats` to a live GameObject fires its `Awake` before a definition is assigned, which logs
+an error, and a logged error fails a Unity test. Same for `FlammableObject`, which reads its
+thresholds once in `Awake` to build a `BurnState` - configure it afterwards and the test silently
+measures the defaults.
+
+**Private serialized fields are set by reflection, through `TestFields`.** Public setters on every
+tuning value would be a worse codebase in exchange for easier tests. The one rule that matters is
+that a misspelled field name *throws* - a silent no-op would leave a test passing against a default
+while claiming to test something else.
+
+**Waits are bounded conditions, never fixed frame counts.** A test that waits exactly 40 frames for
+a 0.55 second wind-up fails on a slow machine and proves nothing on a fast one.
+
+**Delivered - 48 tests (244 in total with edit mode)**
+
+| Fixture | Tests | Covers |
+|---|---|---|
+| `EnemyBehaviourPlayModeTests` | 14 | Detection by range and by facing, chasing, stopping in reach, the wind-up landing no damage, escaping during the wind-up, stagger aborting a swing, stun-lock resistance, death releasing the lock, being shot from behind. |
+| `SpellcastingPlayModeTests` | 9 | Mana spent once, refusal with a reason, channel drain, release, a release during the cast time, running dry, the action lock returned, cooldowns, and a self-cast reaching *every* receiver. |
+| `VitalsPlayModeTests` | 8 | Health and mana regeneration delays, damage restarting the delay, the barrier lapsing and being held, absorbing a real hit, and levitation actually lifting the body and setting it down. |
+| `WorldReceiverPlayModeTests` | 8 | The trough draining if you dawdle, ice not melting, a repair coming apart when released early, a mended pillar staying mended, a crate burning out, weak heat cooling off. |
+| `TimeScalePlayModeTests` | 4 | A dip against the real clock, a dip not stretching its own expiry, and the two pause interactions the split exists to prevent. |
+| `BootSceneSmokePlayModeTests` | 5 | Loads the real `Boot` scene and asserts the project actually works. |
+
+**The smoke test is the one to read.** It is the only automated check that the hand-authored YAML
+loads at all. `check_unity_yaml.py` catches broken references; only Unity can say whether a
+hand-written enum index landed in the field it was meant for. So it asserts that all nine spells are
+present, unique, and each has a non-empty effect list; that Zoltraak is a ray and not self-cast;
+that Barrier is channelled and drains mana; that the enemy spawned with its archetype; that the time
+and shake services registered; and that the door is both lockable and burnable, because that
+particular pairing is the design pillar in one assertion.
+
+**Known limitations**
+
+1. **These have not been run either.** I cannot press Run. A broken test at least fails loudly at a
+   line number, which is a much better failure than a silent gameplay bug - but budget for a couple
+   of them being wrong about a timing constant rather than about the code.
+2. `BootSceneSmokePlayModeTests` is the riskiest fixture: it loads a real scene and has to clean up
+   `Bootstrapper`, which survives scene loads by design. If it proves flaky in a way the others are
+   not, disable that one file - nothing else loads a scene.
+3. Nothing covers the presentation layer. It has no assertable output; a flash either looks right or
+   it does not.
+4. Nothing covers input. `InputReader` needs a device, which needs the Input System's own test
+   fixtures.
+5. Nothing covers saving and loading a live character, which is the gap Milestone 6 should close.
+6. Timing constants in the tests are tied to the current tuning. Change the wind-up to 0.2s and
+   `TheWindUpHappensBeforeAnyDamage` still passes, but change the stagger cooldown to 3s and
+   `RepeatedHitsCannotLockItInPlace` starts failing. That is arguably correct - a tuning change that
+   breaks a stated guarantee should say so - but it is worth knowing before touching numbers.
+
+**How to run them**
+
+`Window > General > Test Runner > PlayMode > Run All`. It enters play mode by itself and takes
+roughly a minute. EditMode still runs instantly and needs no scene.
+
+Read the failures top down. A failure in `BootSceneSmokePlayModeTests` means the YAML is wrong -
+fix that first, because every other fixture builds its own objects and will not be affected. A
+failure anywhere else is code.
 
 ---
 

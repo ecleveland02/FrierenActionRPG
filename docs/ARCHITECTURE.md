@@ -19,6 +19,7 @@ Frieren.Player        -> Core, Characters, Magic, Data
 Frieren.Presentation  -> Core, Characters, Magic, Enemies, Data
 Frieren.Core.Editor   -> everything above
 Frieren.Tests.EditMode-> everything above
+Frieren.Tests.PlayMode-> everything above
 ```
 
 The direction is enforced by the compiler. `Frieren.Enemies` and `Frieren.Player` are siblings that
@@ -41,7 +42,8 @@ inheritance chain crossing an unreferenced assembly is a CS0012 waiting to happe
 | `Frieren.Presentation` | `Scripts/Presentation` | Reacts to gameplay and is read by none of it. Flashes, telegraphs, beams, numbers. |
 | `Frieren.Core` | `Scripts/Core` | Bootstrap, service registry, scene loading, game state, input, debug tooling. |
 | `Frieren.Core.Editor` | `Scripts/Core/Editor` | Editor-only: setup validation, asset creation, scene regeneration, menus. |
-| `Frieren.Tests.EditMode` | `Scripts/Tests/EditMode` | Edit-mode tests. |
+| `Frieren.Tests.EditMode` | `Scripts/Tests/EditMode` | Decisions that resolve in one call. Instant, no scene. |
+| `Frieren.Tests.PlayMode` | `Scripts/Tests/PlayMode` | Anything needing a frame to pass: the enemy, channelling, regeneration, the real scene. |
 
 Remaining gameplay assemblies (`Frieren.Combat`, `Frieren.Quests`, ...) get their
 own asmdefs as those folders gain code. They should depend on `Frieren.Core` and `Frieren.Data`, and on each
@@ -362,6 +364,37 @@ tested - the alternative test would have to write the editor's real clock and co
 and rewrites it every frame from speed and grounding. So `CharacterFlash` builds a shell - a copy of
 the mesh, scaled a few percent up, disabled until wanted - which nothing contends for and which
 reads as an aura rather than as the character changing colour.
+
+## Testing (Milestone 5.6)
+
+Two assemblies, split by what a test needs rather than by what it covers.
+
+**Edit mode is for decisions.** Anything that resolves inside a single call: `BurnState.AddHeat`,
+`TimeScaleState.RequestDip`, `LockedObject.ReceiveMagic`, the resource pool, the cooldown tracker.
+These run instantly, need no scene, and are the reason so much logic in this project is extracted
+into plain C# in the first place - `JumpGate`, `MotorMath`, `OrbitCameraSolver`,
+`InteractionSelector`, `SpellCooldownTracker`, `TimeScaleState`. Extracting the decision out of the
+MonoBehaviour is what makes it cheap to check.
+
+**Play mode is for everything that takes time.** A wind-up, a regeneration delay, a barrier lapse, a
+character actually rising off the ground. No amount of plain-C# extraction covers "the enemy walked
+over and hit me", so that lives here.
+
+Three rules the play-mode fixtures follow, each of which exists because ignoring it produces a test
+that lies:
+
+- **Build from code, not from prefabs.** A test that instantiates `Player.prefab` breaks whenever
+  the prefab changes and tests YAML rather than behaviour. `TestWorld` assembles what it needs.
+- **Assemble inactive, activate last.** `CharacterStats.Awake` logs an error when it has no
+  definition, and a logged error fails a Unity test; `FlammableObject` reads its thresholds once in
+  `Awake`, so configuring it afterwards silently measures the defaults.
+- **Wait on conditions, never on frame counts.** Frame timing varies with what else the editor is
+  doing.
+
+**One fixture breaks all three deliberately.** `BootSceneSmokePlayModeTests` loads the real `Boot`
+scene, because it is the only automated check that the hand-authored YAML deserialises into the
+fields it was meant for. `check_unity_yaml.py` proves a reference resolves; only Unity proves that
+`castMode: 1` reached `castMode`.
 
 ## Where the next milestones attach
 

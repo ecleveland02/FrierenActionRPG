@@ -24,6 +24,7 @@ and quests are authored content, never hardcoded branches.
 | 4 - Magic framework, 3 spells | Verified in the editor |
 | 5 - First enemy, plus the remaining 6 spells | Written, not yet run in the editor |
 | 5.5 - Combat feel: placeholder feedback | Written, not yet run in the editor |
+| 5.6 - Play-mode tests | Written, not yet run in the editor |
 
 Running alongside the milestones is a **Kael character spike** built by Codex: a Meshy-derived
 skinned character with Unity `Cloth`, its own prefab and scene, plus a separate animated prototype.
@@ -133,6 +134,10 @@ trusting any report.
 python3 Tools/Validation/check_assemblies.py
 python3 Tools/Validation/check_unity_yaml.py
 ```
+
+Neither substitutes for the Test Runner. EditMode covers decisions; PlayMode covers anything needing
+a frame, and its smoke test is the only thing that proves hand-written YAML deserialised into the
+fields it was meant for. Ask for both when reporting a change.
 
 It catches, cheaply, the mistakes that are invisible on inspection: an inheritance chain crossing an
 unreferenced assembly (CS0012), a `using` whose assembly is not referenced (CS0234), the Input System

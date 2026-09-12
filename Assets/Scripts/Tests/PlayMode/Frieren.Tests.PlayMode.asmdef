@@ -1,0 +1,30 @@
+{
+    "name": "Frieren.Tests.PlayMode",
+    "rootNamespace": "Frieren.Tests.PlayMode",
+    "references": [
+        "Frieren.Core",
+        "Frieren.Characters",
+        "Frieren.Player",
+        "Frieren.Magic",
+        "Frieren.World",
+        "Frieren.Enemies",
+        "Frieren.Presentation",
+        "Frieren.Data",
+        "Frieren.Save",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
