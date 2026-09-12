@@ -71,6 +71,7 @@ namespace Frieren.Enemies
         private CharacterActionLock actionLock;
         private EnemyPerception perception;
         private EnemyMelee melee;
+        private EnemyNavigation navigation;
         private ICharacterAnimation characterAnimation;
 
         private float stateEndsAt;
@@ -88,6 +89,7 @@ namespace Frieren.Enemies
             actionLock = GetComponent<CharacterActionLock>();
             perception = GetComponent<EnemyPerception>();
             melee = GetComponent<EnemyMelee>();
+            navigation = GetComponent<EnemyNavigation>();
             characterAnimation = GetComponent<ICharacterAnimation>();
         }
 
@@ -176,9 +178,10 @@ namespace Frieren.Enemies
                 return;
             }
 
-            Vector3 direction = toTarget.normalized;
+            Vector3 direction = navigation != null
+                ? navigation.DirectionTo(perception.Target.position) : toTarget.normalized;
             motor.SetHorizontalVelocity(direction * moveSpeed);
-            FaceTowards(direction);
+            if (direction.sqrMagnitude > 0.0001f) FaceTowards(direction);
         }
 
         private void TickAttack()

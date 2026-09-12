@@ -7,6 +7,9 @@
         "Frieren.Player",
         "Frieren.Magic",
         "Frieren.World",
+        "Frieren.Enemies",
+        "Frieren.Presentation",
+        "Unity.AI.Navigation",
         "Frieren.Data",
         "Frieren.Save",
         "Unity.InputSystem"

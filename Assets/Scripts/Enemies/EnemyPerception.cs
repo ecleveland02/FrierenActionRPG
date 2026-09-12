@@ -48,6 +48,7 @@ namespace Frieren.Enemies
         private LayerMask sightBlockers = GameLayers.SolidMask;
 
         private float lastSeenTime = float.NegativeInfinity;
+        private readonly Collider[] candidates = new Collider[32];
 
         public Transform Target { get; private set; }
 
@@ -121,25 +122,25 @@ namespace Frieren.Enemies
         /// <summary>Finds the nearest thing on the target layers, so the brain does not need a reference.</summary>
         public Transform FindCandidate()
         {
-            Collider[] found = Physics.OverlapSphere(transform.position, loseRange, targetLayers,
-                QueryTriggerInteraction.Ignore);
+            int count = Physics.OverlapSphereNonAlloc(transform.position, loseRange, candidates,
+                targetLayers, QueryTriggerInteraction.Ignore);
 
             Transform nearest = null;
             float nearestDistance = float.MaxValue;
 
-            for (int i = 0; i < found.Length; i++)
+            for (int i = 0; i < count; i++)
             {
-                if (found[i] == null || found[i].transform.IsChildOf(transform))
+                if (candidates[i] == null || candidates[i].transform.IsChildOf(transform))
                 {
                     continue;
                 }
 
-                float distance = Vector3.SqrMagnitude(found[i].transform.position - transform.position);
+                float distance = Vector3.SqrMagnitude(candidates[i].transform.position - transform.position);
 
                 if (distance < nearestDistance)
                 {
                     nearestDistance = distance;
-                    nearest = found[i].transform;
+                    nearest = candidates[i].transform;
                 }
             }
 

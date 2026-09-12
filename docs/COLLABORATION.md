@@ -6,7 +6,24 @@
 > they disagree about a rule, `AGENTS.md` wins; where they disagree about project status, whichever
 > is more recent does.
 
-## Current handoff: 2026-09-11
+## Current handoff: 2026-09-12 — Watchtower woodland
+
+Eric paused Kael generation and authorized Codex to build a small world with his imported assets,
+enemy encounters, adaptive music, scene cleanup and scoped performance work. This explicitly
+extends Codex's earlier Kael-only ownership. No direct Claude connection or concurrent assignment
+is implied; this is the shared handoff.
+
+Pulled Claude's latest `4f2b20e` before implementation. Extended `Watchtower.unity`, rather than
+replacing his level or regenerating the core scenes. See [WATCHTOWER_WOODLAND.md](WATCHTOWER_WOODLAND.md)
+for content, regeneration, required local packs and recovery. Build stamp:
+`m7.1 watchtower woodland`. Original Player.prefab, TestScene, puzzle IDs and spell definitions
+are unchanged. The Kael experiment scenes are recoverably archived, not deleted.
+
+Unity generation and the initial nine Watchtower play-mode tests passed. Broader regression and
+animation-binding checks are in progress; final evidence will be appended here. Imported vendor
+packs remain untracked locally and must not be publicly redistributed without license review.
+
+## Previous handoff: 2026-09-11
 
 Owner subsequently confirmed Milestone 2 works well and requested character/animation work. Codex
 built a separate Kael blockout, rig and eight-clip prototype from the supplied concept sheet. See

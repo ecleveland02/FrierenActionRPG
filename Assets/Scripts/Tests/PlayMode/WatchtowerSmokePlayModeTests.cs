@@ -5,9 +5,11 @@ using Frieren.Core.Persistence;
 using Frieren.Core.Services;
 using Frieren.Enemies;
 using Frieren.Player;
+using Frieren.Presentation;
 using Frieren.World;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
@@ -152,6 +154,77 @@ namespace Frieren.Tests.PlayMode
             }
 
             Assert.Greater(seen.Count, 3, "The level should have several things worth remembering.");
+        }
+
+        [UnityTest]
+        public IEnumerator WoodlandHasTwoEncountersAndBakedPaths()
+        {
+            yield return WaitFor(() => Object.FindObjectsByType<EnemyBrain>(FindObjectsSortMode.None).Length == 4,
+                10f, "four woodland sentinels");
+            Assert.AreEqual(2, Object.FindObjectsByType<EnemySpawner>(FindObjectsSortMode.None).Length);
+            Assert.IsTrue(NavMesh.SamplePosition(new Vector3(0f, 0f, -20f), out NavMeshHit start, 2f, NavMesh.AllAreas));
+            Assert.IsTrue(NavMesh.SamplePosition(new Vector3(-3f, 0f, -14f), out NavMeshHit end, 2f, NavMesh.AllAreas));
+            var path = new NavMeshPath();
+            Assert.IsTrue(NavMesh.CalculatePath(start.position, end.position, NavMesh.AllAreas, path));
+            Assert.AreEqual(NavMeshPathStatus.PathComplete, path.status);
+            foreach (EnemyBrain enemy in Object.FindObjectsByType<EnemyBrain>(FindObjectsSortMode.None))
+            {
+                Assert.IsNotNull(enemy.GetComponent<EnemyNavigation>());
+                var animator = enemy.GetComponentInChildren<Animator>();
+                Assert.IsNotNull(animator);
+                Assert.IsNotNull(animator.runtimeAnimatorController);
+                Assert.IsFalse(animator.applyRootMotion);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator ImportedMonsterActuallyAnimatesAndNavigates()
+        {
+            yield return WaitFor(() => Object.FindObjectsByType<EnemyBrain>(FindObjectsSortMode.None).Length == 4,
+                10f, "all encounters");
+            EnemyBrain enemy = null;
+            foreach (EnemyBrain candidate in Object.FindObjectsByType<EnemyBrain>(FindObjectsSortMode.None))
+                if (enemy == null || candidate.transform.position.z < enemy.transform.position.z) enemy = candidate;
+            var animator = enemy.GetComponentInChildren<Animator>();
+            Transform[] bones = animator.GetComponentsInChildren<Transform>();
+            var poses = new Quaternion[bones.Length];
+            for (int i = 0; i < bones.Length; i++) poses[i] = bones[i].localRotation;
+            // Offscreen animation culling is disabled only for this motion-binding assertion.
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            var player = Object.FindFirstObjectByType<PlayerSpellInput>();
+            player.GetComponent<CharacterMotor>().Teleport(new Vector3(0f, 0.2f, -23f), Quaternion.identity);
+            enemy.GetComponent<EnemyPerception>().ForceTarget(player.transform);
+            Vector3 start = enemy.transform.position;
+            yield return new WaitForSeconds(0.8f);
+            Assert.Greater(Vector3.Distance(start, enemy.transform.position), 1f, "The baked path should produce real movement.");
+            bool animated = false;
+            for (int i = 0; i < bones.Length; i++)
+                if (Quaternion.Angle(poses[i], bones[i].localRotation) > 1f) animated = true;
+            Assert.IsTrue(animated, "Clips must bind to the imported bones, not merely exist in a controller.");
+        }
+
+        [UnityTest]
+        public IEnumerator FightingChangesMusicAndDefeatingEnemiesRestoresExploration()
+        {
+            yield return WaitFor(() => Object.FindObjectsByType<EnemyBrain>(FindObjectsSortMode.None).Length == 4,
+                10f, "all encounters");
+            var music = Object.FindFirstObjectByType<EncounterMusic>();
+            Assert.IsNotNull(music);
+            Assert.IsFalse(music.InCombat, "The campsite should start peaceful.");
+            var player = Object.FindFirstObjectByType<PlayerSpellInput>();
+            player.GetComponent<CharacterMotor>().Teleport(new Vector3(0f, 0.2f, -20f), Quaternion.identity);
+            var enemies = Object.FindObjectsByType<EnemyBrain>(FindObjectsSortMode.None);
+            EnemyBrain nearest = null;
+            foreach (EnemyBrain candidate in enemies)
+                if (nearest == null || candidate.transform.position.z < nearest.transform.position.z) nearest = candidate;
+            nearest.GetComponent<EnemyPerception>().ForceTarget(player.transform);
+            yield return WaitFor(() => music.InCombat && music.CombatBlend > 0.5f, 5f, "combat music to fade in");
+            Assert.IsTrue(music.HasActiveThreat());
+            foreach (EnemyBrain enemy in enemies) enemy.GetComponent<CharacterHealth>().TakeDamage(new DamageInfo(100000f));
+            yield return null;
+            Assert.IsTrue(music.InCombat, "The release hold should prevent abrupt track switching.");
+            yield return WaitFor(() => !music.InCombat && music.CombatBlend < 0.01f, 10f, "exploration music to return");
+            Assert.IsFalse(music.HasActiveThreat());
         }
 
         [UnityTest]

@@ -14,7 +14,7 @@ illustration: facial likeness, hair, garment construction and motion still need 
 - `Assets/Art/Characters/Kael/Models/`: base FBX and eight animation FBXs.
 - `Assets/Art/Characters/Kael/Kael.controller`: Unity-generated locomotion and action controller.
 - `Assets/Prefabs/Characters/KaelPlayer.prefab`: copy of the working player with Kael visuals.
-- `Assets/Scenes/KaelTestScene.unity`: copy of TestScene using the Kael prefab.
+- `Assets/Scenes/Archive/KaelTestScene.unity`: archived copy of TestScene using the Kael prefab.
 - `Assets/Scripts/Core/Editor/KaelPrototypeBuilder.cs`: scoped import rules, builder and validation.
 
 Existing gameplay C# and the original Player prefab/Boot/TestScene were not edited. The new prefab

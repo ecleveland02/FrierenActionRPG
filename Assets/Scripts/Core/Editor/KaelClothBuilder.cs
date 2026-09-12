@@ -17,7 +17,7 @@ namespace Frieren.Core.EditorTools
         private const string Folder = "Assets/Art/Characters/KaelMeshyCloth";
         private const string ModelPath = Folder + "/KaelCloth.fbx";
         private const string PrefabPath = "Assets/Prefabs/Characters/KaelClothPlayer.prefab";
-        private const string ScenePath = "Assets/Scenes/KaelClothTestScene.unity";
+        private const string ScenePath = "Assets/Scenes/Archive/KaelClothTestScene.unity";
         private const string MaterialPath = Folder + "/KaelCloth.mat";
         private const string TextureRoot = "Assets/Art/Characters/KaelMeshy/Meshy_AI_Create_a_game_ready_3_biped_texture_0";
 

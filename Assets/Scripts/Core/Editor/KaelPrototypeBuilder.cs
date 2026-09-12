@@ -18,7 +18,7 @@ namespace Frieren.Core.EditorTools
         public const string ArtRoot = "Assets/Art/Characters/Kael";
         public const string ModelFolder = ArtRoot + "/Models/";
         public const string PrefabPath = "Assets/Prefabs/Characters/KaelPlayer.prefab";
-        public const string PreviewScene = "Assets/Scenes/KaelTestScene.unity";
+        public const string PreviewScene = "Assets/Scenes/Archive/KaelTestScene.unity";
         private const string ControllerPath = ArtRoot + "/Kael.controller";
         private static readonly string[] ClipNames = { "Idle", "Walk", "Run", "Air", "Land", "Dodge", "Cast", "Hit" };
 
