@@ -122,6 +122,25 @@ third-party dependencies. No premature optimization.
 
 Match the surrounding style. It is consistent on purpose.
 
+## Handing off between assistants
+
+Nothing exists until it is pushed. Both assistants work from clones, neither can see the other's
+machine, and the local disc is invisible to everyone but the person sitting at it. This has cost
+this project real time twice, so the protocol is short and non-negotiable:
+
+1. **Before asking either assistant to look at anything, run `Upload.bat`.** It commits first and
+   pulls second, so a failed merge cannot lose work, and it prints the commit and build stamp when
+   it finishes.
+2. **Paste those two lines with the request.** "Look at the new animations" is unanswerable;
+   "look at the new animations, I am on `4f2b20e`, stamp `m7 the watchtower`" is not.
+3. **Whoever is asked verifies HEAD matches before saying anything about behaviour.** A mismatch
+   invalidates every observation made in that session - not most of them, all of them.
+4. `Where-Am-I.bat` prints the same information on demand, including whether the checkout is behind
+   the server and whether anything is uncommitted.
+
+The ownership split below is what keeps two assistants out of each other's merge conflicts. It only
+works if both sides push often enough that the other can see the boundary moving.
+
 ## Say which build you expect, every time
 
 `Frieren.Core.Debugging.BuildStamp.Current` is printed at the top of the debug overlay. Bump it on

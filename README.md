@@ -112,6 +112,21 @@ boots the real project and checks all nine spells are wired up, plus save-and-lo
 every world object. Read failures top down: a smoke-test
 failure means the scene or asset YAML is wrong, and everything below it builds its own objects.
 
+## Working with the repo from Windows
+
+Four double-click scripts at the repo root. The first two are the ones used daily.
+
+| Script | What it does |
+|---|---|
+| `Upload.bat` | Sends your local changes up. **Commits first, then pulls, then pushes** - so a failed merge can never lose work. Shows `git lfs status` before committing, and prints the commit and build stamp at the end. |
+| `Update.bat` | Pulls the latest. Save your scenes in Unity first: the editor overwrites files underneath a pull when it next saves. |
+| `Where-Am-I.bat` | Prints branch, commit, build stamp, uncommitted changes, and whether you are behind the server. Paste its output when reporting a problem. |
+| `Resync.bat` | Forces the checkout to match the server exactly, stashing local work onto a backup branch first. Close Unity before running it. |
+
+**Paste the commit and build stamp with any bug report.** "It is not working" and "you are looking
+at a different build than I am" are indistinguishable from the outside, and this project has already
+lost hours to the second one.
+
 ## Layout
 
 ```

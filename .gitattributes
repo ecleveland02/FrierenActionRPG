@@ -60,4 +60,5 @@
 *.tiff  filter=lfs diff=lfs merge=lfs -text
 *.dds   filter=lfs diff=lfs merge=lfs -text
 *.cubemap filter=lfs diff=lfs merge=lfs -text
-*.unitypackage filter=lfs diff=lfs merge=lfs -text
+# .unitypackage is deliberately absent: .gitignore excludes it. Asset-store installers
+# are not source, and one of them is 150 MB.
