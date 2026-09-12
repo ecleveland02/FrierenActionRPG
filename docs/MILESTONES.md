@@ -6,7 +6,7 @@ Each milestone must produce something playable or testable, and be verified befo
 |---|---|---|
 | 1 | Project foundation | **Complete**, opens and runs in the editor |
 | 2 | Placeholder third-person player | **Complete**, playable in the editor |
-| 3 | Modular character architecture | Not started |
+| 3 | Modular character architecture | **Complete**, not yet run in the editor |
 | 4 | Data-driven magic framework + 8 prototype spells | Not started |
 | 5 | First enemy and basic combat | Not started |
 | 6 | Reusable environmental interaction systems | Not started |
@@ -128,22 +128,73 @@ Specific things worth checking, in order:
 
 ---
 
-**Next: Milestone 3 - modular character architecture**
+---
 
-Scope: `CharacterStats`, `CharacterHealth`, `CharacterMana` and the rest as separate components in
-`Frieren.Characters`, built so an enemy and the player share them.
+## Milestone 3 - Modular character architecture (complete)
 
-The strong recommendation is to **open the project and verify Milestones 1 and 2 before starting**.
-Two unverified milestones are already stacked; a third would mean debugging three layers at once.
+**Delivered**
+
+- `CharacterStatsDefinition`, a ScriptableObject per archetype holding maximum health and mana and
+  their regeneration rates and delays. `Stats_Player.asset` is the first one.
+- `CharacterStats`, the component everything reads stats through. A passthrough today; the seam
+  equipment, buffs and progression attach to later.
+- `ResourcePool`, a plain class holding the bounded-value arithmetic: clamping, proportional
+  rescaling when a maximum moves, all-or-nothing withdrawal.
+- `CharacterResource`, the shared base for regenerating pools, with `CharacterHealth` and
+  `CharacterMana` on top. Health adds damage, death and revival; mana adds all-or-nothing spending.
+- `DamageInfo` and `DamageType`, so the damage signature does not have to change when resistances
+  and critical hits arrive.
+- `CharacterPersistence`, one `ISaveable` per character covering all its vitals.
+- `CharacterVitalsReadout`, an on-screen bar and test keys, since nothing can hurt you yet.
+- 33 new EditMode tests (130 total).
+
+**Known limitations**
+
+1. Not yet run in the editor.
+2. Regeneration is untested automatically. It needs a running clock, and edit-mode tests have none;
+   it belongs in a play-mode test once something exists worth driving one for.
+3. `CharacterPersistence.SaveId` is authored per instance. Fine for the player and hand-placed
+   characters, wrong for the enemies spawned at runtime in Milestone 5, which will need ids derived
+   from their spawner.
+4. `DamageType` is carried but never read. There are no resistances until there is something to
+   resist.
+5. `CharacterStats` applies no modifiers. There is nothing to modify with yet.
+6. Death raises an event that nothing listens to. The player does not ragdoll, respawn or stop
+   taking input.
+7. `Frieren.Characters` references the Input System package solely for the debug readout. Both go
+   when a real HUD exists.
+
+**How to test it in the editor**
+
+Open `Boot`, press Play. A second panel appears under the debug overlay showing health and mana.
+
+1. `F2` damages 15. Health falls; mana regenerates on its own, health does not.
+2. `F4` spends 15 mana, and mana regeneration pauses for 1.5 seconds before resuming.
+3. `F2` repeatedly to zero: the readout reads DEAD, further `F2` does nothing, `F3` revives.
+4. The save round trip: `F2` twice, `F5` to save, `F2` twice more, `F9` to load. Health should snap
+   back to the saved value.
+
+That last one is the milestone's real test: it proves stats, vitals and persistence work together.
+
+---
+
+**Next: Milestone 4 - the magic framework**
+
+Scope: a data-driven spell system, and prototypes for the eight starting spells.
+
+**A scope note worth raising before starting.** The plan has Milestone 4 build eight spells and
+Milestone 6 build the environmental interaction system those spells act on. For at least Fire, Ice,
+Levitation, Repair and Unlock that is backwards: those spells are *defined* by what they do to world
+objects, so building them first means five spells with nothing to affect, then rewriting them.
+
+The suggestion is to bring the Milestone 6 interfaces forward into Milestone 4 - the contract for
+"this object responds to a spell effect of type X" - and build one example object per effect
+alongside its spell. Milestone 6 then becomes breadth (more object kinds, more combinations) rather
+than the first attempt.
 
 One thing to settle at the start:
 
-- **Where stats come from.** A `CharacterStatsDefinition` ScriptableObject per character archetype,
-  or values authored per prefab. Recommendation: the ScriptableObject, because Milestone 5 wants
-  several enemies sharing a template, and because progression in a later milestone needs a base to
-  apply modifiers to. Per-prefab values give you nothing to reference when a spell says "+20% max
-  mana".
-
-Milestone 3 is complete when the player's health and mana are components rather than fields, a
-placeholder enemy can be given the same components, and at least one of them persists through a
-save and load.
+- **How a spell composes its behaviour.** A `SpellDefinition` holding a list of effect
+  ScriptableObjects, or one class per spell. Recommendation: the effect list, because it is the only
+  version where "fire that also lights torches" is authored rather than coded, and because the brief
+  explicitly asks for multiple solutions to environmental problems.

@@ -26,7 +26,7 @@ player code in with it.
 |---|---|---|
 | `Frieren.Data` | `Scripts/ScriptableObjects` | Base types for authored content. Depends on nothing, so everything can depend on it. |
 | `Frieren.Save` | `Scripts/Save` | Save file format, storage backends, `SaveService`. Deliberately knows nothing about scenes, input or gameplay. |
-| `Frieren.Characters` | `Scripts/Characters` | What any character needs, player or enemy: `CharacterMotor`, `CharacterActionLock`, the animation abstraction. References nothing. |
+| `Frieren.Characters` | `Scripts/Characters` | What any character needs, player or enemy: motor, action lock, animation abstraction, stats, health, mana, persistence. |
 | `Frieren.Player` | `Scripts/Player` | Player-specific intent only: locomotion, dodge, interaction probe, camera rig, spawner. |
 | `Frieren.Core` | `Scripts/Core` | Bootstrap, service registry, scene loading, game state, input, debug tooling. |
 | `Frieren.Core.Editor` | `Scripts/Core/Editor` | Editor-only: setup validation, asset creation, scene regeneration, menus. |
@@ -156,12 +156,51 @@ in both directions. One prefab stays the single definition of what a player is, 
 loading a save into a named spawn point, and arriving through a specific door all reuse the same
 step.
 
+## Character vitals (Milestone 3)
+
+```
+CharacterStatsDefinition (asset, per archetype)
+          |
+   CharacterStats  ---- Changed ---->  CharacterHealth  ) both are
+          |                            CharacterMana    ) CharacterResource
+          |                                   ^
+          |                                   |
+          +--------------------------  CharacterPersistence (ISaveable)
+```
+
+**Stats come from an asset, not a prefab.** One `CharacterStatsDefinition` per archetype, so
+Milestone 5's enemies share a template and a later "+20% maximum mana" has a base to multiply.
+Nothing reads the asset directly: everything goes through `CharacterStats`, which is a passthrough
+today and the seam equipment, buffs and progression plug into later.
+
+**Health and mana are the same problem twice.** `CharacterResource` owns the shared part - a bounded
+value, a maximum sourced from stats, regeneration that pauses after use, a change event. The
+differences live in the subclasses: death in `CharacterHealth`, all-or-nothing spending in
+`CharacterMana`. Stamina will be the third subclass, not a third implementation.
+
+The arithmetic sits in `ResourcePool`, a plain class, for the same reason as `JumpGate` and
+`MotorMath`: clamping, proportional rescaling and all-or-nothing withdrawal are easy to get subtly
+wrong and impossible to confirm by looking at a health bar.
+
+**Death is an event, not a behaviour.** `CharacterHealth` reports that health hit zero and does
+nothing else - no disabling input, no animation, no despawn. The player and an enemy want opposite
+things to happen there, and either one hardcoded would fight the other. A dead character ignores
+further damage, so a corpse hit three more times does not die three more times.
+
+**Vitals know nothing about saving.** `CharacterPersistence` implements `ISaveable` and reads them.
+That gives a character one save key instead of one per component, keeps health and mana as pure
+gameplay, and makes adding stamina a field rather than another registration.
+
+**Initialisation is lazy, not `Awake`.** The pool is built on first access. Unity does not call
+`Awake` in edit mode, so an eagerly built pool would be unreachable from an edit-mode test, and a
+character assembled by a spawner may have its stats set after its components exist.
+
 ## Where the next milestones attach
 
 | Milestone | Attaches via |
 |---|---|
-| 3 - Character architecture | `CharacterStats`, `CharacterHealth`, `CharacterMana` as separate components in `Frieren.Characters`. Any that persists implements `ISaveable`. The rigged character replaces `PlaceholderCharacterAnimation` with `MecanimCharacterAnimation`. |
-| 4 - Magic framework | `SpellDefinition : IdentifiableScriptableObject` with a list of effect objects. Casting takes `CharacterActionLock`. Environmental interaction is an effect type, not a special case. |
+| 3 - Character architecture | Done. The rigged character still needs to replace `PlaceholderCharacterAnimation` with `MecanimCharacterAnimation`. |
+| 4 - Magic framework | `SpellDefinition : IdentifiableScriptableObject` with a list of effect objects. Casting takes `CharacterActionLock` and pays through `CharacterMana.TrySpend`. Damage effects build a `DamageInfo`. Environmental interaction is an effect type, not a special case. |
 | 5 - Enemy | Reuses `CharacterMotor` driven by a navigation agent instead of input. Its own behaviour state machine, not `GameStateMachine`, which is for application modes. `PlayerDodge.IsInvulnerable` is already exposed for damage to read. |
 | 6 - Environmental interaction | Components responding to spell effect *types*. Separate from `IInteractable`: pressing a lever and burning a crate are different verbs with different rules. |
 | 7 - Vertical slice | `GameSceneDefinition` per area, added to `SceneCatalog` and Build Settings. `PlayerSpawner` handles arrival in each. |

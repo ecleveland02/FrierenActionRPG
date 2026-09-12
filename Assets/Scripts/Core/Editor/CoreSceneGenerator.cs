@@ -66,6 +66,14 @@ namespace Frieren.Core.EditorTools
             root.AddComponent<CharacterMotor>();
             root.AddComponent<CharacterActionLock>();
 
+            CharacterStats stats = root.AddComponent<CharacterStats>();
+            AssignReference(stats, "definition",
+                AssetDatabase.LoadAssetAtPath<CharacterStatsDefinition>(ProjectPaths.PlayerStats));
+            root.AddComponent<CharacterHealth>();
+            root.AddComponent<CharacterMana>();
+            root.AddComponent<CharacterPersistence>();
+            root.AddComponent<CharacterVitalsReadout>();
+
             PlayerLocomotion locomotion = root.AddComponent<PlayerLocomotion>();
             PlayerDodge dodge = root.AddComponent<PlayerDodge>();
             PlayerInteractor interactor = root.AddComponent<PlayerInteractor>();

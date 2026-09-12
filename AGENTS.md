@@ -20,7 +20,7 @@ and quests are authored content, never hardcoded branches.
 |---|---|
 | 1 - Foundation: bootstrap, scenes, save, input, debug | Verified in the editor |
 | 2 - Placeholder third-person player | Verified in the editor, character is playable |
-| 3 - Modular character architecture | Not started |
+| 3 - Modular character architecture | Written, not yet run in the editor |
 | 4-7 | Not started, see `docs/MILESTONES.md` |
 
 Milestones 1 and 2 were authored with no Unity installed, and have since been run. The project
@@ -63,9 +63,13 @@ reverse one; argue for the change instead.
    shadowing it breaks the namespace with a CS0118 that names the wrong cause.
 9. **The Input System package only.** No `UnityEngine.Input`. Input reaches gameplay through the
    `InputReader` ScriptableObject, not the generated C# wrapper.
-10. **Logic worth testing goes in a plain class.** MonoBehaviours cannot be unit-tested meaningfully.
-    `JumpGate`, `OrbitCameraSolver`, `InteractionSelector` and `MotorMath` exist because their logic
-    was extracted out of components.
+10. **Vitals are told their maximum by `CharacterStats`, never by a serialized field.** Two places
+    to set a maximum is one too many, and the one that loses is the one someone forgot to update.
+11. **Death is an event.** `CharacterHealth` reports that health hit zero; it does not decide what
+    happens next. The player and an enemy want opposite things there.
+12. **Logic worth testing goes in a plain class.** MonoBehaviours cannot be unit-tested meaningfully.
+    `JumpGate`, `OrbitCameraSolver`, `InteractionSelector`, `MotorMath` and `ResourcePool` exist
+    because their logic was extracted out of components.
 
 ## Layout
 
@@ -75,7 +79,7 @@ Assets/Scripts/
   Save/               Frieren.Save        save format, storage, service     (no deps)
   Core/               Frieren.Core        bootstrap, services, scenes, state, input, debug
   Core/Editor/        Frieren.Core.Editor setup validation, asset + scene generation, menus
-  Characters/         Frieren.Characters  motor, action lock, animation      (no deps)
+  Characters/         Frieren.Characters  motor, action lock, animation, stats, vitals
   Player/             Frieren.Player      locomotion, dodge, interactor, camera, spawner
   Tests/EditMode/     Frieren.Tests.EditMode
   Combat/ Magic/ Enemies/ Inventory/ Equipment/ Quests/ Dialogue/   empty, later milestones
@@ -98,7 +102,7 @@ Match the surrounding style. It is consistent on purpose.
 
 ## Verifying a change
 
-- `Window > General > Test Runner > EditMode > Run All`. 97 tests, no scene or disk needed.
+- `Window > General > Test Runner > EditMode > Run All`. 130 tests, no scene or disk needed.
 - `F7` opens the Boot scene; press Play.
 - Compile errors block Play mode entirely.
 

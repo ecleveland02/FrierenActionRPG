@@ -1,4 +1,5 @@
 using System.IO;
+using Frieren.Characters;
 using Frieren.Core.Debugging;
 using Frieren.Core.Input;
 using Frieren.Core.Scenes;
@@ -28,6 +29,7 @@ namespace Frieren.Core.EditorTools
             EnsureSceneCatalog(boot, test);
             EnsureLogSettings();
             EnsureInputReader();
+            EnsurePlayerStats();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -90,6 +92,32 @@ namespace Frieren.Core.EditorTools
             }
 
             return false;
+        }
+
+        public static CharacterStatsDefinition EnsurePlayerStats()
+        {
+            var stats = AssetDatabase.LoadAssetAtPath<CharacterStatsDefinition>(ProjectPaths.PlayerStats);
+
+            if (stats != null)
+            {
+                return stats;
+            }
+
+            stats = ScriptableObject.CreateInstance<CharacterStatsDefinition>();
+            CreateAsset(stats, ProjectPaths.PlayerStats);
+
+            var serialized = new SerializedObject(stats);
+            serialized.FindProperty("id").stringValue = "stats.player";
+            serialized.FindProperty("displayName").stringValue = "Player";
+            serialized.FindProperty("maxHealth").floatValue = 100f;
+            serialized.FindProperty("healthRegenPerSecond").floatValue = 0f;
+            serialized.FindProperty("healthRegenDelay").floatValue = 5f;
+            serialized.FindProperty("maxMana").floatValue = 120f;
+            serialized.FindProperty("manaRegenPerSecond").floatValue = 6f;
+            serialized.FindProperty("manaRegenDelay").floatValue = 1.5f;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            return stats;
         }
 
         public static LogSettings EnsureLogSettings()

@@ -17,6 +17,8 @@ namespace Frieren.Core.EditorTools
 
         public const string PlayerPrefab = "Assets/Prefabs/Characters/Player.prefab";
 
+        public const string PlayerStats = "Assets/ScriptableObjects/Characters/Stats_Player.asset";
+
         public const string LogSettings = "Assets/ScriptableObjects/Debug/LogSettings.asset";
         public const string InputReader = "Assets/ScriptableObjects/Input/InputReader.asset";
         public const string InputActions = "Assets/Settings/Input/FrierenControls.inputactions";
