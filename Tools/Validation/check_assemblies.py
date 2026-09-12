@@ -35,6 +35,79 @@ def load_assemblies():
     return found
 
 
+
+# ---------------------------------------------------------------------------
+# Engine modules
+# ---------------------------------------------------------------------------
+# A `using UnityEngine.X` whose module is not in Packages/manifest.json is a CS0234 that no amount
+# of asmdef checking will find, because the reference is to an engine module rather than to a
+# project assembly. It cost a build: GPT added EnemyNavigation using UnityEngine.AI without adding
+# com.unity.modules.ai, and Frieren.Enemies stopped compiling, which took Player, Presentation and
+# both test assemblies down with it.
+#
+# Vendor scripts count. Anything under Assets/ without an asmdef lands in Assembly-CSharp and breaks
+# the build just as thoroughly as our own code does.
+#
+# Only namespaces whose module is unambiguous are listed. Everything else - Rendering,
+# SceneManagement, Events, Assertions, Pool, Jobs - lives in CoreModule and is always present, and
+# guessing about the rest would produce false alarms nobody reads.
+NAMESPACE_MODULES = {
+    "UnityEngine.AI": "com.unity.modules.ai",
+    "UnityEngine.Animations": "com.unity.modules.animation",
+    "UnityEngine.Audio": "com.unity.modules.audio",
+    "UnityEngine.Playables": "com.unity.modules.director",
+    "UnityEngine.Timeline": "com.unity.modules.director",
+    "UnityEngine.Tilemaps": "com.unity.modules.tilemap",
+    "UnityEngine.Video": "com.unity.modules.video",
+    "UnityEngine.XR": "com.unity.modules.xr",
+    "UnityEngine.TerrainUtils": "com.unity.modules.terrain",
+    "UnityEngine.UI": "com.unity.ugui",
+    "UnityEngine.EventSystems": "com.unity.ugui",
+    "UnityEngine.InputSystem": "com.unity.inputsystem",
+}
+
+USING_NAMESPACE = re.compile(r"^\s*using\s+(UnityEngine\.[A-Za-z0-9_.]+)\s*;", re.M)
+
+
+def check_engine_modules():
+    found = []
+    manifest_path = os.path.join("Packages", "manifest.json")
+
+    if not os.path.exists(manifest_path):
+        return found
+
+    with open(manifest_path) as handle:
+        installed = set(json.load(handle).get("dependencies", {}))
+
+    for root, dirs, names in os.walk("Assets"):
+        dirs[:] = [d for d in dirs if not d.startswith(".")]
+
+        for name in sorted(names):
+            if not name.endswith(".cs"):
+                continue
+
+            path = os.path.join(root, name)
+
+            with open(path, errors="ignore") as handle:
+                text = handle.read()
+
+            for namespace in sorted(set(USING_NAMESPACE.findall(text))):
+                # Longest match wins, so UnityEngine.AI.Navigation resolves to the AI module.
+                module = None
+
+                for known, candidate in NAMESPACE_MODULES.items():
+                    if namespace == known or namespace.startswith(known + "."):
+                        if module is None or len(known) > len(module[0]):
+                            module = (known, candidate)
+
+                if module and module[1] not in installed:
+                    found.append(
+                        f"{path}: uses '{namespace}' but '{module[1]}' is not in "
+                        "Packages/manifest.json - this is a CS0234 that fails the whole assembly")
+
+    return found
+
+
 def main():
     if not os.path.isdir(SCRIPTS):
         sys.exit(f"Run this from the repository root; {SCRIPTS} not found.")
@@ -127,6 +200,8 @@ def main():
         cycle = find_cycle(node, [])
         if cycle:
             problems.append("assembly cycle: " + " -> ".join(cycle))
+
+    problems.extend(check_engine_modules())
 
     unique = sorted(set(problems))
     if unique:

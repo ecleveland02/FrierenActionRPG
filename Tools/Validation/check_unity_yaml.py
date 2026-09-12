@@ -164,8 +164,17 @@ def check_components(path, text, anchors):
 
 
 def check_missing_metas():
+    """Only for paths this project authors.
+
+    Vendor packages arrive with their own .meta files, and some ship folder metas for folders whose
+    entire contents are gitignored - Unity warns about those and then tidies them up itself. Failing
+    the gate on somebody else's asset store package trains people to ignore the gate.
+    """
     for root, dirs, files in os.walk(ASSETS):
         dirs[:] = [d for d in dirs if not d.startswith(".")]
+
+        if not (root.replace(os.sep, "/") + "/").startswith(OWNED):
+            continue
         for name in files:
             if name.endswith(".meta") or name.startswith("."):
                 continue
