@@ -7,7 +7,7 @@ Each milestone must produce something playable or testable, and be verified befo
 | 1 | Project foundation | **Complete**, opens and runs in the editor |
 | 2 | Placeholder third-person player | **Complete**, playable in the editor |
 | 3 | Modular character architecture | **Complete**, not yet run in the editor |
-| 4 | Data-driven magic framework + 3 spells | **Complete**, casting confirmed in the editor |
+| 4 | Data-driven magic framework + 3 spells | **Complete**, confirmed in the editor |
 | 5 | First enemy and basic combat | Not started |
 | 6 | Reusable environmental interaction systems | Contract landed in M4; breadth remaining |
 | 7 | Gray-box vertical slice | Not started |
@@ -207,7 +207,8 @@ That last one is the milestone's real test: it proves stats, vitals and persiste
 
 **Known limitations**
 
-1. Casting is confirmed working in the editor; the individual spell outcomes are not all verified yet.
+1. Confirmed in the editor: casting, mana cost, channelling, and self-levitation. Fire and Arcane
+   Bolt have not been separately reported on.
 2. Five of the eight briefed spells are missing: Ice, Barrier, Water, Repair, Unlock. Ice and Water
    need only assets, since `FlammableObject` already answers Cold and Water. Barrier, Repair and
    Unlock need new effect types and new receivers.

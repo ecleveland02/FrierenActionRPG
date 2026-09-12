@@ -114,6 +114,16 @@ third-party dependencies. No premature optimization.
 
 Match the surrounding style. It is consistent on purpose.
 
+## Say which build you expect, every time
+
+`Frieren.Core.Debugging.BuildStamp.Current` is printed at the top of the debug overlay. Bump it on
+any commit that changes behaviour, and tell the user what it should read. If the overlay does not
+show the expected value, nothing observed in that session means anything.
+
+This exists because several hours went into debugging behaviour from revisions that were never on
+the machine. Git reporting a commit does not mean the editor is running it. Ask for the stamp before
+trusting any report.
+
 ## Before pushing C# neither of us can compile
 
 ```
