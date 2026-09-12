@@ -14,7 +14,7 @@ Each milestone must produce something playable or testable, and be verified befo
 | 6 | Persistence: the world remembers what you did to it | **Complete**, not yet run in the editor |
 | 6.1 | Block on right mouse, spells on a radial wheel | **Complete**, not yet run in the editor |
 | 6.2 | Time slows while the wheel is open | **Complete**, not yet run in the editor |
-| 7 | Gray-box vertical slice (absorbs the briefed M6 breadth) | Not started |
+| 7 | Gray-box vertical slice: the Watchtower | **Complete**, not yet run in the editor |
 
 Outside the milestone sequence, a **Kael character spike** exists in its own prefab and scene, built
 by Codex. It proves the Blender-to-Unity path for a skinned, clothed character early, which is real
@@ -736,15 +736,120 @@ explanation.
 
 ---
 
-**Next: Milestone 7 - the gray-box vertical slice**
+## Milestone 7 - The Watchtower (complete, not yet run)
 
-The systems are now well ahead of the content. Nine spells, an enemy, five world receivers,
-feedback, persistence and 251 tests - and no *place*. The test scene is a scatter of props on a
-plane, which is enough to prove a mechanism works and not enough to prove any of it is worth
-playing.
+**Build stamp: `m7 the watchtower`.** Open `Assets/Scenes/Watchtower.unity` and press Play -
+`SceneBootstrapGuard` pulls Boot in behind it, so the services exist.
 
-Milestone 7 absorbs the briefed Milestone 6. More receiver kinds earn their keep when they are
-designed into a space with a reason to exist, not added to a list. The slice wants: a small area
-with a route through it, an objective, one fight that matters, and at least two problems whose
-solutions the player finds rather than is told - which is the pillar the whole project is built to
-demonstrate, and the one thing that has never actually been tested on a person.
+The last milestone in the brief, and the first time any of this is a place rather than a system.
+
+### The level
+
+```
+ z -12 .. 0    the approach
+ z  0         outer wall, five metres, with a locked gate
+ z  0 .. 24   courtyard: cover, two sentinels, a walkway three metres up along the right wall
+ z 24 .. 46   the tower
+                ground floor   y=0
+                collapsed stair rising to the mezzanine
+                near mezzanine y=5, z 30..34
+                a seven-metre gap, open to the floor below
+                far mezzanine  y=5, z 41..45.5, and the seal
+```
+
+**Three problems, each with more than one answer, and none of them knows about the others:**
+
+| Problem | Answers |
+|---|---|
+| The gate | Unbind it (`8`), burn it (`3` - the panel is flammable), or hold Levitation and go over the five-metre wall |
+| The stair | Mend it (`7`, held), or levitate up to the mezzanine |
+| The gap | Fill the aqueduct (`6`) and freeze it (`4`) to walk across, or levitate over |
+
+Not one of those was written for this level. The gate burns because `FlammableObject` answers Heat
+and someone put one on the panel; the aqueduct freezes because `WaterBasin` answers Cold. Every
+route is an existing component reacting to an element, which is the entire thesis of the project
+standing up in a real space for the first time.
+
+**Progress is tracked by arriving, not by solving.** `ObjectiveVolume` completes a goal when the
+player enters it, and the courtyard volume spans the whole courtyard - so a player who levitates
+over the wall at the far corner and never touches the gate has solved it, and the level agrees.
+Tying progress to one solution would have quietly made the other answers wrong.
+
+### Two decisions worth naming
+
+**The slice scene is not regenerable from the editor menu**, unlike Boot and TestScene. That is a
+deliberate break from decision 8. A test scene should be reproducible; a designed level should not,
+because the moment someone nudges a ledge in Unity, "regenerate" becomes a button that destroys
+their work.
+
+**Objectives are not a quest system.** Quests are authored content with branching and state of their
+own. This is the smallest thing that turns an area into a slice: somewhere to go, and a way to know
+you got there.
+
+**Delivered**
+
+- `Assets/Scenes/Watchtower.unity`, 47 placed objects, plus `Scene_Watchtower` in the catalog and in
+  Build Settings.
+- `SliceObjectives`, `ObjectiveVolume`, `ObjectiveInteractable` in `Frieren.World`. All persist.
+- `Tools/Validation/check_level_geometry.py`: slope angles against the character controller's limit,
+  spawn points buried in walls, objective volumes that are solid and therefore walls.
+- 16 edit-mode and 13 play-mode tests (225 + 80 = 305 in total), including a Watchtower smoke test
+  that asserts the *design* - the gate is burnable as well as lockable, the stair starts broken, the
+  aqueduct starts empty, every save id is unique.
+
+**Three bugs the tools caught while building it**
+
+1. Importing `gen_scenes.py` for three helper functions **overwrote Boot.unity and TestScene.unity**
+   with their stale Milestone 2 versions, because that module writes files at import time. Restored
+   from git within the minute; the helpers are now copied, not imported. A generator that acts on
+   import is a loaded gun.
+2. The YAML checker caught four transforms claiming a father that did not list them back, and one
+   parent that listed no children at all.
+3. The geometry checker caught the walkway ramp starting *outside* the courtyard wall and passing
+   through it - and then caught a bug in itself: it was rotating each object's position by its own
+   rotation instead of its parent's, which put every tilted object somewhere it was not while the
+   numbers still looked plausible.
+
+**Known limitations**
+
+1. **Not run in the editor.** The largest single piece of unverified content in the project.
+2. The gap is 6.95m. A running jump may clear it, which would be a fourth solution - fine in
+   principle, but it was not designed and it should be measured.
+3. Two sentinels with direct steering, in a courtyard with cover. This is the first real test of
+   whether "no NavMesh" holds up; expect them to snag on a pillar.
+4. No audio, no music, no VFX beyond the Milestone 5.5 placeholders. Gray boxes and primitives.
+5. The tower interior is one open volume. It reads as a shape, not as a building.
+6. Nothing gates the seal: you can reach it without fighting, which is deliberate and on theme, but
+   it does mean the fight is skippable rather than paced.
+7. The objective readout is IMGUI in the corner, like everything else.
+
+**How to test it**
+
+Open `Watchtower.unity`, press Play. The overlay should read `m7 the watchtower`.
+
+1. Walk to the gate. It says Locked. **Now pick a route** - `8` and cast to unbind it, or `3` and
+   burn the panel down, or hold `5` and float over the wall. All three tick the same objective.
+2. The courtyard: two sentinels. Use the cover and the walkway. Right mouse blocks; `Q` slows time
+   while you choose.
+3. Inside the tower, the stair is rubble. Hold `7` on it for a couple of seconds to mend it - or
+   levitate up to the mezzanine.
+4. On the mezzanine, a broken aqueduct over a seven-metre drop. `6` twice to fill it, `4` to freeze
+   it, then walk across. Or levitate.
+5. Read the seal. The objective panel should say the slice is complete.
+6. Then `F5`, break everything you can, and `F9`. The gate, the stair, the aqueduct, the dead
+   sentinels and your objectives should all come back as they were.
+
+Step 1 and step 4 are the ones that matter. If those feel like *your* solutions rather than the
+level telling you what to do, the pillar works.
+
+---
+
+**Next: play it**
+
+Every milestone in the brief is now written. Nothing after this point is worth deciding from a
+description - the questions left are all questions about how it feels, and the only instrument for
+those is a person playing it.
+
+What the answers would most likely change, in rough order of likelihood: the two sentinels and
+whether direct steering survives contact with cover; the 0.55s wind-up; whether blocking occupying
+the caster is right; the 6.95m gap; and whether three problems is enough level to judge anything by.

@@ -590,3 +590,43 @@ bugs, that one is invisible in a log.
 
 `Bootstrapper` force-clears it when a scene starts loading, because a holder that is being destroyed
 cannot release anything.
+
+
+---
+
+## Milestone 7
+
+### 42. The slice scene is not regenerable from the editor menu
+
+Decision 8 says scenes are committed *and* regenerable from code, and `Boot` and `TestScene` both
+are. The Watchtower deliberately is not.
+
+A test scene is a fixture: reproducing it exactly is the point, and regenerating it is a repair. A
+designed level is authored content that someone will nudge by hand - a ledge moved half a metre
+because it played badly is the most valuable edit in the project. Putting a "regenerate" button next
+to it makes destroying that edit one misclick away.
+
+So the Watchtower is generated once and then owned by the scene file. The generator stays in the
+scratchpad as a record of how it was laid out, not as a thing to re-run.
+
+### 43. Objective volumes complete on arrival, never on solution
+
+The courtyard goal is "get into the courtyard", not "unlock the gate", and its trigger spans the
+whole courtyard rather than the strip behind the gate. A player who levitated over the wall at the
+far corner and never touched the gate has solved the problem.
+
+This is small and it is load-bearing. The moment progress is tied to one solution, the other answers
+become things the level tolerates rather than things it accepts, and the design pillar quietly stops
+being true while every individual system still works.
+
+### 44. A generator that writes files at import time is a loaded gun
+
+Building the Watchtower, I imported `gen_scenes.py` for three helper functions. That module writes
+`Boot.unity` and `TestScene.unity` at module scope, so the import overwrote two committed scenes
+with their stale Milestone 2 versions - silently, as a side effect of `import`.
+
+Git had them, so it cost a minute. Two things follow. A script that does work at module scope
+cannot be used as a library, so the helpers are copied rather than imported. And the asset
+generators live in a session scratchpad rather than in the repository, which means this trap gets
+rebuilt from scratch every time - committing them under `Tools/` so they can carry a `main()` guard
+and a test is the obvious fix, and is not done yet.

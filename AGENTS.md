@@ -28,6 +28,7 @@ and quests are authored content, never hardcoded branches.
 | 6 - Persistence for the world | Written, not yet run in the editor |
 | 6.1 - Block on right mouse, spell wheel on Q | Written, not yet run in the editor |
 | 6.2 - Time slows while the wheel is open | Written, not yet run in the editor |
+| 7 - The Watchtower vertical slice | Written, not yet run in the editor |
 
 Running alongside the milestones is a **Kael character spike** built by Codex: a Meshy-derived
 skinned character with Unity `Cloth`, its own prefab and scene, plus a separate animated prototype.
@@ -137,6 +138,7 @@ trusting any report.
 python3 Tools/Validation/check_assemblies.py
 python3 Tools/Validation/check_usings.py
 python3 Tools/Validation/check_unity_yaml.py
+python3 Tools/Validation/check_level_geometry.py
 ```
 
 Neither substitutes for the Test Runner. EditMode covers decisions; PlayMode covers anything needing

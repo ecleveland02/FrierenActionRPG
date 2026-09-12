@@ -99,13 +99,13 @@ and walk across - or hold Levitation (`6`) and float over instead. Further west,
 Unbinding (`9`) opens and Fire (`4`) burns down. South-east, a broken stump that Mending (`8`) puts
 back together if you hold it long enough.
 
-**Automated tests:** `Window > General > Test Runner`. **EditMode** runs 216 tests instantly and needs no
+**Automated tests:** `Window > General > Test Runner`. **EditMode** runs 225 tests instantly and needs no
 scene: they cover the service
 locator, the game state machine, the save system, jump timing, motor maths, camera orbit maths,
 interaction scoring, the character resource pool, spell cooldowns, burn state, the damage barrier,
 the water basin, the lock and the time scale.
 
-**PlayMode** runs 73 more and takes about a minute: the enemy end to end (detection, chasing, the
+**PlayMode** runs 80 more and takes about a minute: the enemy end to end (detection, chasing, the
 wind-up landing no damage, escaping it, stagger, death), channelling and mana drain, regeneration
 delays, the barrier lapsing, levitation lifting the body, the trough draining, and a smoke test that
 boots the real project and checks all nine spells are wired up, plus save-and-load round trips for
@@ -118,7 +118,7 @@ failure means the scene or asset YAML is wrong, and everything below it builds i
 Assets/
   Art/            Characters, Environments, Materials, VFX, UI  (placeholders only for now)
   Audio/  Animations/  Prefabs/
-  Scenes/         Boot.unity, TestScene.unity
+  Scenes/         Boot.unity, TestScene.unity, Watchtower.unity (the vertical slice)
   ScriptableObjects/   Authored data assets (scene definitions, settings)
   Settings/Input/ FrierenControls.inputactions
   Scripts/
