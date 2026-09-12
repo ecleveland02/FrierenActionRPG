@@ -132,6 +132,7 @@ trusting any report.
 
 ```
 python3 Tools/Validation/check_assemblies.py
+python3 Tools/Validation/check_usings.py
 python3 Tools/Validation/check_unity_yaml.py
 ```
 
@@ -148,7 +149,12 @@ class* lives in another assembly requires referencing that assembly too, even th
 never named in the file. `SpellDefinition` derives from `IdentifiableScriptableObject` in
 `Frieren.Data`, so `Frieren.Player` must reference `Frieren.Data` despite never mentioning it.
 
-The second script does the same job for the hand-authored `.unity`, `.prefab` and `.asset` files:
+`check_usings.py` catches the file-level version of the same problem, CS0246: a type used without a
+`using` that reaches it. That is the more common mistake by far, and it has already shipped once - a
+play-mode test base using `[UnityTearDown]` with no `using UnityEngine.TestTools;`, which failed the
+whole test assembly and with it the editor's compile.
+
+The third script does the same job for the hand-authored `.unity`, `.prefab` and `.asset` files:
 duplicate anchors, a `fileID` naming nothing, a GUID no asset owns, a GameObject and its component
 disagreeing about who owns whom, a transform listing a child that does not list it back, and missing
 or orphan `.meta` files. It caught a `TextArea` string containing a colon on its first run, which is

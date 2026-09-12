@@ -16,6 +16,6 @@ namespace Frieren.Core.Debugging
     public static class BuildStamp
     {
         /// <summary>Bump this whenever behaviour changes. Shown in the debug overlay.</summary>
-        public const string Current = "m5.6 play-mode tests";
+        public const string Current = "m5.6a using fix";
     }
 }

@@ -3,6 +3,7 @@ using System.Collections;
 using Frieren.Core.Services;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Frieren.Tests.PlayMode
 {
