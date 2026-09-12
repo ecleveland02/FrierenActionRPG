@@ -234,11 +234,77 @@ def check_missing_metas():
                 problems.append(f"{os.path.join(root, name)}: orphan .meta with no asset")
 
 
+# ---------------------------------------------------------------------------
+# Cross-file references
+# ---------------------------------------------------------------------------
+# A reference into another asset carries both a guid and a fileID, and the fileID has to name an
+# object that actually exists over there. Getting the guid right and the fileID wrong is worse than
+# getting both wrong: the editor resolves the file, fails to find the object, and hands the field
+# whatever it did find. That surfaces at runtime as "Specified cast is not valid" from inside a
+# coroutine, several layers away from the asset that is actually broken.
+#
+# It cost a round trip. Nine spell VFX assets pointed at fileID 100100000, which is the prefab
+# asset object rather than its root GameObject, so every one of them threw on first cast.
+#
+# Only prefabs are resolved. Scene and asset files are checked the same way elsewhere, and meshes,
+# sprites and clips inside imported binaries have fileIDs this cannot see.
+CROSS_REF = re.compile(r"\{fileID: (-?\d+), guid: ([0-9a-f]{32}), type: \d+\}")
+
+
+def prefab_anchors_by_guid():
+    """Every .prefab in the project, mapped guid -> set of anchors it defines."""
+    found = {}
+
+    for root, dirs, files in os.walk(ASSETS):
+        dirs[:] = [d for d in dirs if not d.startswith(".")]
+
+        for name in sorted(files):
+            if not name.endswith(".prefab"):
+                continue
+
+            path = os.path.join(root, name)
+            meta = path + ".meta"
+
+            if not os.path.exists(meta):
+                continue
+
+            with open(meta, errors="ignore") as handle:
+                guid = re.search(r"^guid: (\w+)", handle.read(), re.M)
+
+            if not guid:
+                continue
+
+            with open(path, errors="ignore") as handle:
+                text = handle.read()
+
+            found[guid.group(1)] = (path, set(re.findall(r"^--- !u!\d+ &(-?\d+)", text, re.M)))
+
+    return found
+
+
+def check_cross_references(path, text, prefabs):
+    for match in CROSS_REF.finditer(text):
+        file_id, guid = match.group(1), match.group(2)
+
+        if guid not in prefabs:
+            continue
+
+        target, anchors = prefabs[guid]
+
+        if file_id in anchors:
+            continue
+
+        problems.append(
+            f"{path}: references {{fileID: {file_id}}} in {target}, which defines no such object. "
+            "A prefab asset is referenced by its root GameObject's fileID, not by 100100000.")
+
+
 def main():
     packages = package_guids()
     # Without a package cache on disk there is no way to tell a package reference from a broken
     # one, so that check stands down rather than crying wolf.
     guids = (known_guids() | {g: "<package>" for g in packages}) if packages else None
+    prefabs = prefab_anchors_by_guid()
     scanned = 0
     for root, dirs, files in os.walk(ASSETS):
         dirs[:] = [d for d in dirs if not d.startswith(".")]
@@ -248,7 +314,9 @@ def main():
             path = os.path.join(root, name).replace(os.sep, "/")
             if not path.startswith(OWNED):
                 continue
-            check_document(path, open(path).read(), guids)
+            body = open(path).read()
+            check_document(path, body, guids)
+            check_cross_references(path, body, prefabs)
             scanned += 1
 
     check_missing_metas()

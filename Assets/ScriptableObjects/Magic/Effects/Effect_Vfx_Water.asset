@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Effect_Vfx_Water
   m_EditorClassIdentifier: 
   editorNote: Closest thing the pack has to a splash. Worth replacing.
-  prefab: {fileID: 100100000, guid: 0edef91621bb6b34384ccc9dbb98729c, type: 3}
+  prefab: {fileID: 4924508274929071776, guid: 0edef91621bb6b34384ccc9dbb98729c, type: 3}
   placement: 0
   facing: 0
   offset: {x: 0, y: 0, z: 0}

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Effect_Vfx_Barrier
   m_EditorClassIdentifier: 
   editorNote: A ward around the caster. One at a time: barrier is channelled.
-  prefab: {fileID: 100100000, guid: b99922c2f59b1a542bdd06ae8bee47ae, type: 3}
+  prefab: {fileID: 1289543790355709915, guid: b99922c2f59b1a542bdd06ae8bee47ae, type: 3}
   placement: 1
   facing: 2
   offset: {x: 0, y: 0, z: 0}
