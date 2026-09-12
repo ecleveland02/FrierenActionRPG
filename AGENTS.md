@@ -120,6 +120,25 @@ Match the surrounding style. It is consistent on purpose.
 - `F7` opens the Boot scene; press Play.
 - Compile errors block Play mode entirely.
 
+## Who owns what, right now
+
+| Area | Owner |
+|---|---|
+| The milestone line: core, characters, magic, combat, world systems | Claude |
+| The Kael character spike: cloth, rig, animation clips, Blender pipeline | Codex |
+
+Concretely, Codex owns `KaelClothBuilder.cs`, `KaelPrototypeBuilder.cs`, `Tools/Blender/`,
+`KaelClothPlayer.prefab`, `KaelClothTestScene.unity`, `Assets/Art/Characters/`, `ArtSource/` and the
+`KAEL_*.md` documents. Claude owns everything under the milestone plan, including `Player.prefab`
+and `TestScene.unity`.
+
+`CharacterClothWind.cs` sits in Claude's assembly but is Codex's component; leave it alone unless
+the cloth work needs it changed. Diagnostics for someone else's subsystem go in a new file rather
+than into theirs - see `KaelClothDiagnostics.cs`.
+
+Neither owner edits the other's files without saying so first. This division is why the first
+merge of the two lines of work had zero conflicts.
+
 ## More than one assistant at once
 
 Unity YAML does not merge, and two agents editing the same file produce silent loss rather than a
