@@ -1,0 +1,289 @@
+using Frieren.Core.Debugging;
+using Frieren.Core.Input;
+using Frieren.Magic;
+using Frieren.Player.Cameras;
+using UnityEngine;
+
+namespace Frieren.Player
+{
+    /// <summary>
+    /// A radial spell selector: hold the wheel button, point or press a number, let go to commit.
+    /// </summary>
+    /// <remarks>
+    /// Selection used to be the number row alone, which stops scaling somewhere around five spells
+    /// and stopped being usable at nine. A wheel shows every option at once and puts them somewhere
+    /// the hand can learn, which a row of digits never does.
+    ///
+    /// Pointer and number row both work, and neither is a special case: the wheel tracks a
+    /// <see cref="Highlighted"/> index, the pointer moves it by angle, the number row sets it
+    /// directly, and releasing commits whatever it lands on. Pressing a number while the wheel is
+    /// open therefore just works, and so does pressing one while it is closed.
+    ///
+    /// It takes the pointer from the camera while it is open, through
+    /// <see cref="OrbitCameraRig.LookEnabled"/>. Aiming a wheel and turning the camera with the
+    /// same mouse movement is not a thing that can be shared.
+    ///
+    /// Nothing is committed until release. Sweeping across the wheel does not fire seven spell
+    /// changes on the way to the one you meant, and returning to the dead zone in the middle falls
+    /// back to what was already selected, so opening the wheel and letting go changes nothing.
+    /// </remarks>
+    [RequireComponent(typeof(PlayerSpellInput))]
+    [DisallowMultipleComponent]
+    public sealed class SpellWheelInput : MonoBehaviour
+    {
+        [SerializeField] private InputReader inputReader;
+
+        [SerializeField]
+        [Tooltip("Pointer travel, in pixels, before the wheel starts tracking. Stops a twitch from re-selecting.")]
+        private float deadZone = 40f;
+
+        [SerializeField]
+        [Tooltip("Radius of the drawn wheel, in pixels.")]
+        private float radius = 150f;
+
+        [SerializeField]
+        [Tooltip("How far the pointer can travel from the centre. Beyond this it simply clamps.")]
+        private float pointerRange = 220f;
+
+        private PlayerSpellInput spells;
+        private OrbitCameraRig cameraRig;
+        private Vector2 pointer;
+        private bool cameraLookWasEnabled = true;
+
+        /// <summary>What the number row last chose. The pointer overrides it while it is out of the
+        /// dead zone, and it is what the wheel falls back to when the pointer is not.</summary>
+        private int keyHighlight;
+
+        private int lastSeenSelection;
+
+        /// <summary>True while the wheel is up.</summary>
+        public bool IsOpen { get; private set; }
+
+        /// <summary>
+        /// The slot the wheel would commit right now. -1 only when there is nothing to choose from.
+        /// </summary>
+        public int Highlighted { get; private set; } = -1;
+
+        private void Awake()
+        {
+            spells = GetComponent<PlayerSpellInput>();
+
+            if (inputReader == null)
+            {
+                GameLog.Error(LogChannel.Magic,
+                    $"{name}: SpellWheelInput has no InputReader, so the wheel will never open.", this);
+            }
+        }
+
+        /// <summary>Told by the spawner, the same way locomotion and the spellcaster are.</summary>
+        public void SetCameraRig(OrbitCameraRig rig) => cameraRig = rig;
+
+        private void OnEnable()
+        {
+            if (inputReader != null)
+            {
+                inputReader.SpellWheelPerformed += Open;
+                inputReader.SpellWheelReleased += CloseAndCommit;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (inputReader != null)
+            {
+                inputReader.SpellWheelPerformed -= Open;
+                inputReader.SpellWheelReleased -= CloseAndCommit;
+            }
+
+            // Leaving the camera switched off because a component was disabled mid-wheel would be
+            // an unrecoverable state with no obvious cause.
+            Close();
+        }
+
+        public void Open()
+        {
+            if (IsOpen || spells.KnownSpells.Count == 0)
+            {
+                return;
+            }
+
+            IsOpen = true;
+            pointer = Vector2.zero;
+            keyHighlight = spells.SelectedIndex;
+            lastSeenSelection = spells.SelectedIndex;
+            Highlighted = keyHighlight;
+
+            if (cameraRig != null)
+            {
+                cameraLookWasEnabled = cameraRig.LookEnabled;
+                cameraRig.LookEnabled = false;
+            }
+        }
+
+        /// <summary>Closes without changing the selection.</summary>
+        public void Close()
+        {
+            if (!IsOpen)
+            {
+                return;
+            }
+
+            IsOpen = false;
+            Highlighted = -1;
+
+            if (cameraRig != null)
+            {
+                cameraRig.LookEnabled = cameraLookWasEnabled;
+            }
+        }
+
+        public void CloseAndCommit()
+        {
+            if (!IsOpen)
+            {
+                return;
+            }
+
+            int chosen = Highlighted;
+            Close();
+
+            if (chosen >= 0)
+            {
+                spells.Select(chosen);
+            }
+        }
+
+        private void Update()
+        {
+            if (!IsOpen)
+            {
+                return;
+            }
+
+            // A number pressed while the wheel is open takes over, and re-centres the pointer so
+            // the wheel does not snap straight back to wherever the mouse happened to be resting.
+            // PlayerSpellInput reads the row itself; this only notices that it moved.
+            if (spells.SelectedIndex != lastSeenSelection)
+            {
+                lastSeenSelection = spells.SelectedIndex;
+                keyHighlight = lastSeenSelection;
+                pointer = Vector2.zero;
+            }
+
+            TrackPointer();
+        }
+
+        private void TrackPointer()
+        {
+            if (inputReader == null)
+            {
+                return;
+            }
+
+            Vector2 look = inputReader.LookInput;
+
+            if (inputReader.LookIsPointerDelta)
+            {
+                pointer += new Vector2(look.x, look.y);
+            }
+            else
+            {
+                // A stick reports a position, not a movement, so it points straight at a slot
+                // rather than dragging towards one.
+                pointer = look * pointerRange;
+            }
+
+            pointer = Vector2.ClampMagnitude(pointer, pointerRange);
+
+            int slot = pointer.magnitude < deadZone
+                ? -1
+                : SlotFor(pointer, spells.KnownSpells.Count);
+
+            // The pointer wins while it is pointing somewhere. In the dead zone the wheel keeps
+            // whatever was already chosen, so opening it and letting go is not a way to lose your
+            // spell.
+            Highlighted = slot >= 0 ? slot : keyHighlight;
+        }
+
+        /// <summary>
+        /// Which slot a direction points at. Slot 0 sits at the top and they run clockwise, because
+        /// that is the order the number row is already in.
+        /// </summary>
+        public static int SlotFor(Vector2 direction, int slotCount)
+        {
+            if (slotCount <= 0 || direction.sqrMagnitude <= 0.0001f)
+            {
+                return -1;
+            }
+
+            float degrees = Mathf.Atan2(direction.x, direction.y) * Mathf.Rad2Deg;
+
+            if (degrees < 0f)
+            {
+                degrees += 360f;
+            }
+
+            float slice = 360f / slotCount;
+
+            // Offset by half a slice so a slot is centred on its angle rather than starting at it.
+            int slot = Mathf.FloorToInt((degrees + slice * 0.5f) / slice);
+            return slot % slotCount;
+        }
+
+        /// <summary>The screen offset of a slot's centre, for drawing. Same convention as SlotFor.</summary>
+        public static Vector2 SlotOffset(int slot, int slotCount, float radius)
+        {
+            if (slotCount <= 0)
+            {
+                return Vector2.zero;
+            }
+
+            float degrees = slot * (360f / slotCount);
+            float radians = degrees * Mathf.Deg2Rad;
+            return new Vector2(Mathf.Sin(radians) * radius, Mathf.Cos(radians) * radius);
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private GUIStyle slotStyle;
+        private GUIStyle centreStyle;
+
+        private void OnGUI()
+        {
+            if (!IsOpen)
+            {
+                return;
+            }
+
+            slotStyle ??= new GUIStyle(GUI.skin.box) { alignment = TextAnchor.MiddleCenter, fontSize = 12 };
+            centreStyle ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontSize = 14 };
+
+            var centre = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+            int count = spells.KnownSpells.Count;
+
+            for (int i = 0; i < count; i++)
+            {
+                SpellDefinition spell = spells.KnownSpells[i];
+
+                if (spell == null)
+                {
+                    continue;
+                }
+
+                // Screen y grows downwards, so the offset's y is subtracted to put slot 0 on top.
+                Vector2 offset = SlotOffset(i, count, radius);
+                var slot = new Rect(centre.x + offset.x - 62f, centre.y - offset.y - 20f, 124f, 40f);
+
+                Color previous = GUI.color;
+                GUI.color = i == Highlighted ? new Color(1f, 0.9f, 0.5f) : new Color(1f, 1f, 1f, 0.75f);
+                GUI.Box(slot, $"{i + 1}. {spell.DisplayName}\n{spell.ManaCost:0} mana", slotStyle);
+                GUI.color = previous;
+            }
+
+            string label = Highlighted >= 0 && Highlighted < count && spells.KnownSpells[Highlighted] != null
+                ? spells.KnownSpells[Highlighted].DisplayName
+                : "no spell";
+            GUI.Label(new Rect(centre.x - 90f, centre.y - 10f, 180f, 20f), label, centreStyle);
+        }
+#endif
+    }
+}

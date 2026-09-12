@@ -90,6 +90,14 @@ namespace Frieren.Core.EditorTools
             AssignReference(spellInput, "inputReader", reader);
             AssignSpellList(spellInput);
 
+            SpellWheelInput spellWheel = root.AddComponent<SpellWheelInput>();
+            AssignReference(spellWheel, "inputReader", reader);
+
+            PlayerBlockInput block = root.AddComponent<PlayerBlockInput>();
+            AssignReference(block, "inputReader", reader);
+            AssignReference(block, "blockSpell",
+                AssetDatabase.LoadAssetAtPath<SpellDefinition>(ProjectPaths.SpellBarrier));
+
             PlayerLocomotion locomotion = root.AddComponent<PlayerLocomotion>();
             PlayerDodge dodge = root.AddComponent<PlayerDodge>();
             PlayerInteractor interactor = root.AddComponent<PlayerInteractor>();
@@ -210,7 +218,19 @@ namespace Frieren.Core.EditorTools
             SerializedProperty spells = serialized.FindProperty("knownSpells");
             spells.ClearArray();
 
-            string[] paths = { ProjectPaths.SpellArcaneBolt, ProjectPaths.SpellFire, ProjectPaths.SpellLevitate };
+            // Wheel order, which is also the number row. Barrier is deliberately absent: it lives
+            // on the block button, not in a slot you have to select before you can defend yourself.
+            string[] paths =
+            {
+                ProjectPaths.SpellArcaneBolt,
+                ProjectPaths.SpellZoltraak,
+                ProjectPaths.SpellFire,
+                ProjectPaths.SpellIce,
+                ProjectPaths.SpellLevitate,
+                ProjectPaths.SpellWater,
+                ProjectPaths.SpellRepair,
+                ProjectPaths.SpellUnlock,
+            };
 
             foreach (string path in paths)
             {

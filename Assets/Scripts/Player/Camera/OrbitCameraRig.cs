@@ -74,6 +74,12 @@ namespace Frieren.Player.Cameras
 
         public Transform Target => target;
 
+        /// <summary>
+        /// Whether pointer and stick input turn the camera. Something taking over the pointer -
+        /// the spell wheel today, a menu later - switches this off while it is up.
+        /// </summary>
+        public bool LookEnabled { get; set; } = true;
+
         public OrbitCameraSolver Solver => solver;
 
         private void Awake()
@@ -135,6 +141,14 @@ namespace Frieren.Player.Cameras
         {
             Vector2 degrees = pendingPointerDelta * pointerSensitivity;
             pendingPointerDelta = Vector2.zero;
+
+            // Something else is using the pointer - the spell wheel, and later a menu. The pending
+            // delta is still cleared above, so the camera does not lurch by everything the player
+            // moved while it was suspended.
+            if (!LookEnabled)
+            {
+                return;
+            }
 
             if (inputReader != null && !inputReader.LookIsPointerDelta)
             {

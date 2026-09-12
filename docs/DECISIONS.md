@@ -513,3 +513,48 @@ the new clock on load.
 
 Worth writing down because it is not specific to cooldowns. Every timer this project persists later
 - a buff, a respawn, a door that closes itself - has the same trap waiting.
+
+
+---
+
+## Milestone 6.1
+
+### 37. Defence gets a button, not a slot
+
+Barrier was a spell in the selection list, which meant defending yourself required first selecting
+defence. That is fine for a utility spell and wrong for a block: the moment you need it is the
+moment you have no time to choose it.
+
+So it moved to right mouse. It is still authored as a `SpellDefinition` and still runs through
+`CharacterSpellcaster` - the cost, the drain and the effect stay in the asset, and nothing about the
+magic system learned that this spell is special. Only the input changed.
+
+The consequence worth stating: blocking occupies the caster, so casting is refused while a ward is
+up. That is a real rule with a real cost, and it is the one to revisit first if the fight feels
+stiff.
+
+### 38. Two inputs on one caster need a scoped release
+
+`ReleaseChannel()` released whatever channel was running. With one input that is unambiguous; with
+two it is a bug. Tapping cast while blocking would have dropped the ward - the cast is refused
+because a channel is already running, but its button-up still landed.
+
+`ReleaseChannel(spell)` releases only if that spell is the one running. Worth writing down because
+the same shape returns with every input that can start a channel: an ability bar, an item, an NPC
+casting through the same component.
+
+### 39. The wheel has one highlight, not two input modes
+
+A radial menu with a pointer and a number row is tempting to build as two selection systems that
+each write the answer. That produces the classic bug where the mouse resting off-centre silently
+overrides the key you just pressed.
+
+Instead there is one highlighted index. The number row sets it, the pointer overrides it only while
+out of the dead zone, and a number press re-centres the pointer so it has to be moved deliberately to
+take back over. Nothing commits until release, so sweeping across the wheel changes the selection
+once rather than six times.
+
+The wheel takes the pointer from the camera while it is open, via `OrbitCameraRig.LookEnabled`. That
+property is deliberately general - a menu will want the same thing - and it clears the pending delta
+rather than banking it, so the camera does not lurch by everything the player moved while it was
+suspended.

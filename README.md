@@ -69,7 +69,9 @@ Press Play from `Boot.unity`. Boot loads `TestScene` additively and hands contro
 | Dodge | `Ctrl` | B / circle |
 | Interact | `E` | X / square |
 | Cast | Left mouse (hold for channelled spells) | Right trigger |
-| Select spell | `1`-`9`: bolt, Zoltraak, barrier, fire, ice, levitate, water, mending, unbinding | - |
+| Block | **Right mouse (hold)** | Left trigger |
+| Spell wheel | **`Q` (hold)** — point with the mouse or press `1`-`8` | Left bumper, point with the left stick |
+| Select spell | `1`-`8`: bolt, Zoltraak, fire, ice, levitate, water, mending, unbinding | - |
 | Pause | `Esc` | Start |
 
 Debug keys: `F1` overlay, `F2` damage 15, `F3` heal or revive, `F4` spend 15 mana, `F5` quick save,
@@ -97,13 +99,13 @@ and walk across - or hold Levitation (`6`) and float over instead. Further west,
 Unbinding (`9`) opens and Fire (`4`) burns down. South-east, a broken stump that Mending (`8`) puts
 back together if you hold it long enough.
 
-**Automated tests:** `Window > General > Test Runner`. **EditMode** runs 196 tests instantly and needs no
+**Automated tests:** `Window > General > Test Runner`. **EditMode** runs 209 tests instantly and needs no
 scene: they cover the service
 locator, the game state machine, the save system, jump timing, motor maths, camera orbit maths,
 interaction scoring, the character resource pool, spell cooldowns, burn state, the damage barrier,
 the water basin, the lock and the time scale.
 
-**PlayMode** runs 55 more and takes about a minute: the enemy end to end (detection, chasing, the
+**PlayMode** runs 67 more and takes about a minute: the enemy end to end (detection, chasing, the
 wind-up landing no damage, escaping it, stagger, death), channelling and mana drain, regeneration
 delays, the barrier lapsing, levitation lifting the body, the trough draining, and a smoke test that
 boots the real project and checks all nine spells are wired up, plus save-and-load round trips for

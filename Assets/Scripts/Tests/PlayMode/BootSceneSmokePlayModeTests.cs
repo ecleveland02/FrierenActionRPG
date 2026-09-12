@@ -120,7 +120,8 @@ namespace Frieren.Tests.PlayMode
             PlayerSpellInput player = FindPlayer();
             IReadOnlyList<SpellDefinition> spells = player.KnownSpells;
 
-            Assert.AreEqual(9, spells.Count, "Nine spells were authored; a missing one means a broken reference.");
+            Assert.AreEqual(8, spells.Count,
+                "Eight spells are on the wheel. Barrier is the ninth and lives on the block button.");
 
             var ids = new HashSet<string>();
 
@@ -150,18 +151,37 @@ namespace Frieren.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator ZoltraakAndBarrierAreWhatTheyClaimToBe()
+        public IEnumerator ZoltraakIsWhatItClaimsToBe()
         {
             PlayerSpellInput player = FindPlayer();
             SpellDefinition zoltraak = FindSpell(player, "spell.zoltraak");
-            SpellDefinition barrier = FindSpell(player, "spell.barrier");
 
             Assert.AreEqual(SpellTargeting.Ray, zoltraak.Targeting, "Zoltraak is aimed, not self-cast.");
             Assert.IsFalse(zoltraak.IsChannelled);
             Assert.Greater(zoltraak.Range, 20f);
 
-            Assert.AreEqual(SpellTargeting.Self, barrier.Targeting, "A ward goes on the caster.");
-            Assert.IsTrue(barrier.IsChannelled, "Barrier is held, not fired once.");
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator BlockingIsWiredToItsOwnButtonAndNotToTheWheel()
+        {
+            PlayerSpellInput player = FindPlayer();
+            var block = player.GetComponent<PlayerBlockInput>();
+
+            Assert.IsNotNull(block, "Right mouse has to reach something.");
+            Assert.IsNotNull(block.BlockSpell, "The block button has no spell behind it.");
+            Assert.AreEqual("spell.barrier", block.BlockSpell.Id);
+            Assert.AreEqual(SpellTargeting.Self, block.BlockSpell.Targeting, "A ward goes on the caster.");
+            Assert.IsTrue(block.BlockSpell.IsChannelled, "Blocking is held, not fired once.");
+
+            for (int i = 0; i < player.KnownSpells.Count; i++)
+            {
+                Assert.AreNotEqual("spell.barrier", player.KnownSpells[i]?.Id,
+                    "Barrier moved off the wheel; leaving it in a slot too would be two ways to do one thing.");
+            }
+
+            Assert.IsNotNull(player.GetComponent<SpellWheelInput>(), "Q has to reach something.");
 
             yield return null;
         }

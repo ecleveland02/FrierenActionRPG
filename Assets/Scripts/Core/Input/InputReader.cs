@@ -39,6 +39,8 @@ namespace Frieren.Core.Input
         private InputAction dodgeAction;
         private InputAction interactAction;
         private InputAction castAction;
+        private InputAction blockAction;
+        private InputAction spellWheelAction;
         private InputAction pauseAction;
 
         public bool IsInitialized { get; private set; }
@@ -61,6 +63,11 @@ namespace Frieren.Core.Input
 
         public bool SprintHeld { get; private set; }
 
+        /// <summary>True while the block button is held, for anything that asks rather than listens.</summary>
+        public bool BlockHeld { get; private set; }
+
+        public bool SpellWheelHeld { get; private set; }
+
         public event Action<Vector2> MoveChanged;
 
         public event Action<Vector2> LookChanged;
@@ -77,6 +84,16 @@ namespace Frieren.Core.Input
 
         /// <summary>Raised when the cast button is released. Ends a channelled spell.</summary>
         public event Action CastReleased;
+
+        /// <summary>Raised while the block button goes down. Raises a ward for as long as it is held.</summary>
+        public event Action BlockPerformed;
+
+        public event Action BlockReleased;
+
+        /// <summary>Raised when the spell wheel opens. It stays open until <see cref="SpellWheelReleased"/>.</summary>
+        public event Action SpellWheelPerformed;
+
+        public event Action SpellWheelReleased;
 
         public event Action PausePerformed;
 
@@ -111,6 +128,8 @@ namespace Frieren.Core.Input
             dodgeAction = Resolve(gameplayMap, "Dodge");
             interactAction = Resolve(gameplayMap, "Interact");
             castAction = Resolve(gameplayMap, "Cast");
+            blockAction = Resolve(gameplayMap, "Block");
+            spellWheelAction = Resolve(gameplayMap, "SpellWheel");
             pauseAction = Resolve(gameplayMap, "Pause");
 
             Bind(moveAction, OnMove, OnMove);
@@ -120,6 +139,8 @@ namespace Frieren.Core.Input
             Bind(dodgeAction, OnDodge);
             Bind(interactAction, OnInteract);
             Bind(castAction, OnCast, OnCastReleased);
+            Bind(blockAction, OnBlock, OnBlockReleased);
+            Bind(spellWheelAction, OnSpellWheel, OnSpellWheelReleased);
             Bind(pauseAction, OnPause);
 
             IsInitialized = true;
@@ -170,6 +191,8 @@ namespace Frieren.Core.Input
             Unbind(dodgeAction, OnDodge);
             Unbind(interactAction, OnInteract);
             Unbind(castAction, OnCast, OnCastReleased);
+            Unbind(blockAction, OnBlock, OnBlockReleased);
+            Unbind(spellWheelAction, OnSpellWheel, OnSpellWheelReleased);
             Unbind(pauseAction, OnPause);
 
             gameplayMap?.Disable();
@@ -182,6 +205,8 @@ namespace Frieren.Core.Input
             dodgeAction = null;
             interactAction = null;
             castAction = null;
+            blockAction = null;
+            spellWheelAction = null;
             pauseAction = null;
             gameplayMap = null;
             uiMap = null;
@@ -195,6 +220,10 @@ namespace Frieren.Core.Input
             InteractPerformed = null;
             CastPerformed = null;
             CastReleased = null;
+            BlockPerformed = null;
+            BlockReleased = null;
+            SpellWheelPerformed = null;
+            SpellWheelReleased = null;
             PausePerformed = null;
 
             ResetValues();
@@ -209,6 +238,8 @@ namespace Frieren.Core.Input
             LookInput = Vector2.zero;
             LookIsPointerDelta = false;
             SprintHeld = false;
+            BlockHeld = false;
+            SpellWheelHeld = false;
         }
 
         private InputAction Resolve(InputActionMap map, string actionName)
@@ -289,6 +320,30 @@ namespace Frieren.Core.Input
         private void OnCast(InputAction.CallbackContext context) => CastPerformed?.Invoke();
 
         private void OnCastReleased(InputAction.CallbackContext context) => CastReleased?.Invoke();
+
+        private void OnBlock(InputAction.CallbackContext context)
+        {
+            BlockHeld = true;
+            BlockPerformed?.Invoke();
+        }
+
+        private void OnBlockReleased(InputAction.CallbackContext context)
+        {
+            BlockHeld = false;
+            BlockReleased?.Invoke();
+        }
+
+        private void OnSpellWheel(InputAction.CallbackContext context)
+        {
+            SpellWheelHeld = true;
+            SpellWheelPerformed?.Invoke();
+        }
+
+        private void OnSpellWheelReleased(InputAction.CallbackContext context)
+        {
+            SpellWheelHeld = false;
+            SpellWheelReleased?.Invoke();
+        }
 
         private void OnPause(InputAction.CallbackContext context) => PausePerformed?.Invoke();
     }

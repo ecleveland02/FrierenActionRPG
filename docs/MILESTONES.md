@@ -12,6 +12,7 @@ Each milestone must produce something playable or testable, and be verified befo
 | 5.5 | Combat feel: placeholder feedback so the loop can be judged | **Complete**, not yet run in the editor |
 | 5.6 | Play-mode tests, so Milestones 5 and 5.5 can be verified by pressing Run | **Complete**, not yet run in the editor |
 | 6 | Persistence: the world remembers what you did to it | **Complete**, not yet run in the editor |
+| 6.1 | Block on right mouse, spells on a radial wheel | **Complete**, not yet run in the editor |
 | 7 | Gray-box vertical slice (absorbs the briefed M6 breadth) | Not started |
 
 Outside the milestone sequence, a **Kael character spike** exists in its own prefab and scene, built
@@ -611,6 +612,70 @@ Not spawning it is the same outcome for none of the work.
 4. The sharp one: **kill the sentinel, save, load.** It should stay dead rather than respawning.
 5. `Frieren > Saves > Open Save Folder` shows the JSON, one entry per object, keyed by the ids in
    `SceneObjectId`.
+
+---
+
+## Milestone 6.1 - Block on its own button, spells on a wheel (complete, not yet run)
+
+**Build stamp: `m6.1 block and spell wheel`.** Both changes requested directly.
+
+### Blocking is a button, not a slot
+
+Barrier leaves the spell list and gets right mouse to itself. That is a design change, not a rebind:
+defence you have to *select* is defence you will not use, and cycling to it mid-swing is the exact
+opposite of what a block is for.
+
+It is still a spell. `PlayerBlockInput` runs the same `Spell_Barrier` asset through the same
+`CharacterSpellcaster`, so its cost, its drain and what it does stay authored in an asset. All the
+component changes is which button starts it.
+
+**Blocking occupies the caster.** The spellcaster runs one spell at a time, so the cast button is
+refused while a ward is up and says why. That reads as concentration and suits the setting; if it
+feels bad in play, the fix is a flag on the spell rather than a special path for this one button.
+
+**One real bug fell out of two inputs sharing one caster.** `ReleaseChannel()` released whatever was
+running, so tapping cast while blocking - the cast itself refused - would still have dropped the
+ward on button-up. There is now `ReleaseChannel(spell)`, and each input releases only its own.
+
+### The wheel
+
+Hold `Q`. Point with the mouse or press a number; release to commit.
+
+Nine spells on a number row stopped being usable somewhere around five. The wheel shows every option
+at once and puts them somewhere the hand can learn.
+
+Pointer and number row are not two code paths. The wheel tracks one highlighted index: the pointer
+moves it by angle, the number row sets it directly, and the pointer only wins while it is out of the
+dead zone in the middle. So pressing a number with the wheel open just works, opening and letting go
+changes nothing, and sweeping across the wheel does not fire six spell changes on the way to the one
+you meant.
+
+It borrows the pointer from the camera while it is open, through a new `OrbitCameraRig.LookEnabled`.
+Aiming a wheel and turning the camera with the same mouse movement is not a thing that can be
+shared. `PlayerSpawner` wires it the same way it already wires locomotion and the aim source.
+
+**Delivered**
+
+- `Block` and `SpellWheel` actions in the input asset: right mouse / left trigger, and `Q` / left
+  bumper.
+- `PlayerBlockInput`, `SpellWheelInput`, `CharacterSpellcaster.ReleaseChannel(spell)`,
+  `OrbitCameraRig.LookEnabled`.
+- The permanent nine-line spell list is gone; `PlayerSpellInput` now shows one line, since the wheel
+  is a better place to look.
+- 13 edit-mode tests for the wheel geometry and 12 play-mode tests for both features
+  (209 + 67 = 276 in total).
+
+**Known limitations**
+
+1. Not run in the editor.
+2. The wheel is IMGUI, like the rest of the placeholder UI. It is legible, not pretty.
+3. Time does not slow while the wheel is open. `TimeScaleService` makes that a two-line change if it
+   turns out to be wanted, and it deliberately is not there yet - it changes the pace of every fight.
+4. The number row still works with the wheel closed, which is a superset of what was asked for and
+   costs nothing.
+5. Gamepad wheel selection points with the left stick, which is also the movement stick. Playable,
+   but it means you cannot walk while choosing.
+6. Blocking has no visual of its own beyond the barrier shell and the vitals readout.
 
 ---
 

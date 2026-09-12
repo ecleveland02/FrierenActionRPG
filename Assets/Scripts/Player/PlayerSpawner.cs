@@ -119,6 +119,13 @@ namespace Frieren.Player
             {
                 spellcaster.SetAimSource(cameraRig.transform);
             }
+
+            // The wheel borrows the pointer from the camera while it is open, so it needs to know
+            // which camera to borrow it from.
+            if (SpawnedPlayer.TryGetComponent(out SpellWheelInput spellWheel))
+            {
+                spellWheel.SetCameraRig(cameraRig);
+            }
         }
 
 #if UNITY_EDITOR

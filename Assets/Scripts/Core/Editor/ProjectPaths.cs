@@ -23,6 +23,14 @@ namespace Frieren.Core.EditorTools
         public const string SpellArcaneBolt = SpellFolder + "/Spell_ArcaneBolt.asset";
         public const string SpellFire = SpellFolder + "/Spell_Fire.asset";
         public const string SpellLevitate = SpellFolder + "/Spell_Levitate.asset";
+        public const string SpellZoltraak = SpellFolder + "/Spell_Zoltraak.asset";
+        public const string SpellIce = SpellFolder + "/Spell_Ice.asset";
+        public const string SpellWater = SpellFolder + "/Spell_Water.asset";
+        public const string SpellRepair = SpellFolder + "/Spell_Repair.asset";
+        public const string SpellUnlock = SpellFolder + "/Spell_Unlock.asset";
+
+        /// <summary>Not on the wheel. Held on the block button instead - see PlayerBlockInput.</summary>
+        public const string SpellBarrier = SpellFolder + "/Spell_Barrier.asset";
 
         public const string LogSettings = "Assets/ScriptableObjects/Debug/LogSettings.asset";
         public const string InputReader = "Assets/ScriptableObjects/Input/InputReader.asset";

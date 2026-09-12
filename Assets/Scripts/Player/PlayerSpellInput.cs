@@ -16,8 +16,9 @@ namespace Frieren.Player
     /// input at all, which is what lets an enemy in Milestone 5 cast the same spells through the
     /// same component with a behaviour tree driving it instead of a mouse.
     ///
-    /// Spell selection is a numeric row for now. Real spell discovery, a hotbar and a spell menu are
-    /// later milestones; this exists so three spells can be tested without any UI.
+    /// Selection is a shared index rather than an input mode of its own: the number row is read
+    /// here, and <see cref="SpellWheelInput"/> drives the same <see cref="Select"/>. Either works at
+    /// any time, and neither knows about the other.
     /// </remarks>
     [RequireComponent(typeof(CharacterSpellcaster))]
     [DisallowMultipleComponent]
@@ -75,7 +76,8 @@ namespace Frieren.Player
             }
 
             // Releasing on disable stops a channel surviving the component being switched off.
-            spellcaster.ReleaseChannel();
+            // Scoped to the selected spell so it cannot drop a ward the block input is holding.
+            spellcaster.ReleaseChannel(SelectedSpell);
         }
 
         private void Update() => ReadSelectionKeys();
@@ -127,35 +129,37 @@ namespace Frieren.Player
             spellcaster.TryCast(SelectedSpell);
         }
 
-        private void OnCastReleased() => spellcaster.ReleaseChannel();
+        private void OnCastReleased() => spellcaster.ReleaseChannel(SelectedSpell);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// A single line, now that <c>SpellWheelInput</c> shows the full list on demand. Nine rows
+        /// permanently on screen was a list nobody read once there was somewhere better to look.
+        /// </summary>
         private void OnGUI()
         {
-            var area = new Rect(10f, 337f, 420f, 22f + knownSpells.Count * 18f);
+            var area = new Rect(10f, 337f, 420f, 40f);
             GUILayout.BeginArea(area, GUI.skin.box);
-            GUILayout.Label("Spells - number keys select, Cast (LMB / RT) casts");
 
-            for (int i = 0; i < knownSpells.Count; i++)
+            SpellDefinition spell = SelectedSpell;
+
+            if (spell == null)
             {
-                SpellDefinition spell = knownSpells[i];
-
-                if (spell == null)
-                {
-                    continue;
-                }
-
-                float cooldown = spellcaster != null ? spellcaster.CooldownRemaining(spell) : 0f;
-                string marker = i == SelectedIndex ? ">" : " ";
-                string cost = spell.IsChannelled
-                    ? $"{spell.ManaCost:0} + {spell.ManaPerSecond:0}/s (hold)"
-                    : $"{spell.ManaCost:0} mana";
-                string state = spellcaster != null && spellcaster.IsChannelling && spellcaster.CurrentSpell == spell
-                    ? "  CHANNELLING"
-                    : cooldown > 0f ? $"  cooling {cooldown:0.0}s" : string.Empty;
-                GUILayout.Label($"{marker} {i + 1}. {spell.DisplayName}   {cost}{state}");
+                GUILayout.Label("No spell selected.  Q for the wheel");
+                GUILayout.EndArea();
+                return;
             }
 
+            float cooldown = spellcaster != null ? spellcaster.CooldownRemaining(spell) : 0f;
+            string cost = spell.IsChannelled
+                ? $"{spell.ManaCost:0} + {spell.ManaPerSecond:0}/s (hold)"
+                : $"{spell.ManaCost:0} mana";
+            string state = spellcaster != null && spellcaster.IsChannelling && spellcaster.CurrentSpell == spell
+                ? "  CHANNELLING"
+                : cooldown > 0f ? $"  cooling {cooldown:0.0}s" : string.Empty;
+
+            GUILayout.Label($"{SelectedIndex + 1}. {spell.DisplayName}   {cost}{state}");
+            GUILayout.Label("Q wheel (point or press a number)   LMB cast   RMB block");
             GUILayout.EndArea();
         }
 #endif

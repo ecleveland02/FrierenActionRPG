@@ -168,6 +168,23 @@ namespace Frieren.Magic
         /// </remarks>
         public void ReleaseChannel() => channelReleaseRequested = true;
 
+        /// <summary>
+        /// Releases the channel only if <paramref name="spell"/> is the one running.
+        /// </summary>
+        /// <remarks>
+        /// Two inputs now drive one caster: the cast button and the block button. Without this,
+        /// tapping cast while blocking would drop the ward - the cast itself is refused because a
+        /// channel is already running, but its release would still land on the barrier. Each input
+        /// releases its own spell and nothing else.
+        /// </remarks>
+        public void ReleaseChannel(SpellDefinition spell)
+        {
+            if (spell != null && CurrentSpell == spell)
+            {
+                channelReleaseRequested = true;
+            }
+        }
+
         /// <summary>Stops a cast in progress. The mana is not refunded; it was spent to begin.</summary>
         public void CancelCast()
         {

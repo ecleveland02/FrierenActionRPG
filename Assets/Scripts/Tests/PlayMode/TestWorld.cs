@@ -168,6 +168,24 @@ namespace Frieren.Tests.PlayMode
             return spell;
         }
 
+        /// <summary>
+        /// A reader with no action asset behind it.
+        /// </summary>
+        /// <remarks>
+        /// The player's input components log an error when they have no reader, and a logged error
+        /// fails a Unity test - so a fixture that wants to drive them through their public API still
+        /// has to hand them one. It is never initialised, so it raises nothing and reads as neutral.
+        /// Driving real devices is the Input System's own test fixtures' problem, and a different
+        /// one from what happens after a button is read.
+        /// </remarks>
+        public Core.Input.InputReader CreateSilentInputReader()
+        {
+            var reader = ScriptableObject.CreateInstance<Core.Input.InputReader>();
+            reader.name = "InputReader_Test";
+            Track(reader);
+            return reader;
+        }
+
         public T Track<T>(T target) where T : Object
         {
             spawned.Add(target);
