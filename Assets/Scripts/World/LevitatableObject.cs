@@ -42,6 +42,15 @@ namespace Frieren.World
         [Min(0.01f)]
         private float fallSpeed = 2.5f;
 
+        [Header("Placeholder visuals")]
+        [SerializeField]
+        [Tooltip("Tinted so a liftable block is distinguishable from ordinary scenery. Goes with the HUD.")]
+        private Renderer tintTarget;
+
+        [SerializeField] private Color restColour = new Color(0.45f, 0.6f, 0.85f);
+
+        [SerializeField] private Color raisedColour = new Color(0.65f, 0.85f, 1f);
+
         [Header("Hold")]
         [SerializeField]
         [Min(0f)]
@@ -51,6 +60,9 @@ namespace Frieren.World
         private Vector3 restingPosition;
         private float targetLift;
         private float holdRemaining;
+        private MaterialPropertyBlock propertyBlock;
+        private int baseColorId;
+        private int colorId;
 
         public event Action<float> Lifted;
 
@@ -61,7 +73,45 @@ namespace Frieren.World
 
         public bool IsRaised => CurrentLift > 0.01f;
 
-        private void Awake() => restingPosition = transform.position;
+        private void Awake()
+        {
+            restingPosition = transform.position;
+            propertyBlock = new MaterialPropertyBlock();
+            baseColorId = Shader.PropertyToID("_BaseColor");
+            colorId = Shader.PropertyToID("_Color");
+
+            if (tintTarget == null)
+            {
+                tintTarget = GetComponentInChildren<Renderer>();
+            }
+
+            ApplyTint();
+        }
+
+        /// <summary>
+        /// Colours the block so it reads as magic-reactive.
+        /// </summary>
+        /// <remarks>
+        /// Gray-boxing makes every object an identical grey cube, so a player casting Levitation has
+        /// no way to know which blocks will answer. Flammable objects already tint themselves; this
+        /// gives liftable ones the same courtesy. It goes when there is real art, or a targeting
+        /// highlight, to say the same thing better.
+        /// </remarks>
+        private void ApplyTint()
+        {
+            if (tintTarget == null)
+            {
+                return;
+            }
+
+            float raised = maximumLift <= 0f ? 0f : Mathf.Clamp01(CurrentLift / maximumLift);
+            Color colour = Color.Lerp(restColour, raisedColour, raised);
+
+            tintTarget.GetPropertyBlock(propertyBlock);
+            propertyBlock.SetColor(baseColorId, colour);
+            propertyBlock.SetColor(colorId, colour);
+            tintTarget.SetPropertyBlock(propertyBlock);
+        }
 
         private void Update()
         {
@@ -92,6 +142,7 @@ namespace Frieren.World
             float speed = targetLift > current ? riseSpeed : fallSpeed;
             float next = Mathf.MoveTowards(current, targetLift, speed * deltaTime);
             transform.position = restingPosition + Vector3.up * next;
+            ApplyTint();
 
             if (next <= 0.001f && targetLift <= 0f && current > 0.001f)
             {

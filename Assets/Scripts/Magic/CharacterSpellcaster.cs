@@ -163,10 +163,13 @@ namespace Frieren.Magic
                 }
             }
 
-            GameLog.Info(LogChannel.Magic,
-                $"{name} cast {spell.Id} at {context.Point}" +
-                $"{(context.Target != null ? $" hitting {context.Target.name}" : string.Empty)}, " +
-                $"affected something: {affectedSomething}.", this);
+            string outcome = affectedSomething
+                ? "something responded"
+                : context.Target != null
+                    ? $"'{context.Target.name}' does not respond to this spell"
+                    : "nothing was hit";
+
+            GameLog.Info(LogChannel.Magic, $"{name} cast {spell.Id} at {context.Point}: {outcome}.", this);
 
             castRoutine = null;
             CurrentSpell = null;

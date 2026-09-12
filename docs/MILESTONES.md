@@ -7,7 +7,7 @@ Each milestone must produce something playable or testable, and be verified befo
 | 1 | Project foundation | **Complete**, opens and runs in the editor |
 | 2 | Placeholder third-person player | **Complete**, playable in the editor |
 | 3 | Modular character architecture | **Complete**, not yet run in the editor |
-| 4 | Data-driven magic framework + 3 spells | **Complete**, not yet run in the editor |
+| 4 | Data-driven magic framework + 3 spells | **Complete**, casting confirmed in the editor |
 | 5 | First enemy and basic combat | Not started |
 | 6 | Reusable environmental interaction systems | Contract landed in M4; breadth remaining |
 | 7 | Gray-box vertical slice | Not started |
@@ -206,7 +206,7 @@ That last one is the milestone's real test: it proves stats, vitals and persiste
 
 **Known limitations**
 
-1. Not yet run in the editor.
+1. Casting is confirmed working in the editor; the individual spell outcomes are not all verified yet.
 2. Five of the eight briefed spells are missing: Ice, Barrier, Water, Repair, Unlock. Ice and Water
    need only assets, since `FlammableObject` already answers Cold and Water. Barrier, Repair and
    Unlock need new effect types and new receivers.
@@ -226,8 +226,10 @@ Open `Boot`, press Play. A spell list appears under the vitals panel.
 2. Aim at the tall dummy and cast Bolt. Its health drops; mana drops; the spell greys out briefly.
 3. Aim at a crate and cast Fire. It warms toward orange, catches, burns, then blackens and vanishes.
    One Fire cast reaches both crates if you stand so they are within 2.5m of the impact.
-4. Aim at the block and cast Levitation. It rises and holds, then sinks. Cast again while it is up
-   to raise it further, then jump onto it.
+4. Aim at the **pale blue** block and cast Levitation. It rises and holds, then sinks; cast again
+   while it is up to raise it further, then jump onto it. The large grey `Platform` nearby is
+   ordinary scenery and will correctly ignore the spell - magic-reactive objects are tinted,
+   everything else is default grey.
 5. Cast until mana runs out: the console explains the refusal rather than nothing happening.
 
 Item 3 is the one that matters. The crate has no idea Fire exists - it reacts to Heat - so any later
