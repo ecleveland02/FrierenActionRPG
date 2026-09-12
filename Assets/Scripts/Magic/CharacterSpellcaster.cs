@@ -125,6 +125,11 @@ namespace Frieren.Magic
             }
 
             CurrentSpell = spell;
+
+            // Cleared here, not in Channel: the cast time runs before the channel starts, and a
+            // release during it must survive to end the channel on its first check. Clearing later
+            // discarded it, so a quick click began a channel nothing would ever stop.
+            channelReleaseRequested = false;
             cooldowns.Begin(spell.Id, Time.time, spell.Cooldown);
             CastStarted?.Invoke(spell);
             characterAnimation?.PlayAction(CharacterAction.CastStart);
@@ -199,9 +204,9 @@ namespace Frieren.Magic
         private IEnumerator Channel(SpellDefinition spell)
         {
             IsChannelling = true;
-            channelReleaseRequested = false;
 
             float started = Time.time;
+            bool firstTick = true;
             float tick = spell.ChannelTickInterval;
             float costPerTick = spell.ManaPerSecond * tick;
             string reason = "released";
@@ -220,7 +225,20 @@ namespace Frieren.Magic
                     break;
                 }
 
-                ApplyEffects(spell, BuildContext(spell), log: false);
+                bool affected = ApplyEffects(spell, BuildContext(spell), log: false);
+
+                if (firstTick)
+                {
+                    // One line per channel rather than ten a second, but enough to tell a spell
+                    // that never started from one that started and reached nothing.
+                    firstTick = false;
+                    SpellContext probe = BuildContext(spell);
+                    GameLog.Info(LogChannel.Magic,
+                        $"{name} began channelling {spell.Id} ({spell.Targeting}) on " +
+                        $"'{(probe.Target != null ? probe.Target.name : "nothing")}': " +
+                        $"{(affected ? "something responded" : "nothing responded")}.", this);
+                }
+
                 ChannelTicked?.Invoke(spell);
 
                 yield return new WaitForSeconds(tick);
