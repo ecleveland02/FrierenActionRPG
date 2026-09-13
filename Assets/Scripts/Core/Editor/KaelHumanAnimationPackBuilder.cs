@@ -193,7 +193,7 @@ namespace Frieren.Core.EditorTools
         [MenuItem("Frieren/Kael/Use Imported KaelRigged Model", priority = 65)]
         public static void UseImportedKaelRiggedModel()
         {
-            const string modelPath = "Assets/Art/Characters/Kael/Models/KaelRigged/Kael.fbx";
+            const string modelPath = "Assets/Art/Characters/Kael/Models/KaelRigged/KaelRigged@T-Pose.fbx";
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
             if (model == null)
                 throw new InvalidOperationException("KaelRigged FBX has not finished importing: " + modelPath);
