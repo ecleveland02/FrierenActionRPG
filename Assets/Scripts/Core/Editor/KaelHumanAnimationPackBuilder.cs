@@ -36,6 +36,7 @@ namespace Frieren.Core.EditorTools
             ac.AddParameter("MoveForward", AnimatorControllerParameterType.Float);
             ac.AddParameter("VerticalVelocity", AnimatorControllerParameterType.Float);
             ac.AddParameter("IsGrounded", AnimatorControllerParameterType.Bool);
+            ac.AddParameter("IsSprinting", AnimatorControllerParameterType.Bool);
             ac.AddParameter("Jump", AnimatorControllerParameterType.Trigger);
             ac.AddParameter("Land", AnimatorControllerParameterType.Trigger);
             var sm = ac.layers[0].stateMachine;
@@ -47,6 +48,9 @@ namespace Frieren.Core.EditorTools
             if (left != null) tree.AddChild(left, new Vector2(-1f, 0f));
             if (right != null) tree.AddChild(right, new Vector2(1f, 0f));
             locomotion.motion = tree; sm.defaultState = locomotion;
+            var sprint = sm.AddState("Sprint"); sprint.motion = run;
+            var toSprint = locomotion.AddTransition(sprint); toSprint.hasExitTime = false; toSprint.AddCondition(AnimatorConditionMode.If, 0, "IsSprinting");
+            var fromSprint = sprint.AddTransition(locomotion); fromSprint.hasExitTime = false; fromSprint.AddCondition(AnimatorConditionMode.IfNot, 0, "IsSprinting");
             var air = sm.AddState("Air"); air.motion = jump; var t = locomotion.AddTransition(air); t.hasExitTime = false; t.AddCondition(AnimatorConditionMode.IfNot, 0, "IsGrounded");
             var grounded = air.AddTransition(locomotion); grounded.hasExitTime = false; grounded.AddCondition(AnimatorConditionMode.If, 0, "IsGrounded");
             var prefab = PrefabUtility.LoadPrefabContents(Player);

@@ -31,6 +31,7 @@ namespace Frieren.Characters.Animation
 
         [Header("Bool parameters")]
         [SerializeField] private string groundedParameter = "IsGrounded";
+        [SerializeField] private string sprintParameter = "IsSprinting";
 
         [Header("Damping")]
         [SerializeField]
@@ -43,6 +44,7 @@ namespace Frieren.Characters.Animation
         private int forwardHash;
         private int verticalVelocityHash;
         private int groundedHash;
+        private int sprintHash;
         private bool warnedMissingAnimator;
 
         // Animator.parameters allocates a fresh array on every access, and this component touched
@@ -66,6 +68,7 @@ namespace Frieren.Characters.Animation
             forwardHash = Animator.StringToHash(forwardParameter);
             verticalVelocityHash = Animator.StringToHash(verticalVelocityParameter);
             groundedHash = Animator.StringToHash(groundedParameter);
+            sprintHash = Animator.StringToHash(sprintParameter);
         }
 
         public void SetLocomotion(float planarSpeed, float normalizedSpeed, bool isGrounded, float verticalVelocity)
@@ -79,6 +82,7 @@ namespace Frieren.Characters.Animation
             SetFloatDamped(normalizedSpeedHash, normalizedSpeed);
             SetFloat(verticalVelocityHash, verticalVelocity);
             SetBool(groundedHash, isGrounded);
+            SetBool(sprintHash, normalizedSpeed > 0.8f);
         }
 
         public void SetMovementDirection(Vector3 worldVelocity)
