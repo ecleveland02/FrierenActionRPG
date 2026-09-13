@@ -1,0 +1,57 @@
+using System;
+using System.Linq;
+using Frieren.Characters.Animation;
+using UnityEditor;
+using UnityEditor.Animations;
+using UnityEngine;
+
+namespace Frieren.Core.EditorTools
+{
+    public static class KaelHumanAnimationPackBuilder
+    {
+        const string Controller = "Assets/Art/Characters/Kael/KevinHuman.controller";
+        const string Player = "Assets/Prefabs/Characters/Player.prefab";
+
+        [MenuItem("Frieren/Kael/Use Kevin Human Animation Pack", priority = 63)]
+        public static void Build()
+        {
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            AnimationClip Clip(string token) => Find(token);
+            var idle = Clip("HumanM@Idle01.fbx");
+            var walk = Clip("HumanM@Walk01_Forward.fbx");
+            var run = Clip("HumanM@Run01_Forward.fbx");
+            var jump = Clip("HumanM@Jump01.fbx");
+            var land = Clip("HumanM@Jump01 - Land.fbx");
+            if (new[] { idle, walk, run, jump, land }.Any(c => c == null))
+                throw new InvalidOperationException("Kevin Human animation clips were not imported.");
+            AssetDatabase.DeleteAsset(Controller);
+            var ac = AnimatorController.CreateAnimatorControllerAtPath(Controller);
+            ac.AddParameter("Speed", AnimatorControllerParameterType.Float);
+            ac.AddParameter("MoveBlend", AnimatorControllerParameterType.Float);
+            ac.AddParameter("VerticalVelocity", AnimatorControllerParameterType.Float);
+            ac.AddParameter("IsGrounded", AnimatorControllerParameterType.Bool);
+            ac.AddParameter("Jump", AnimatorControllerParameterType.Trigger);
+            ac.AddParameter("Land", AnimatorControllerParameterType.Trigger);
+            var sm = ac.layers[0].stateMachine;
+            var locomotion = sm.AddState("Locomotion");
+            var tree = new BlendTree { name = "Kevin Human Locomotion", blendType = BlendTreeType.Simple1D, blendParameter = "MoveBlend", useAutomaticThresholds = false };
+            AssetDatabase.AddObjectToAsset(tree, ac);
+            tree.AddChild(idle, 0f); tree.AddChild(walk, .56f); tree.AddChild(run, 1f); locomotion.motion = tree; sm.defaultState = locomotion;
+            var air = sm.AddState("Air"); air.motion = jump; var t = locomotion.AddTransition(air); t.hasExitTime = false; t.AddCondition(AnimatorConditionMode.IfNot, 0, "IsGrounded");
+            var grounded = air.AddTransition(locomotion); grounded.hasExitTime = false; grounded.AddCondition(AnimatorConditionMode.If, 0, "IsGrounded");
+            var prefab = PrefabUtility.LoadPrefabContents(Player);
+            try { var animator = prefab.GetComponentInChildren<Animator>(true); if (animator == null) throw new InvalidOperationException("Player has no Animator."); animator.runtimeAnimatorController = ac; animator.applyRootMotion = false; PrefabUtility.SaveAsPrefabAsset(prefab, Player); }
+            finally { PrefabUtility.UnloadPrefabContents(prefab); }
+            AssetDatabase.SaveAssets();
+            Debug.Log("[Kael] Kevin Iglesias Human Animations assigned to Player.prefab.");
+        }
+
+        static AnimationClip Find(string file)
+        {
+            var guid = AssetDatabase.FindAssets(file.Replace(".fbx", ""), new[] { "Assets/Animations" }).FirstOrDefault();
+            if (string.IsNullOrEmpty(guid)) return null;
+            var path = AssetDatabase.GUIDToAssetPath(guid);
+            return AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>().FirstOrDefault(c => !c.name.StartsWith("__preview__"));
+        }
+    }
+}
