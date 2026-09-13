@@ -207,8 +207,17 @@ character.
 4. **Spell icon choices are guesses.** Mapped from the Blink pack's class folder names without ever
    seeing the images.
 5. **The Water spell's VFX is a snow hit.** Closest thing the pack has to a splash. Replace first.
-6. **~1.8 GB of audio** across five overlapping music libraries, against GitHub's free LFS allowance
-   of 1 GB storage and 1 GB monthly bandwidth. Explicitly deferred by the owner, but it is a cliff.
+6. **Git LFS is over quota and this is now blocking, not theoretical.** The repository holds
+   **2.52 GB** of LFS content against GitHub's free allowance of 1 GB storage and 1 GB of downloads
+   per month. `Assets/Audio` alone is 1.90 GB, 76% of the total, across five overlapping music
+   libraries that are barely used. Without it the repository would be 0.62 GB and comfortably
+   inside the free tier.
+
+   Two things worth knowing before acting. First, deleting the audio in a new commit does **not**
+   reclaim LFS storage: the objects stay on the remote, and GitHub's documented way to remove them
+   is to delete and recreate the repository. Second, code and scenes are ordinary text and are not
+   affected, so `Update-NoLFS.bat` pulls everything except art and audio and works while LFS is
+   blocked.
 7. **The HUD is unverified.** Built at runtime in code rather than as a prefab, so it cannot be
    inspected without pressing Play. Font is the engine builtin; a real one is a single change in
    `HudBuilder.Font`.

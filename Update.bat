@@ -44,6 +44,9 @@ if not "%PULLFAILED%"=="0" (
   echo      changes away and take the server's version.
   echo   2. If the local changes are yours and worth keeping, run
   echo      Upload.bat first to commit them, then run this again.
+  echo   3. If the message mentions a data quota or bandwidth, this is
+  echo      Git LFS, not your changes. Run Update-NoLFS.bat instead: the
+  echo      code and scenes will come down, only art and audio will not.
   echo.
   pause
   exit /b 1
