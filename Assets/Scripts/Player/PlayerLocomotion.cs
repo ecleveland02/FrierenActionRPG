@@ -193,7 +193,7 @@ namespace Frieren.Player
         {
             Vector2 input = inputReader != null ? inputReader.MoveInput : Vector2.zero;
             Vector3 direction;
-            if (FaceTarget != null)
+            if (FaceTarget != null && !IsSprinting)
             {
                 // Lock-on movement is target-relative: forward always means toward the enemy,
                 // while rotation remains independently pinned to the target.
@@ -251,7 +251,7 @@ namespace Frieren.Player
         {
             Vector3 facing;
 
-            if (FaceTarget != null)
+            if (FaceTarget != null && !IsSprinting)
             {
                 Vector3 toTarget = FaceTarget.position - transform.position;
                 toTarget.y = 0f;
