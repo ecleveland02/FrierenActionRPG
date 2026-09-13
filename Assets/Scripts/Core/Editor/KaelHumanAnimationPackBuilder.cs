@@ -60,6 +60,111 @@ namespace Frieren.Core.EditorTools
             Debug.Log("[Kael] Kevin Iglesias Human Animations assigned to Player.prefab.");
         }
 
+        [MenuItem("Frieren/Kael/Build KaelAnimations Copy Controller", priority = 62)]
+        public static void BuildKaelAnimationsCopy()
+        {
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+
+            AnimationClip FindClip(string name) => FindInFolder(name, "Assets/Animations/KaelAnimations - Copy");
+            var idle = FindClip("Breathing Idle");
+            var walk = FindClip("Walking");
+            var walkBack = FindClip("Walking Backwards");
+            var run = FindClip("Running");
+            var runBack = FindClip("Running Backward");
+            var sprint = FindClip("Sprint");
+            var strafeLeft = FindClip("Jog Strafe Left");
+            var strafeRight = FindClip("Jog Strafe Right");
+            var jump = FindClip("Jump");
+            var land = FindClip("Land");
+
+            if (idle == null || walk == null || walkBack == null || run == null || runBack == null ||
+                sprint == null || strafeLeft == null || strafeRight == null)
+            {
+                throw new InvalidOperationException(
+                    "KaelAnimations - Copy must contain Breathing Idle, Walking, Walking Backwards, " +
+                    "Running, Running Backward, Sprint, Jog Strafe Left and Jog Strafe Right clips.");
+            }
+
+            AssetDatabase.DeleteAsset("Assets/Art/Characters/Kael/Kael.controller");
+            var controller = AnimatorController.CreateAnimatorControllerAtPath("Assets/Art/Characters/Kael/Kael.controller");
+            controller.AddParameter("Speed", AnimatorControllerParameterType.Float);
+            controller.AddParameter("MoveBlend", AnimatorControllerParameterType.Float);
+            controller.AddParameter("MoveDirection", AnimatorControllerParameterType.Float);
+            controller.AddParameter("MoveForward", AnimatorControllerParameterType.Float);
+            controller.AddParameter("VerticalVelocity", AnimatorControllerParameterType.Float);
+            controller.AddParameter("IsGrounded", AnimatorControllerParameterType.Bool);
+            controller.AddParameter("IsSprinting", AnimatorControllerParameterType.Bool);
+            controller.AddParameter("Jump", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("Land", AnimatorControllerParameterType.Trigger);
+
+            var stateMachine = controller.layers[0].stateMachine;
+            var locomotion = stateMachine.AddState("Locomotion");
+            var tree = new BlendTree
+            {
+                name = "Kael Locomotion",
+                blendType = BlendTreeType.FreeformCartesian2D,
+                blendParameter = "MoveDirection",
+                blendParameterY = "MoveForward",
+                useAutomaticThresholds = false
+            };
+            AssetDatabase.AddObjectToAsset(tree, controller);
+            tree.AddChild(idle, new Vector2(0f, 0f));
+            tree.AddChild(walk, new Vector2(0f, 0.56f));
+            tree.AddChild(walkBack, new Vector2(0f, -0.56f));
+            tree.AddChild(strafeLeft, new Vector2(-0.56f, 0f));
+            tree.AddChild(strafeRight, new Vector2(0.56f, 0f));
+            tree.AddChild(run, new Vector2(0f, 0.82f));
+            tree.AddChild(runBack, new Vector2(0f, -0.82f));
+            tree.AddChild(sprint, new Vector2(0f, 1f));
+            locomotion.motion = tree;
+            stateMachine.defaultState = locomotion;
+
+            if (jump != null)
+            {
+                var air = stateMachine.AddState("Air");
+                air.motion = jump;
+                var toAir = locomotion.AddTransition(air);
+                toAir.hasExitTime = false;
+                toAir.duration = 0.12f;
+                toAir.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsGrounded");
+                var fromAir = air.AddTransition(locomotion);
+                fromAir.hasExitTime = false;
+                fromAir.duration = 0.16f;
+                fromAir.AddCondition(AnimatorConditionMode.If, 0f, "IsGrounded");
+            }
+
+            if (land != null)
+            {
+                var landing = stateMachine.AddState("Land");
+                landing.motion = land;
+                var toLand = locomotion.AddTransition(landing);
+                toLand.hasExitTime = false;
+                toLand.duration = 0.08f;
+                toLand.AddCondition(AnimatorConditionMode.If, 0f, "Land");
+                var fromLand = landing.AddTransition(locomotion);
+                fromLand.hasExitTime = true;
+                fromLand.exitTime = 0.85f;
+                fromLand.duration = 0.12f;
+            }
+
+            var prefab = PrefabUtility.LoadPrefabContents(Player);
+            try
+            {
+                var animator = prefab.GetComponentInChildren<Animator>(true);
+                if (animator == null) throw new InvalidOperationException("Player has no Animator.");
+                animator.runtimeAnimatorController = controller;
+                animator.applyRootMotion = false;
+                PrefabUtility.SaveAsPrefabAsset(prefab, Player);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefab);
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log("[Kael] KaelAnimations - Copy locomotion controller assigned to Player.prefab.");
+        }
+
         [MenuItem("Frieren/Kael/Restore Cloth On Player", priority = 64)]
         public static void RestoreCloth()
         {
@@ -91,6 +196,23 @@ namespace Frieren.Core.EditorTools
             if (string.IsNullOrEmpty(guid)) return null;
             var path = AssetDatabase.GUIDToAssetPath(guid);
             return AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>().FirstOrDefault(c => !c.name.StartsWith("__preview__"));
+        }
+
+        static AnimationClip FindInFolder(string clipName, string folder)
+        {
+            string[] guids = AssetDatabase.FindAssets(clipName, new[] { folder });
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                foreach (var clip in AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>())
+                {
+                    if (!clip.name.StartsWith("__preview__", StringComparison.OrdinalIgnoreCase) &&
+                        clip.name.IndexOf(clipName, StringComparison.OrdinalIgnoreCase) >= 0)
+                        return clip;
+                }
+            }
+
+            return null;
         }
     }
 }
