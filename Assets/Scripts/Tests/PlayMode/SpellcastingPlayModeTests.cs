@@ -145,7 +145,10 @@ namespace Frieren.Tests.PlayMode
             yield return WaitUntil(() => spellcaster.IsChannelling, 1f, "the channel");
             yield return WaitUntil(() => !spellcaster.IsChannelling, 2f, "the channel to run dry");
 
-            Assert.Less(mana.Current, 1f);
+            // Spending is all-or-nothing: 20 - 5 up front - three 4-point ticks leaves 3.
+            // The channel must stop when another whole tick is unaffordable, not drain the remainder.
+            Assert.AreEqual(3f, mana.Current, 0.001f);
+            Assert.Less(mana.Current, spell.ManaPerSecond * spell.ChannelTickInterval);
         }
 
         [UnityTest]

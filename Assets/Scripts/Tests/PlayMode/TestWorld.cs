@@ -89,6 +89,9 @@ namespace Frieren.Tests.PlayMode
             controller.height = 2f;
             controller.radius = 0.5f;
             controller.center = Vector3.up;
+            // Match the production prefabs. Unity's default threshold drops tiny steps at
+            // uncapped test-runner frame rates, making speed and levitation hardware-dependent.
+            controller.minMoveDistance = 0f;
 
             host.AddComponent<CharacterMotor>();
             host.AddComponent<CharacterActionLock>();

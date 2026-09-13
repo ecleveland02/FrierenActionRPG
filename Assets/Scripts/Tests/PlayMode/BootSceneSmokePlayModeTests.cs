@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using Frieren.Characters;
 using Frieren.Core.Bootstrap;
 using Frieren.Core.Services;
@@ -42,6 +43,17 @@ namespace Frieren.Tests.PlayMode
         public IEnumerator LoadBoot()
         {
             Time.timeScale = 1f;
+            // Each case represents a fresh launch, not another Boot loaded behind the
+            // bootstrap guard that the test runner created for its own starting scene.
+            if (Bootstrapper.Instance != null)
+            {
+                Object.Destroy(Bootstrapper.Instance.gameObject);
+                yield return null;
+            }
+            MethodInfo resetGuard = typeof(SceneBootstrapGuard).GetMethod("ResetState",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.IsNotNull(resetGuard, "The editor bootstrap reset must be available for a fresh-launch test.");
+            resetGuard.Invoke(null, null);
             ServiceLocator.Clear();
 
             yield return SceneManager.LoadSceneAsync("Boot", LoadSceneMode.Single);

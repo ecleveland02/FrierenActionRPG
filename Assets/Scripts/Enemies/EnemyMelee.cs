@@ -114,7 +114,9 @@ namespace Frieren.Enemies
             {
                 IsWindingUp = false;
                 phaseEndsAt = Time.time + recovery;
-                SwingLanded?.Invoke(Strike());
+                // Damage must happen even when no presentation listener is subscribed.
+                int landed = Strike();
+                SwingLanded?.Invoke(landed);
                 return;
             }
 

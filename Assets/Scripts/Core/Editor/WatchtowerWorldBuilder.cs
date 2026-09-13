@@ -171,7 +171,7 @@ namespace Frieren.Core.EditorTools
             ArchiveCharacterScenes();
             RenderPreview();
             Debug.Log("[Woodland] Built forest camp, two encounters, soundtrack, navigation and ruin dressing. " +
-                "Build stamp: m7.1 watchtower woodland.");
+                "Build stamp: " + Debugging.BuildStamp.Current + ".");
         }
 
         private static void ArchiveCharacterScenes()
