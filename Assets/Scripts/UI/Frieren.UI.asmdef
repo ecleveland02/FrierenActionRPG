@@ -1,0 +1,20 @@
+{
+    "name": "Frieren.UI",
+    "rootNamespace": "Frieren.UI",
+    "references": [
+        "Frieren.Core",
+        "Frieren.Characters",
+        "Frieren.Magic",
+        "Frieren.Player",
+        "Frieren.Data"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

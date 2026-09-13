@@ -131,6 +131,7 @@ GameObject:
   - component: {fileID: 102}
   - component: {fileID: 103}
   - component: {fileID: 104}
+  - component: {fileID: 105}
   m_Layer: 0
   m_Name: PersistentSystems
   m_TagString: Untagged
@@ -194,3 +195,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc1e8f13086f5fc2af60ac997f559531, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &105
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87963aeea72fdb008f8d5e3366cec157, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  barSize: {x: 320, y: 22}
+  barCorner: {x: 34, y: 34}
+  ghostDelay: 0.35
+  ghostRate: 0.55
+  rebindInterval: 0.25

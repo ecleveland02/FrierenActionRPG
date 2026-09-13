@@ -16,6 +16,6 @@ namespace Frieren.Core.Debugging
     public static class BuildStamp
     {
         /// <summary>Bump this whenever behaviour changes. Shown in the debug overlay.</summary>
-        public const string Current = "m7.9 kaelcloth is the player";
+        public const string Current = "m8.0 hud: vitals, spell slot, reticle";
     }
 }

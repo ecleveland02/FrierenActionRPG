@@ -355,53 +355,6 @@ namespace Frieren.Player
         private Vector3 EyePosition() =>
             cameraRig != null ? cameraRig.transform.position : transform.position + Vector3.up * 1.4f;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private GUIStyle reticleStyle;
-
-        /// <summary>
-        /// A placeholder reticle. Replaced the day there is a HUD; until then, a lock you cannot
-        /// see is a lock you cannot tell apart from a camera bug.
-        /// </summary>
-        private void OnGUI()
-        {
-            if (!IsLocked || cameraRig == null)
-            {
-                return;
-            }
-
-            UnityEngine.Camera view = cameraRig.GetComponent<UnityEngine.Camera>();
-
-            if (view == null)
-            {
-                return;
-            }
-
-            Vector3 screen = view.WorldToScreenPoint(Current.AimPosition);
-
-            // Negative z means the point is behind the camera, where WorldToScreenPoint still
-            // returns coordinates and they are mirrored nonsense.
-            if (screen.z <= 0f)
-            {
-                return;
-            }
-
-            reticleStyle ??= new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = 13,
-            };
-
-            float x = screen.x;
-            float y = Screen.height - screen.y;
-
-            Color previous = GUI.color;
-            GUI.color = new Color(1f, 0.55f, 0.35f);
-            GUI.Label(new Rect(x - 12f, y - 12f, 24f, 24f), "[ ]", reticleStyle);
-            GUI.Label(new Rect(x - 80f, y + 10f, 160f, 20f), Current.DisplayName, reticleStyle);
-            GUI.color = previous;
-        }
-#endif
-
         private void CollectCandidates()
         {
             candidates.Clear();

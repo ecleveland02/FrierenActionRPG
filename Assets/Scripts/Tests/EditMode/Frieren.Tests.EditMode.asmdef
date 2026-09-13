@@ -5,6 +5,7 @@
         "Frieren.Core",
         "Frieren.Characters",
         "Frieren.Player",
+        "Frieren.UI",
         "Frieren.Magic",
         "Frieren.World",
         "Frieren.Presentation",

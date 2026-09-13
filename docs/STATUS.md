@@ -46,6 +46,7 @@ Do not reintroduce URP without revisiting that. See section 6.
 | 7.1 Camera pass: cursor, lock-on, framing | Verified in play by the owner |
 | 7.2 Kael as the player character | Model swapped and pushed; **retargeting unverified** |
 | 7.3 Spell icons and spell VFX | Wired and pushed; **unverified on screen** |
+| 8 HUD: vitals, spell slot, lock-on reticle | Written; **unverified on screen** |
 
 "Verified in play by the owner" means a human pressed Play and it behaved. It does not mean tested.
 
@@ -202,8 +203,9 @@ character.
 5. **The Water spell's VFX is a snow hit.** Closest thing the pack has to a splash. Replace first.
 6. **~1.8 GB of audio** across five overlapping music libraries, against GitHub's free LFS allowance
    of 1 GB storage and 1 GB monthly bandwidth. Explicitly deferred by the owner, but it is a cliff.
-7. **No HUD.** Health, mana, cooldowns and the lock-on reticle are all `OnGUI` placeholders. Lock-on
-   is the first system where placeholder UI is load-bearing for judging whether it feels good.
+7. **The HUD is unverified.** Built at runtime in code rather than as a prefab, so it cannot be
+   inspected without pressing Play. Font is the engine builtin; a real one is a single change in
+   `HudBuilder.Font`.
 8. **`MonsterCelMaterial.mat`** references a texture GUID not in the repo, so it renders white.
    Nothing uses it; inventing a texture would be a guess.
 
