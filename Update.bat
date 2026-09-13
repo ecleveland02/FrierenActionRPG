@@ -1,8 +1,34 @@
 @echo off
-REM Double-click this to pull the latest changes.
-REM Save your scenes in Unity first; Unity overwrites files underneath a pull when it next saves.
+REM ---------------------------------------------------------------------------
+REM This script pulls a new version of ITSELF. cmd.exe reads a batch file from
+REM disk as it runs, by byte offset, so rewriting it mid-run makes cmd resume in
+REM the middle of the new file and execute fragments of lines. That produced a
+REM real failure once: 'hing' is not recognized as an internal or external
+REM command, which is the tail of the word "nothing".
+REM
+REM So it copies itself somewhere git cannot reach and hands over to that copy.
+REM Flat gotos rather than nested if/else blocks, because a parenthesised block
+REM is parsed in one go and %errorlevel% inside one is the value from before the
+REM block ran. The path is passed as "%~dp0." because %~dp0 ends in a backslash
+REM and a backslash before a closing quote escapes it.
+REM ---------------------------------------------------------------------------
+if /i "%~1"=="--relaunched" goto :run
 
-cd /d "%~dp0"
+copy /y "%~f0" "%TEMP%\%~n0_running.bat" >nul
+if errorlevel 1 (
+  echo Could not copy this script to the temp folder, so it is running in place.
+  echo If it stops partway through with a nonsense command, that is why: the pull
+  echo overwrote the file while it was still being read.
+  echo.
+  goto :run
+)
+call "%TEMP%\%~n0_running.bat" --relaunched "%~dp0."
+exit /b
+
+:run
+if /i "%~1"=="--relaunched" cd /d "%~2"
+if /i not "%~1"=="--relaunched" cd /d "%~dp0"
+
 setlocal
 
 echo ============================================================
