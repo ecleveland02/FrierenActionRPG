@@ -1,6 +1,6 @@
 # Project status and forward plan
 
-Last updated 2026-09-13, at commit `b45f767`.
+Last updated 2026-09-13, at commit `c0a075e`.
 
 This is the single page to read before picking up work. It says what exists, what is actually
 verified, what is known to be broken or missing, and what should happen next. For the reasoning
@@ -50,14 +50,14 @@ Do not reintroduce URP without revisiting that. See section 6.
 
 "Verified in play by the owner" means a human pressed Play and it behaved. It does not mean tested.
 
-**343 tests exist (260 EditMode, 83 PlayMode) and not one has ever been run.** This is the single
+**351 tests exist (268 EditMode, 83 PlayMode) and not one has ever been run.** This is the single
 largest unverified surface in the project and the cheapest thing anyone could fix.
 
 ---
 
 ## 3. Architecture in one page
 
-12 assemblies, enforced acyclic by `.asmdef`:
+13 assemblies, enforced acyclic by `.asmdef`:
 
 ```
 Frieren.Data          -> (nothing)
@@ -69,11 +69,16 @@ Frieren.Magic         -> Core, Characters, Data
 Frieren.Enemies       -> Core, Characters, Data
 Frieren.Player        -> Core, Characters, Magic, Data
 Frieren.Presentation  -> Core, Characters, Magic, Enemies, Data
+Frieren.UI            -> Core, Characters, Magic, Player, Data
 Frieren.Core.Editor   -> all of the above
 Frieren.Tests.EditMode / Frieren.Tests.PlayMode -> all of the above
 ```
 
 `Frieren.Core` must never depend on a gameplay assembly. Invert with an interface instead.
+
+`Frieren.Presentation` is world-space feedback and does not reference `Frieren.Player`.
+`Frieren.UI` is screen-space and does. Keep that split: it is the reason the HUD could be added
+without giving the flash-and-floating-text layer a dependency on player input.
 
 ### Contracts worth knowing before writing anything
 
@@ -92,7 +97,8 @@ Frieren.Tests.EditMode / Frieren.Tests.PlayMode -> all of the above
 
 Logic worth testing goes in a plain C# class, not a MonoBehaviour. `JumpGate`, `OrbitCameraSolver`,
 `MotorMath`, `ResourcePool`, `BurnState`, `TimeScaleState`, `LockOnPicker` and
-`SpellWheelInput.SlotFor` all exist because their logic was extracted out of components.
+`SpellWheelInput.SlotFor` and `BarSmoothing` all exist because their logic was extracted out of
+components.
 
 ---
 
