@@ -16,12 +16,34 @@ is implied; this is the shared handoff.
 Pulled Claude's latest `4f2b20e` before implementation. Extended `Watchtower.unity`, rather than
 replacing his level or regenerating the core scenes. See [WATCHTOWER_WOODLAND.md](WATCHTOWER_WOODLAND.md)
 for content, regeneration, required local packs and recovery. Build stamp:
-`m7.1 watchtower woodland`. Original Player.prefab, TestScene, puzzle IDs and spell definitions
-are unchanged. The Kael experiment scenes are recoverably archived, not deleted.
+`m7.9 woodland combat verified`. This pass did not replace Player.prefab, TestScene, puzzle IDs or
+spell definitions. The Kael experiment scenes are recoverably archived, not deleted.
 
-Unity generation and the initial nine Watchtower play-mode tests passed. Broader regression and
-animation-binding checks are in progress; final evidence will be appended here. Imported vendor
-packs remain untracked locally and must not be publicly redistributed without license review.
+The checkout advanced to `2d32fd2` through Eric's upload/merge workflow during the task. Those
+changes, including Kael as player, camera/lock-on, built-in pipeline cleanup and spell VFX, were
+preserved and the final scene regenerated against them. Imported packs are now tracked by those
+upload commits; license review is still needed before public redistribution.
+
+Final verification in Unity 6000.0.32f1: **260/260 EditMode**, **83/83 PlayMode**; assembly, using,
+Unity YAML and explicit Watchtower geometry checks passed. The PlayMode run includes boot, monster
+bone animation and actual path movement, music entering combat and returning after enemy deaths,
+and the original four-objective puzzle defaults. Local result files are
+`C:\Users\ericc\Code\AllEditTests.xml` and `C:\Users\ericc\Code\AllPlayTestsFinal.xml`.
+
+One gameplay bug fixed during verification: damage was inside a null-conditional event invocation
+in EnemyMelee, so no listeners meant no Strike. Strike now runs independently of feedback listeners.
+TestWorld now matches production `minMoveDistance = 0`; boot fixtures reset bootstrap state; the
+channel test expects the valid 3-mana remainder after whole 4-mana ticks. No gameplay values were
+weakened to make tests pass. The trail is now one low-cost mesh rather than ten overlapping discs.
+
+Final Computer Use check: opened Boot in the normal editor and pressed Play. Kael spawned at the
+camp, both approach enemies and the dressed Watchtower were visible, and the overlay showed the
+expected `m7.9 woodland combat verified` stamp. A spell cast displayed particles without an
+exception. The scene rendered with batching active; this was a visual spot-check, not a standalone
+performance benchmark or a manual completion of every puzzle. Left Unity in Boot, out of Play mode.
+
+`STATUS.md` was an unrelated untracked file supplied during this work and was left alone. Its
+claims that tests have never run are superseded by the evidence above.
 
 ## Previous handoff: 2026-09-11
 

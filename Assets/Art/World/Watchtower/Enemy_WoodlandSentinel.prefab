@@ -1722,9 +1722,9 @@ GameObject:
   - component: {fileID: 2790784852686046434}
   - component: {fileID: 5145541671474068234}
   - component: {fileID: 2415266071569235188}
+  - component: {fileID: 5749583239137521770}
   - component: {fileID: 797762277972833491}
   - component: {fileID: 3259400474298017401}
-  - component: {fileID: 5749583239137521770}
   - component: {fileID: 4722449968860202935}
   m_Layer: 9
   m_Name: Enemy_WoodlandSentinel
@@ -1912,6 +1912,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   source: {fileID: 1410958037370217158}
   scale: 1.08
+  skinned: []
 --- !u!114 &8777938741624834196
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1990,6 +1991,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 42271b4ee42c24d5d65dc043de02a273, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &5749583239137521770
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5749583239137521769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7aeffa7adfd7b83475941a13309d164a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  aimPoint: {fileID: 0}
+  aimHeight: 1.1
+  displayName: 
 --- !u!114 &797762277972833491
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2699,18 +2715,3 @@ Transform:
   m_Children: []
   m_Father: {fileID: 5491773197161156218}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5749583239137521770
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5749583239137521769}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7aeffa7adfd7b83475941a13309d164a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  aimPoint: {fileID: 0}
-  aimHeight: 1.1
-  displayName: 

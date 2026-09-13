@@ -1,6 +1,6 @@
 # Watchtower Woodland
 
-Build stamp: `m7.1 watchtower woodland`.
+Build stamp: `m7.9 woodland combat verified`.
 
 Eric paused the Kael replacement and authorized Codex to extend Claude's milestone work with the
 locally imported environment, audio and creature assets. This pass preserves the existing player,
@@ -14,8 +14,8 @@ Start at the forest camp, follow the trail, fight the two woodland sentinels, th
 courtyard for the original two-enemy encounter and magic puzzles. The gate can be unlocked or
 burned; the broken stair can be repaired; the aqueduct can be filled and frozen.
 
-Movement, attacks, blocking and the spell wheel remain Claude's existing controls. The player is
-still the established capsule prototype, not the unfinished Kael model.
+Movement, attacks, blocking and the spell wheel remain Claude's existing controls. The subsequent
+Claude updates that promote Kael to Player.prefab and add camera/lock-on/spell-VFX work are preserved.
 
 ## What changed
 
@@ -36,9 +36,9 @@ still the established capsule prototype, not the unfinished Kael model.
   colliders; a bounded particle count and a shadow-free local camp light. These are scoped cost
   reductions, not a measured claim of an FPS improvement.
 
-The installed URP package is **not** the active renderer in this checkout. Generated materials
-therefore match the existing built-in pipeline. Vendor vegetation shaders and subdued wind are
-preserved in material copies; imported originals are not overwritten.
+The project uses the **built-in renderer**; Claude subsequently removed the unused URP packages.
+Generated materials match that pipeline. Vendor vegetation shaders and subdued wind are preserved
+in material copies. Unity may update imported material serialization during import.
 
 ## Scenes and recovery
 
@@ -59,8 +59,9 @@ changes. Back up any hand edits to generated content before rebuilding. Do not r
 Core Scenes for this feature: that rebuilds unrelated core assets.
 
 Generated assets live under `Assets/Art/World/Watchtower`. The imported packs below must be
-present with their original metadata. They are local user imports, not files Codex is authorized
-to redistribute publicly. Do not blindly add the untracked vendor packs to Git.
+present with their original metadata. They were initially local user imports and were subsequently
+included in Eric's Unity upload commits. Review their licenses before sharing the repository or
+redistributing source assets; this pass does not establish redistribution rights.
 
 - Polytope Studio / Lowpoly Environments (pine trees, rocks, grass).
 - Stylized Labs / Stylized Fantasy / Props Sample (camp props and obelisk).
@@ -74,14 +75,17 @@ clone without the same imports cannot render this world; importing the packs is 
 
 ## Verification
 
-Unity 6000.0.32f1 generated and saved the scene through editor APIs. The first nine Watchtower
-play-mode tests passed, including persistent IDs, original puzzle defaults, four enemy spawns,
-baked ground paths and combat music returning to exploration after all enemies die.
+Unity 6000.0.32f1 generated and saved the scene through editor APIs. All **260 EditMode tests** and
+**83 PlayMode tests** passed. The latter includes real boot, original puzzle defaults, persistent
+IDs, four enemy spawns, navigation movement, imported monster bone animation, and combat music
+returning to exploration after all enemies die. All four static validators also passed; geometry
+was checked explicitly against `Assets/Scenes/Watchtower.unity`.
 
-Additional full-suite and animation-binding checks are recorded in `COLLABORATION.md` after they
-finish. Static geometry validation must name `Assets/Scenes/Watchtower.unity` explicitly: after
-Unity saves the scene its YAML no longer contains the class-name marker the checker's automatic
-discovery expects.
+The full suite exposed and fixed one actual combat defect: `SwingLanded?.Invoke(Strike())` skipped
+damage altogether when no listener existed. Damage now happens before the optional notification.
+Test fixtures also needed fresh bootstrap state per boot case and the same zero minimum movement
+threshold as the production prefabs. The channel-mana assertion now respects whole-tick spending:
+an unaffordable remaining fraction is retained, not drained for free.
 
-Remaining creative work: replace the player capsule when the character is ready, richer ruin
-surface art, more varied encounters, and subjective music-volume/combat-feel tuning in play mode.
+Remaining creative work: richer ruin surface art, more varied encounters, and subjective
+music-volume/combat-feel tuning in play mode. No FPS gain is claimed without profiling a build.
