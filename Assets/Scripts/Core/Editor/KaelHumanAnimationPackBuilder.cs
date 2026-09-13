@@ -46,6 +46,31 @@ namespace Frieren.Core.EditorTools
             Debug.Log("[Kael] Kevin Iglesias Human Animations assigned to Player.prefab.");
         }
 
+        [MenuItem("Frieren/Kael/Restore Cloth On Player", priority = 64)]
+        public static void RestoreCloth()
+        {
+            var prefab = PrefabUtility.LoadPrefabContents(Player);
+            try
+            {
+                var clothSource = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Characters/KaelClothPlayer.prefab");
+                if (clothSource == null) throw new InvalidOperationException("KaelClothPlayer prefab is missing.");
+                var old = prefab.transform.Find("KaelVisual");
+                if (old != null) Object.DestroyImmediate(old.gameObject);
+                var instance = (GameObject)PrefabUtility.InstantiatePrefab(clothSource);
+                var visual = instance.transform.Find("KaelClothVisual");
+                if (visual == null) throw new InvalidOperationException("Cloth prefab has no KaelClothVisual.");
+                visual.SetParent(prefab.transform, false);
+                visual.name = "KaelVisual";
+                Object.DestroyImmediate(instance);
+                var animator = visual.GetComponent<Animator>();
+                if (animator != null) animator.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(Controller);
+                PrefabUtility.SaveAsPrefabAsset(prefab, Player);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(prefab); }
+            AssetDatabase.SaveAssets();
+            Debug.Log("[Kael] Restored the configured cloth visual on Player.prefab.");
+        }
+
         static AnimationClip Find(string file)
         {
             var guid = AssetDatabase.FindAssets(file.Replace(".fbx", ""), new[] { "Assets/Animations" }).FirstOrDefault();

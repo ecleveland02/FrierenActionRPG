@@ -192,8 +192,29 @@ namespace Frieren.Player
         private void ApplyMovement(float deltaTime)
         {
             Vector2 input = inputReader != null ? inputReader.MoveInput : Vector2.zero;
-            Quaternion cameraRotation = ResolveCameraRotation();
-            Vector3 direction = MotorMath.CameraRelativeDirection(input, cameraRotation);
+            Vector3 direction;
+            if (FaceTarget != null)
+            {
+                // Lock-on movement is target-relative: forward always means toward the enemy,
+                // while rotation remains independently pinned to the target.
+                Vector3 toTarget = FaceTarget.position - transform.position;
+                toTarget.y = 0f;
+                if (toTarget.sqrMagnitude > 0.0001f)
+                {
+                    Vector3 forward = toTarget.normalized;
+                    Vector3 right = Vector3.Cross(Vector3.up, forward);
+                    direction = right * input.x + forward * input.y;
+                }
+                else
+                {
+                    direction = Vector3.zero;
+                }
+            }
+            else
+            {
+                Quaternion cameraRotation = ResolveCameraRotation();
+                direction = MotorMath.CameraRelativeDirection(input, cameraRotation);
+            }
 
             IsSprinting = inputReader != null && inputReader.SprintHeld && direction.sqrMagnitude > 0.01f;
 
