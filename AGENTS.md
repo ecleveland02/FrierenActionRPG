@@ -19,52 +19,57 @@ and quests are authored content, never hardcoded branches.
 | Milestone | Status |
 |---|---|
 | 1 - Foundation: bootstrap, scenes, save, input, debug | Verified in the editor |
-| 2 - Placeholder third-person player | Verified in the editor, character is playable |
+| 2 - Placeholder third-person player | Verified in the editor |
 | 3 - Modular character architecture | Verified in the editor |
 | 4 - Magic framework, 3 spells | Verified in the editor |
-| 5 - First enemy, plus the remaining 6 spells | Written, not yet run in the editor |
-| 5.5 - Combat feel: placeholder feedback | Written, not yet run in the editor |
-| 5.6 - Play-mode tests | Written, not yet run in the editor |
-| 6 - Persistence for the world | Written, not yet run in the editor |
-| 6.1 - Block on right mouse, spell wheel on Q | Written, not yet run in the editor |
-| 6.2 - Time slows while the wheel is open | Written, not yet run in the editor |
-| 7 - The Watchtower vertical slice | Written, not yet run in the editor |
+| 5 - First enemy, plus the remaining 6 spells | Verified in play by the owner |
+| 5.5 - Combat feel: placeholder feedback | Verified in play by the owner |
+| 5.6 - Play-mode tests | Written; the Test Runner has never been opened |
+| 6 - Persistence for the world | Written; not exercised deliberately |
+| 6.1 - Block on right mouse, spell wheel on Q | Verified in play by the owner |
+| 6.2 - Time slows while the wheel is open | Verified in play by the owner |
+| 7 - The Watchtower vertical slice | Verified in play by the owner |
+| 7.1 - Camera: cursor claims, lock-on, off-centre framing | Verified in play by the owner |
+| 7.2 - Kael as the player character | Pushed; retargeting unverified |
+| 7.3 - Spell icons and spell VFX | Pushed; unverified on screen |
 
-Running alongside the milestones is a **Kael character spike** built by Codex: a Meshy-derived
-skinned character with Unity `Cloth`, its own prefab and scene, plus a separate animated prototype.
-It is deliberately isolated - it does not touch `Player.prefab` or `TestScene.unity` - and is
-unverified in the editor. See [`docs/KAEL_CLOTH.md`](docs/KAEL_CLOTH.md),
-[`docs/KAEL_CHARACTER.md`](docs/KAEL_CHARACTER.md) and
-[`docs/COLLABORATION.md`](docs/COLLABORATION.md).
+**The full picture, and what happens next, is in [`docs/STATUS.md`](docs/STATUS.md). Read that
+first.** It supersedes this table whenever the two disagree.
 
-**Before Kael can replace the placeholder capsule**, it needs the components Milestone 3 added to
-the player after the spike was branched: `CharacterStats` (with a stats definition assigned),
-`CharacterHealth`, `CharacterMana`, `CharacterPersistence`, and an `ICharacterAnimation`
-implementation - `MecanimCharacterAnimation` once there is an animator controller, since
-`PlaceholderCharacterAnimation` squashes a primitive and is wrong for a real mesh. Do not promote it
-until the vertical slice works; that is the brief's constraint and it still holds.
-| 4-7 | Not started, see `docs/MILESTONES.md` |
+Kael is no longer a side spike. `Player.prefab` now instantiates
+`Assets/Art/Characters/KaelMeshyCloth/KaelCloth.fbx` with `MecanimCharacterAnimation` driving
+`Kael.controller`, and the eight animation FBXs have been converted from Generic to Humanoid so they
+retarget onto it. The blockout at `Assets/Art/Characters/Kael/Models/Kael.fbx` is no longer used by
+the player and is kept only as the source of those animation clips.
 
-Milestones 1 and 2 were authored with no Unity installed, and have since been run. The project
-compiles with zero errors, boots, spawns the player, and the character is controllable with a
-following camera. Pause works and the save probe round-trips.
+**343 tests exist (260 EditMode, 83 PlayMode) and none has ever been run.** Treat anything not
+actually exercised in the editor as unverified.
 
-Running it found three defects that static analysis had missed, which is worth knowing before
-trusting any similar reasoning: a scene guard that suppressed the first-scene load, a pause that
-could not be released because the state change ran inside an Input System callback, and a mouse
-look delta that was summed when it should have been assigned. **Anything not actually exercised in
-the editor should still be treated as unverified**, including jump, dodge, interaction and scene
-transitions.
+Running Milestones 1 and 2 found three defects static analysis had missed, which is worth knowing
+before trusting any similar reasoning: a scene guard that suppressed the first-scene load, a pause
+that could not be released because the state change ran inside an Input System callback, and a mouse
+look delta that was summed when it should have been assigned.
+
+## Render pipeline
+
+**Built-in.** URP was installed but never configured, and has been removed. All seven Polytope
+environment shaders are `#pragma surface` inside `CGPROGRAM`, which is built-in-only and does not
+compile under URP. Vendor assets authored for URP need converting: albedo moves from `_BaseMap` to
+`_MainTex`, tint from `_BaseColor` to `_Color`, gloss from `_Smoothness` to `_Glossiness`. Do not
+reintroduce URP without reopening that decision.
 
 ## Hard rules
 
 These are decisions with reasons behind them, recorded in `docs/DECISIONS.md`. Do not quietly
 reverse one; argue for the change instead.
 
-1. **Never hand-edit `.unity`, `.prefab`, `.asset` or `.meta` files.** They are hand-authored YAML
-   with cross-referencing GUIDs, they do not merge, and a mistake shows up as missing script
-   references rather than an error. Change them through the Unity editor, or through
-   `Frieren > Setup > Regenerate Core Scenes`, which rebuilds them from code.
+1. **Hand-edit `.unity`, `.prefab`, `.asset` and `.meta` files only behind the validators.** This
+   rule used to be a flat ban, written when the editor was the alternative. It is not: no agent on
+   this project has Unity, and the entire asset layer is hand-authored YAML with md5-derived GUIDs.
+   What makes that safe is the four checkers in `Tools/Validation`, and they are not optional. Run
+   all four before every push. Never invent a fileID you could read out of the target file: a prefab
+   is referenced by its root GameObject's id, not by `100100000`, and a right guid with a wrong
+   fileID looks perfectly normal in the inspector and fails only at runtime.
 2. **One integrator.** `CharacterMotor.Update` is the only thing that calls
    `CharacterController.Move`. Abilities call `SetHorizontalVelocity` and `Jump`. Two callers means
    gravity integrates twice.
