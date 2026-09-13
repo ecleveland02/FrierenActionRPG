@@ -108,11 +108,7 @@ namespace Frieren.Player
             }
 
             var animator = SpawnedPlayer.GetComponentInChildren<Animator>();
-            string rig = animator == null
-                ? "no Animator"
-                : animator.runtimeAnimatorController == null
-                    ? "Animator with no controller"
-                    : $"Animator running {animator.runtimeAnimatorController.name}";
+            string rig = DescribeRig(animator);
 
             // The placeholder body was a built-in primitive with no rig. Naming that case outright
             // is worth the six lines: an out-of-date prefab and a broken model look identical from
@@ -161,6 +157,52 @@ namespace Frieren.Player
             {
                 actionLock.ForceRelease();
             }
+        }
+
+        /// <summary>
+        /// Everything about the rig that decides whether a clip can play, in one line.
+        /// </summary>
+        /// <remarks>
+        /// A character that stands still has several causes that look identical: no animator, no
+        /// controller, no avatar, an avatar that failed to build, or an avatar that built as generic
+        /// when the clips are humanoid. Only the last two are subtle, and both are silent - Unity
+        /// reports a failed avatar once at import and never again, so by the time the game is
+        /// running there is nothing on screen to distinguish them.
+        ///
+        /// Retargeting needs the model's avatar and the clips' avatars to both be human. This says
+        /// what the model's is; a human avatar here with a character still in bind pose means the
+        /// clips are the half that failed.
+        /// </remarks>
+        private static string DescribeRig(Animator animator)
+        {
+            if (animator == null)
+            {
+                return "no Animator";
+            }
+
+            if (animator.runtimeAnimatorController == null)
+            {
+                return "Animator with no controller";
+            }
+
+            string controller = animator.runtimeAnimatorController.name;
+
+            if (animator.avatar == null)
+            {
+                return $"controller {controller}, but NO AVATAR, so no clip can play";
+            }
+
+            if (!animator.avatar.isValid)
+            {
+                return $"controller {controller}, avatar {animator.avatar.name} is INVALID";
+            }
+
+            string kind = animator.avatar.isHuman ? "humanoid" : "GENERIC";
+            string note = animator.avatar.isHuman
+                ? string.Empty
+                : " - the clips were converted to Humanoid and cannot retarget onto a generic avatar";
+
+            return $"controller {controller}, {kind} avatar {animator.avatar.name}{note}";
         }
 
         /// <summary>

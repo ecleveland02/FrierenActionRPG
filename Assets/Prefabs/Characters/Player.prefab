@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 106}
   - component: {fileID: 107}
   - component: {fileID: 108}
+  - component: {fileID: 109}
   - component: {fileID: 140}
   - component: {fileID: 141}
   - component: {fileID: 142}
@@ -452,6 +453,21 @@ MonoBehaviour:
   pointerSwitchThreshold: 260
   stickSwitchThreshold: 0.22
   switchDecay: 3
+--- !u!114 &109
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3afe8bdd6d4676ce97e032789667af0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  alignOnStart: 1
+  extraLift: 0
+  suspiciousAbove: 3
 --- !u!1001 &1900000
 PrefabInstance:
   m_ObjectHideFlags: 0
