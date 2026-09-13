@@ -4,6 +4,7 @@ using Frieren.Characters.Animation;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Frieren.Core.EditorTools
 {
