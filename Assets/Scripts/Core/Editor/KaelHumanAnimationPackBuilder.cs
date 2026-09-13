@@ -206,8 +206,10 @@ namespace Frieren.Core.EditorTools
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 foreach (var clip in AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>())
                 {
-                    if (!clip.name.StartsWith("__preview__", StringComparison.OrdinalIgnoreCase) &&
-                        clip.name.IndexOf(clipName, StringComparison.OrdinalIgnoreCase) >= 0)
+                    // FBX exporters commonly name the embedded clip "Take 001" or
+                    // "mixamo.com" rather than matching the file name. The file search above
+                    // is the identity; only reject Unity's generated preview clip here.
+                    if (!clip.name.StartsWith("__preview__", StringComparison.OrdinalIgnoreCase))
                         return clip;
                 }
             }
