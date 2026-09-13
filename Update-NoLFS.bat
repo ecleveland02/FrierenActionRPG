@@ -17,6 +17,25 @@ git log --oneline -1
 for /f "delims=" %%s in ('findstr /c:"Current =" "Assets\Scripts\Core\Debugging\BuildStamp.cs"') do echo  stamp:%%s
 echo.
 
+REM A half-finished merge blocks every pull, and the error git gives for it looks nothing
+REM like the cause. Catch it here and name the fix instead.
+git rev-parse --verify -q MERGE_HEAD >nul 2>&1
+if not errorlevel 1 (
+  echo ############################################################
+  echo #   A MERGE IS ALREADY IN PROGRESS AND UNRESOLVED.         #
+  echo ############################################################
+  echo.
+  echo These files are conflicted:
+  git diff --name-only --diff-filter=U
+  echo.
+  echo No pull can run until that is dealt with. Run Rescue-LocalWork.bat,
+  echo which abandons the broken merge and pushes your own commits somewhere
+  echo safe so nothing is lost.
+  echo.
+  pause
+  exit /b 1
+)
+
 echo Pulling text only, skipping LFS downloads...
 echo.
 set GIT_LFS_SKIP_SMUDGE=1
