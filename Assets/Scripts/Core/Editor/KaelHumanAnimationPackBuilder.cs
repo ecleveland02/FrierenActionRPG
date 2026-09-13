@@ -20,6 +20,8 @@ namespace Frieren.Core.EditorTools
             var idle = Clip("HumanM@Idle01.fbx");
             var walk = Clip("HumanM@Walk01_Forward.fbx");
             var run = Clip("HumanM@Run01_Forward.fbx");
+            var left = Clip("HumanM@Walk01_Left.fbx");
+            var right = Clip("HumanM@Walk01_Right.fbx");
             var jump = Clip("HumanM@Jump01.fbx");
             var land = Clip("HumanM@Jump01 - Land.fbx");
             if (new[] { idle, walk, run, jump, land }.Any(c => c == null))
@@ -28,15 +30,19 @@ namespace Frieren.Core.EditorTools
             var ac = AnimatorController.CreateAnimatorControllerAtPath(Controller);
             ac.AddParameter("Speed", AnimatorControllerParameterType.Float);
             ac.AddParameter("MoveBlend", AnimatorControllerParameterType.Float);
+            ac.AddParameter("MoveDirection", AnimatorControllerParameterType.Float);
             ac.AddParameter("VerticalVelocity", AnimatorControllerParameterType.Float);
             ac.AddParameter("IsGrounded", AnimatorControllerParameterType.Bool);
             ac.AddParameter("Jump", AnimatorControllerParameterType.Trigger);
             ac.AddParameter("Land", AnimatorControllerParameterType.Trigger);
             var sm = ac.layers[0].stateMachine;
             var locomotion = sm.AddState("Locomotion");
-            var tree = new BlendTree { name = "Kevin Human Locomotion", blendType = BlendTreeType.Simple1D, blendParameter = "MoveBlend", useAutomaticThresholds = false };
+            var tree = new BlendTree { name = "Kevin Human Locomotion", blendType = BlendTreeType.FreeformCartesian2D, blendParameter = "MoveDirection", blendParameterY = "MoveBlend", useAutomaticThresholds = false };
             AssetDatabase.AddObjectToAsset(tree, ac);
-            tree.AddChild(idle, 0f); tree.AddChild(walk, .56f); tree.AddChild(run, 1f); locomotion.motion = tree; sm.defaultState = locomotion;
+            tree.AddChild(idle, new Vector2(0f, 0f)); tree.AddChild(walk, new Vector2(0f, .56f)); tree.AddChild(run, new Vector2(0f, 1f));
+            if (left != null) tree.AddChild(left, new Vector2(-1f, .56f));
+            if (right != null) tree.AddChild(right, new Vector2(1f, .56f));
+            locomotion.motion = tree; sm.defaultState = locomotion;
             var air = sm.AddState("Air"); air.motion = jump; var t = locomotion.AddTransition(air); t.hasExitTime = false; t.AddCondition(AnimatorConditionMode.IfNot, 0, "IsGrounded");
             var grounded = air.AddTransition(locomotion); grounded.hasExitTime = false; grounded.AddCondition(AnimatorConditionMode.If, 0, "IsGrounded");
             var prefab = PrefabUtility.LoadPrefabContents(Player);

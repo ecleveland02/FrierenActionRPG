@@ -315,6 +315,8 @@ namespace Frieren.Player
                 NormalizedSpeed,
                 motor.IsGrounded,
                 motor.VerticalVelocity);
+            if (characterAnimation is MecanimCharacterAnimation mecanim)
+                mecanim.SetMovementDirection(planarVelocity);
         }
 
         /// <summary>

@@ -25,6 +25,7 @@ namespace Frieren.Characters.Animation
         [Header("Float parameters")]
         [SerializeField] private string speedParameter = "Speed";
         [SerializeField] private string normalizedSpeedParameter = "MoveBlend";
+        [SerializeField] private string directionParameter = "MoveDirection";
         [SerializeField] private string verticalVelocityParameter = "VerticalVelocity";
 
         [Header("Bool parameters")]
@@ -37,6 +38,7 @@ namespace Frieren.Characters.Animation
 
         private int speedHash;
         private int normalizedSpeedHash;
+        private int directionHash;
         private int verticalVelocityHash;
         private int groundedHash;
         private bool warnedMissingAnimator;
@@ -58,6 +60,7 @@ namespace Frieren.Characters.Animation
 
             speedHash = Animator.StringToHash(speedParameter);
             normalizedSpeedHash = Animator.StringToHash(normalizedSpeedParameter);
+            directionHash = Animator.StringToHash(directionParameter);
             verticalVelocityHash = Animator.StringToHash(verticalVelocityParameter);
             groundedHash = Animator.StringToHash(groundedParameter);
         }
@@ -73,6 +76,13 @@ namespace Frieren.Characters.Animation
             SetFloatDamped(normalizedSpeedHash, normalizedSpeed);
             SetFloat(verticalVelocityHash, verticalVelocity);
             SetBool(groundedHash, isGrounded);
+        }
+
+        public void SetMovementDirection(Vector3 worldVelocity)
+        {
+            if (!IsUsable()) return;
+            Vector3 local = transform.InverseTransformDirection(worldVelocity);
+            SetFloatDamped(directionHash, Mathf.Clamp(local.x / 8f, -1f, 1f));
         }
 
         public void PlayAction(CharacterAction action)
