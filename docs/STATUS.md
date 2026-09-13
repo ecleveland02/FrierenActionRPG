@@ -1,6 +1,6 @@
 # Project status and forward plan
 
-Last updated 2026-09-13, at commit `c0a075e`.
+Last updated 2026-09-13, at commit `f7404d0`.
 
 This is the single page to read before picking up work. It says what exists, what is actually
 verified, what is known to be broken or missing, and what should happen next. For the reasoning
@@ -198,7 +198,26 @@ character.
 ## 6. Known gaps, in priority order
 
 1. **343 tests have never been run.** Open the Test Runner. This is the highest value hour available.
-2. **Kael's retargeting is unverified.** Humanoid retargeting quality depends on the two rest poses
+2. **Kael does not animate, and the cause is now known.** He renders in a T-pose, which means the
+   humanoid system is running and the model's avatar is fine; a clip with no valid humanoid data
+   plays as the avatar's rest pose. So the eight animation FBXs are the half that failed.
+
+   They cannot be made to work as Generic clips either. KaelCloth's skeleton is Mixamo naming with
+   the prefix stripped - Hips, LeftUpLeg, LeftLeg, LeftFoot, LeftToeBase, Spine, Spine01, Spine02,
+   LeftShoulder, LeftArm, LeftForeArm, LeftHand, neck, Head - while the blockout uses Root, Hips,
+   Spine, Chest, Shoulder.L, UpperArm.L, Forearm.L, Thigh.L, Shin.L. Different names and a
+   different hierarchy, so Generic path binding is impossible and humanoid retargeting is the only
+   route from those clips. That retargeting is what is failing: the blockout is authored in an
+   A-pose (build_kael.py line 308) with bone names Unity's mapper has to guess at.
+
+   The cheap fix is Mixamo. KaelCloth's rig is already Mixamo-shaped, so animations downloaded for
+   it come back on its own skeleton and bind with no retargeting at all. That also replaces
+   hand-keyed blockout poses with captured motion. See section 7.
+
+3. **KaelCloth has no StaffSocket bone.** The blockout had one; this rig ends at LeftHand and
+   RightHand. Attaching the staff means parenting to RightHand rather than to a purpose-made bone.
+
+4. **Kael's retargeting is unverified.** Humanoid retargeting quality depends on the two rest poses
    agreeing. If a clip looks wrong, it is the avatar T-pose, fixed in the Rig tab under Configure,
    not in any file. The source rig's `Coat` chain and `StaffSocket` are not humanoid bones and are
    dropped in retargeting; that matters when the staff gets attached.
