@@ -190,6 +190,49 @@ namespace Frieren.Core.EditorTools
             Debug.Log("[Kael] Restored the configured cloth visual on Player.prefab.");
         }
 
+        [MenuItem("Frieren/Kael/Use Imported KaelRigged Model", priority = 65)]
+        public static void UseImportedKaelRiggedModel()
+        {
+            const string modelPath = "Assets/Art/Characters/Kael/Models/KaelRigged/" +
+                                     "tripo_convert_52036e65-177a-431c-887c-80dc4cdeb4bb.fbx";
+            var model = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
+            if (model == null)
+                throw new InvalidOperationException("KaelRigged FBX has not finished importing: " + modelPath);
+            var controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(Controller);
+            if (controller == null)
+                throw new InvalidOperationException("Build the KaelAnimations Copy controller first.");
+
+            var prefab = PrefabUtility.LoadPrefabContents(Player);
+            try
+            {
+                var oldVisual = prefab.transform.Find("KaelVisual");
+                if (oldVisual != null) Object.DestroyImmediate(oldVisual.gameObject);
+                var visual = (GameObject)PrefabUtility.InstantiatePrefab(model);
+                visual.name = "KaelVisual";
+                visual.transform.SetParent(prefab.transform, false);
+                var animator = visual.GetComponent<Animator>() ?? visual.AddComponent<Animator>();
+                animator.runtimeAnimatorController = controller;
+                animator.applyRootMotion = false;
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                var adapter = prefab.GetComponent<MecanimCharacterAnimation>();
+                if (adapter != null)
+                {
+                    var serialized = new SerializedObject(adapter);
+                    serialized.FindProperty("animator").objectReferenceValue = animator;
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                }
+                foreach (Transform child in visual.GetComponentsInChildren<Transform>(true))
+                    child.gameObject.layer = prefab.layer;
+                PrefabUtility.SaveAsPrefabAsset(prefab, Player);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefab);
+            }
+            AssetDatabase.SaveAssets();
+            Debug.Log("[Kael] Imported KaelRigged model assigned to Player.prefab.");
+        }
+
         static AnimationClip Find(string file)
         {
             var guid = AssetDatabase.FindAssets(file.Replace(".fbx", ""), new[] { "Assets/Animations" }).FirstOrDefault();
