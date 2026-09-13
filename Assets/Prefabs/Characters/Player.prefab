@@ -193,8 +193,11 @@ MonoBehaviour:
   animator: {fileID: 5866666021911019633}
   speedParameter: Speed
   normalizedSpeedParameter: MoveBlend
+  directionParameter: MoveDirection
+  forwardParameter: MoveForward
   verticalVelocityParameter: VerticalVelocity
   groundedParameter: IsGrounded
+  sprintParameter: IsSprinting
   blendDampTime: 0.1
 --- !u!114 &109
 MonoBehaviour:
@@ -670,7 +673,7 @@ PrefabInstance:
     - target: {fileID: 5866666021909216657, guid: 106802fb27f9c0b4b8585a1625c544bf, type: 3}
       propertyPath: m_Controller
       value: 
-      objectReference: {fileID: 9100000, guid: d91916c8b24a5fe4e8c0c5ec9483b363, type: 2}
+      objectReference: {fileID: 9100000, guid: 7b45ccb27bbe66c468464041fc07e994, type: 2}
     - target: {fileID: 5866666021909216657, guid: 106802fb27f9c0b4b8585a1625c544bf, type: 3}
       propertyPath: m_CullingMode
       value: 0
