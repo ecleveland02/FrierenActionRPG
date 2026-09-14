@@ -251,10 +251,12 @@ namespace Frieren.Core.EditorTools
 
         static AnimationClip FindInFolder(string clipName, string folder)
         {
-            string[] guids = AssetDatabase.FindAssets("t:Model", new[] { folder });
-            foreach (string guid in guids)
+            string prefix = folder.TrimEnd('/') + "/";
+            foreach (string path in AssetDatabase.GetAllAssetPaths())
             {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ||
+                    !path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
+                    continue;
                 string file = Path.GetFileNameWithoutExtension(path);
                 if (file.IndexOf(clipName, StringComparison.OrdinalIgnoreCase) < 0)
                     continue;
