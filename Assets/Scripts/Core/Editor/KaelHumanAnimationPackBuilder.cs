@@ -218,14 +218,23 @@ namespace Frieren.Core.EditorTools
         public static void UseImportedKaelRiggedModel()
         {
             const string modelFolder = "Assets/Art/Characters/Kael/Models/KaelRigged";
-            var modelGuid = AssetDatabase.FindAssets("t:Model", new[] { modelFolder })
-                .FirstOrDefault(guid =>
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            string prefix = modelFolder.TrimEnd('/') + "/";
+            string modelPath = AssetDatabase.GetAllAssetPaths()
+                .Where(path => path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
+                               path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
+                .FirstOrDefault(path =>
                 {
-                    string file = Path.GetFileNameWithoutExtension(AssetDatabase.GUIDToAssetPath(guid));
+                    string file = Path.GetFileNameWithoutExtension(path);
                     return file.IndexOf("KaelRigged", StringComparison.OrdinalIgnoreCase) >= 0 &&
                            file.IndexOf("T-Pose", StringComparison.OrdinalIgnoreCase) >= 0;
                 });
-            string modelPath = string.IsNullOrEmpty(modelGuid) ? null : AssetDatabase.GUIDToAssetPath(modelGuid);
+            if (string.IsNullOrEmpty(modelPath))
+                modelPath = AssetDatabase.GetAllAssetPaths()
+                    .Where(path => path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
+                                   path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
+                    .FirstOrDefault(path => Path.GetFileNameWithoutExtension(path)
+                        .IndexOf("Kael", StringComparison.OrdinalIgnoreCase) >= 0);
             var model = string.IsNullOrEmpty(modelPath) ? null : AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
             if (model == null)
                 throw new InvalidOperationException("KaelRigged T-pose FBX has not finished importing in " + modelFolder);
