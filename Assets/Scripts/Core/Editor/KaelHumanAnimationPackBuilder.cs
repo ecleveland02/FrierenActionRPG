@@ -240,6 +240,8 @@ namespace Frieren.Core.EditorTools
                     .Where(path => path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
                     .Where(path => Path.GetFileNameWithoutExtension(path)
                         .IndexOf("Kael", StringComparison.OrdinalIgnoreCase) >= 0)
+                    .Where(path => path.IndexOf("Staff", StringComparison.OrdinalIgnoreCase) < 0 &&
+                                   path.IndexOf("Weapon", StringComparison.OrdinalIgnoreCase) < 0)
                     .Where(path => !path.EndsWith("/Models/Kael.fbx", StringComparison.OrdinalIgnoreCase))
                     .OrderByDescending(path => Path.GetFileNameWithoutExtension(path)
                         .IndexOf("Rigged", StringComparison.OrdinalIgnoreCase) >= 0)
