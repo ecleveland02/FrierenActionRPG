@@ -238,8 +238,12 @@ namespace Frieren.Core.EditorTools
             if (string.IsNullOrEmpty(modelPath))
                 modelPath = AssetDatabase.GetAllAssetPaths()
                     .Where(path => path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
-                    .FirstOrDefault(path => Path.GetFileNameWithoutExtension(path)
-                        .IndexOf("Kael", StringComparison.OrdinalIgnoreCase) >= 0);
+                    .Where(path => Path.GetFileNameWithoutExtension(path)
+                        .IndexOf("Kael", StringComparison.OrdinalIgnoreCase) >= 0)
+                    .Where(path => !path.EndsWith("/Models/Kael.fbx", StringComparison.OrdinalIgnoreCase))
+                    .OrderByDescending(path => Path.GetFileNameWithoutExtension(path)
+                        .IndexOf("Rigged", StringComparison.OrdinalIgnoreCase) >= 0)
+                    .FirstOrDefault();
             var model = string.IsNullOrEmpty(modelPath) ? null : AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
             if (model == null)
                 throw new InvalidOperationException("KaelRigged T-pose FBX has not finished importing in " + modelFolder);
