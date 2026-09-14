@@ -75,6 +75,8 @@ namespace Frieren.Core.EditorTools
             var sprint = FindClip("Sprint");
             var strafeLeft = FindClip("Jog Strafe Left");
             var strafeRight = FindClip("Jog Strafe Right");
+            var turnLeft = FindClip("Left Turn");
+            var turnRight = FindClip("Right Turn");
             var jump = FindClip("Jump");
             var land = FindClip("Land");
 
@@ -114,6 +116,8 @@ namespace Frieren.Core.EditorTools
             controller.AddParameter("IsSprinting", AnimatorControllerParameterType.Bool);
             controller.AddParameter("Jump", AnimatorControllerParameterType.Trigger);
             controller.AddParameter("Land", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("TurnLeft", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("TurnRight", AnimatorControllerParameterType.Trigger);
 
             var stateMachine = controller.layers[0].stateMachine;
             var locomotion = stateMachine.AddState("Locomotion");
@@ -164,6 +168,9 @@ namespace Frieren.Core.EditorTools
                 fromLand.exitTime = 0.85f;
                 fromLand.duration = 0.12f;
             }
+
+            AddTurnState(stateMachine, locomotion, turnLeft, "TurnLeft");
+            AddTurnState(stateMachine, locomotion, turnRight, "TurnRight");
 
             var prefab = PrefabUtility.LoadPrefabContents(Player);
             try
@@ -261,6 +268,7 @@ namespace Frieren.Core.EditorTools
                 var visual = (GameObject)PrefabUtility.InstantiatePrefab(model);
                 visual.name = "KaelVisual";
                 visual.transform.SetParent(prefab.transform, false);
+                NormalizeVisualScale(visual, prefab.GetComponent<CharacterController>());
                 var animator = visual.GetComponentInChildren<Animator>(true);
                 if (animator == null)
                     animator = visual.AddComponent<Animator>();
@@ -284,6 +292,33 @@ namespace Frieren.Core.EditorTools
             }
             AssetDatabase.SaveAssets();
             Debug.Log("[Kael] Imported KaelRigged model assigned to Player.prefab.");
+        }
+
+        static void AddTurnState(AnimatorStateMachine machine, AnimatorState locomotion, AnimationClip clip, string trigger)
+        {
+            if (clip == null) return;
+            var state = machine.AddState(trigger);
+            state.motion = clip;
+            var enter = locomotion.AddTransition(state);
+            enter.hasExitTime = false;
+            enter.duration = 0.08f;
+            enter.AddCondition(AnimatorConditionMode.If, 0f, trigger);
+            var exit = state.AddTransition(locomotion);
+            exit.hasExitTime = true;
+            exit.exitTime = 0.9f;
+            exit.duration = 0.1f;
+        }
+
+        static void NormalizeVisualScale(GameObject visual, CharacterController controller)
+        {
+            if (controller == null) return;
+            var renderers = visual.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0) return;
+            Bounds bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+            if (bounds.size.y <= 0.001f) return;
+            float targetHeight = controller.height;
+            visual.transform.localScale *= targetHeight / bounds.size.y;
         }
 
         static AnimationClip Find(string file)
