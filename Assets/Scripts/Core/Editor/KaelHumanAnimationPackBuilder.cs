@@ -81,9 +81,18 @@ namespace Frieren.Core.EditorTools
             if (idle == null || walk == null || walkBack == null || run == null || runBack == null ||
                 sprint == null || strafeLeft == null || strafeRight == null)
             {
-                throw new InvalidOperationException(
-                    "KaelAnimations - Copy must contain Breathing Idle, Walking, Walking Backwards, " +
-                    "Running, Running Backward, Sprint, Jog Strafe Left and Jog Strafe Right clips.");
+                string missing = string.Join(", ", new[]
+                {
+                    idle == null ? "Breathing Idle" : null,
+                    walk == null ? "Walking" : null,
+                    walkBack == null ? "Walking Backwards" : null,
+                    run == null ? "Running" : null,
+                    runBack == null ? "Running Backward" : null,
+                    sprint == null ? "Sprint" : null,
+                    strafeLeft == null ? "Jog Strafe Left" : null,
+                    strafeRight == null ? "Jog Strafe Right" : null
+                }.Where(value => value != null));
+                throw new InvalidOperationException("Missing Kael animation clips: " + missing);
             }
 
             AssetDatabase.DeleteAsset("Assets/Art/Characters/Kael/Kael.controller");
@@ -258,7 +267,10 @@ namespace Frieren.Core.EditorTools
                     !path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
                     continue;
                 string file = Path.GetFileNameWithoutExtension(path);
-                if (file.IndexOf(clipName, StringComparison.OrdinalIgnoreCase) < 0)
+                string normalizedFile = Normalize(file);
+                string normalizedClip = Normalize(clipName);
+                if (!normalizedFile.Contains(normalizedClip) &&
+                    !(normalizedClip.EndsWith("backwards") && normalizedFile.Contains("backward")))
                     continue;
                 foreach (var clip in AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>())
                 {
@@ -271,6 +283,11 @@ namespace Frieren.Core.EditorTools
             }
 
             return null;
+        }
+
+        static string Normalize(string value)
+        {
+            return new string(value.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
         }
     }
 }
