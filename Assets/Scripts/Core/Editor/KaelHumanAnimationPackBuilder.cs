@@ -169,10 +169,16 @@ namespace Frieren.Core.EditorTools
             try
             {
                 var animator = prefab.GetComponentInChildren<Animator>(true);
-                if (animator == null) throw new InvalidOperationException("Player has no Animator.");
-                animator.runtimeAnimatorController = controller;
-                animator.applyRootMotion = false;
-                PrefabUtility.SaveAsPrefabAsset(prefab, Player);
+                if (animator != null)
+                {
+                    animator.runtimeAnimatorController = controller;
+                    animator.applyRootMotion = false;
+                    PrefabUtility.SaveAsPrefabAsset(prefab, Player);
+                }
+                else
+                {
+                    Debug.LogWarning("[Kael] Player has no visual Animator yet; run Use Imported KaelRigged Model next.");
+                }
             }
             finally
             {
