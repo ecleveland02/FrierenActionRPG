@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using Frieren.Characters.Animation;
 using UnityEditor;
@@ -193,10 +194,18 @@ namespace Frieren.Core.EditorTools
         [MenuItem("Frieren/Kael/Use Imported KaelRigged Model", priority = 65)]
         public static void UseImportedKaelRiggedModel()
         {
-            const string modelPath = "Assets/Art/Characters/Kael/Models/KaelRigged/KaelRigged@T-Pose.fbx";
-            var model = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
+            const string modelFolder = "Assets/Art/Characters/Kael/Models/KaelRigged";
+            var modelGuid = AssetDatabase.FindAssets("t:Model", new[] { modelFolder })
+                .FirstOrDefault(guid =>
+                {
+                    string file = Path.GetFileNameWithoutExtension(AssetDatabase.GUIDToAssetPath(guid));
+                    return file.IndexOf("KaelRigged", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                           file.IndexOf("T-Pose", StringComparison.OrdinalIgnoreCase) >= 0;
+                });
+            string modelPath = string.IsNullOrEmpty(modelGuid) ? null : AssetDatabase.GUIDToAssetPath(modelGuid);
+            var model = string.IsNullOrEmpty(modelPath) ? null : AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
             if (model == null)
-                throw new InvalidOperationException("KaelRigged FBX has not finished importing: " + modelPath);
+                throw new InvalidOperationException("KaelRigged T-pose FBX has not finished importing in " + modelFolder);
             var controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(Controller);
             if (controller == null)
                 throw new InvalidOperationException("Build the KaelAnimations Copy controller first.");
@@ -242,10 +251,13 @@ namespace Frieren.Core.EditorTools
 
         static AnimationClip FindInFolder(string clipName, string folder)
         {
-            string[] guids = AssetDatabase.FindAssets(clipName, new[] { folder });
+            string[] guids = AssetDatabase.FindAssets("t:Model", new[] { folder });
             foreach (string guid in guids)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
+                string file = Path.GetFileNameWithoutExtension(path);
+                if (file.IndexOf(clipName, StringComparison.OrdinalIgnoreCase) < 0)
+                    continue;
                 foreach (var clip in AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>())
                 {
                     // FBX exporters commonly name the embedded clip "Take 001" or
