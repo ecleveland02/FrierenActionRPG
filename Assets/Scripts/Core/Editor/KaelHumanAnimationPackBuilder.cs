@@ -259,7 +259,9 @@ namespace Frieren.Core.EditorTools
                 var visual = (GameObject)PrefabUtility.InstantiatePrefab(model);
                 visual.name = "KaelVisual";
                 visual.transform.SetParent(prefab.transform, false);
-                var animator = visual.GetComponent<Animator>() ?? visual.AddComponent<Animator>();
+                var animator = visual.GetComponentInChildren<Animator>(true);
+                if (animator == null)
+                    animator = visual.AddComponent<Animator>();
                 animator.runtimeAnimatorController = controller;
                 animator.applyRootMotion = false;
                 animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
