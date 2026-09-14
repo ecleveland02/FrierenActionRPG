@@ -78,6 +78,14 @@ namespace Frieren.Core.EditorTools
             var jump = FindClip("Jump");
             var land = FindClip("Land");
 
+            // Some FBX exporters expose the idle file without an AnimationClip sub-asset.
+            // Walking is a safe temporary fallback and still lets the controller build.
+            if (idle == null && walk != null)
+            {
+                idle = walk;
+                Debug.LogWarning("[Kael] Breathing Idle.fbx has no exposed clip; using Walking as idle fallback.");
+            }
+
             if (idle == null || walk == null || walkBack == null || run == null || runBack == null ||
                 sprint == null || strafeLeft == null || strafeRight == null)
             {
