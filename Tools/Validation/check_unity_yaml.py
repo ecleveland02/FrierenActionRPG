@@ -166,7 +166,17 @@ def check_hierarchy(path, text, anchors):
                     f"{path}: transform {parent} lists child {kid}, but {kid}'s father is {fathers[kid]}")
 
     for child, father in fathers.items():
-        if father != 0 and child not in children.get(father, []):
+        if father == 0:
+            continue
+
+        # A stripped transform is a stub for an object inside a nested prefab. It carries no
+        # m_Children, so a real object parented to one is correct and unlistable. This is the
+        # mirror of the case above and shows up whenever something is attached to a bone of an
+        # imported model - a cloth collider, a weapon socket, a hit spark.
+        if father in stripped_owner:
+            continue
+
+        if child not in children.get(father, []):
             problems.append(f"{path}: transform {child} claims father {father}, which does not list it")
 
     # A nested prefab nobody lists is invisible in the hierarchy, which is the mirror of the check
@@ -182,7 +192,15 @@ def check_hierarchy(path, text, anchors):
 
 
 def check_components(path, text, anchors):
-    """A GameObject's component list and its components' m_GameObject must agree."""
+    """A GameObject's component list and its components' m_GameObject must agree.
+
+    Stripped GameObjects are exempt in both directions. A stub for an object inside a nested
+    prefab has no m_Component list of its own - the real list lives in the source prefab - so a
+    component added to one is recorded on the PrefabInstance as an addition rather than in a list
+    here. Requiring the list reported every such addition as broken.
+    """
+    stripped = {int(a) for a in re.findall(r"^--- !u!\d+ &(-?\d+) stripped", text, re.M)}
+
     owners = {}
     listed = {}
     for class_id, anchor, body in blocks(text):
@@ -190,7 +208,7 @@ def check_components(path, text, anchors):
             found = re.search(r"^  m_Component:\n((?:  - component: \{fileID: \d+\}\n?)*)",
                               body + "\n", re.M)
             listed[anchor] = [int(m) for m in LOCAL_REF.findall(found.group(1))] if found else []
-            if not listed[anchor]:
+            if not listed[anchor] and anchor not in stripped:
                 problems.append(f"{path}: GameObject {anchor} has no components, not even a Transform")
             continue
         owner = re.search(r"^  m_GameObject: \{fileID: (\d+)\}", body, re.M)
@@ -206,7 +224,10 @@ def check_components(path, text, anchors):
                     f"{path}: GameObject {go} lists component {comp}, which belongs to {owners[comp]}")
 
     for comp, go in owners.items():
-        if go != 0 and comp not in listed.get(go, []):
+        if go == 0 or go in stripped:
+            continue
+
+        if comp not in listed.get(go, []):
             problems.append(f"{path}: component {comp} belongs to GameObject {go}, which does not list it")
 
 

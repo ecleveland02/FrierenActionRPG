@@ -16,6 +16,10 @@ namespace Frieren.Core.Debugging
     public static class BuildStamp
     {
         /// <summary>Bump this whenever behaviour changes. Shown in the debug overlay.</summary>
+<<<<<<< HEAD
         public const string Current = "world entry v1 - open world grounded spawn";
+=======
+        public const string Current = "m8.4 kaelcloth with the cloth sim";
+>>>>>>> e2c46bbc2b4f59b07cc6dd5327e296427eb6dfcf
     }
 }
