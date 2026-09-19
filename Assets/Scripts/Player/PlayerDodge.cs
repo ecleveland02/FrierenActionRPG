@@ -13,9 +13,7 @@ namespace Frieren.Player
     /// The first holder of <see cref="CharacterActionLock"/>, and the reason it exists. While the
     /// dodge holds the lock, locomotion stands down and the dodge drives the motor directly.
     ///
-    /// <see cref="IsInvulnerable"/> is exposed but nothing reads it yet - there is no damage until
-    /// Milestone 5. It is here because the invulnerability window is a property of the dodge's
-    /// timeline, and bolting it on later would mean re-deriving the same timings elsewhere.
+    /// Damage is ignored only during the gameplay-owned invulnerability window.
     ///
     /// Speed falls off linearly rather than along an AnimationCurve. A curve would serialise as
     /// keyframe data in the prefab, and an empty curve evaluates to zero - a dodge that silently
@@ -24,7 +22,7 @@ namespace Frieren.Player
     [RequireComponent(typeof(CharacterMotor))]
     [RequireComponent(typeof(CharacterActionLock))]
     [DisallowMultipleComponent]
-    public sealed class PlayerDodge : MonoBehaviour
+    public sealed class PlayerDodge : MonoBehaviour, IDamageModifier
     {
         [Header("Input")]
         [SerializeField] private InputReader inputReader;
@@ -52,6 +50,11 @@ namespace Frieren.Player
         [Tooltip("Seconds after the dodge begins during which the character should ignore damage.")]
         private float invulnerabilityDuration = 0.2f;
 
+        [SerializeField] private float invulnerabilityStart = 0.06f;
+        [SerializeField] private float staminaCost = 25f;
+        private CharacterStamina stamina;
+        private PlayerLocomotion locomotion;
+
         private CharacterMotor motor;
         private CharacterActionLock actionLock;
         private ICharacterAnimation characterAnimation;
@@ -63,7 +66,10 @@ namespace Frieren.Player
         public bool IsDodging { get; private set; }
 
         /// <summary>True during the dodge's invulnerability window. Read by combat from Milestone 5.</summary>
-        public bool IsInvulnerable => IsDodging && elapsed <= invulnerabilityDuration;
+        public bool IsInvulnerable => isActiveAndEnabled && IsDodging &&
+            DodgeTiming.IsProtected(elapsed, invulnerabilityStart, invulnerabilityDuration);
+        public int ModifierOrder => -1000;
+        public float ModifyIncomingDamage(in DamageInfo damage, float amount) => IsInvulnerable ? 0f : amount;
 
         public bool IsOnCooldown => Time.time - lastDodgeEndTime < cooldown;
 
@@ -72,6 +78,8 @@ namespace Frieren.Player
             motor = GetComponent<CharacterMotor>();
             actionLock = GetComponent<CharacterActionLock>();
             characterAnimation = GetComponent<ICharacterAnimation>();
+            stamina = GetComponent<CharacterStamina>();
+            locomotion = GetComponent<PlayerLocomotion>();
 
             if (inputReader == null)
             {
@@ -129,7 +137,7 @@ namespace Frieren.Player
 
         private void OnDodgePressed()
         {
-            if (IsDodging || IsOnCooldown)
+            if (IsDodging || IsOnCooldown || startSpeed <= 0f || duration <= 0f || stamina == null || stamina.Current < staminaCost)
             {
                 return;
             }
@@ -144,13 +152,22 @@ namespace Frieren.Player
                 return;
             }
 
+            if (!stamina.TrySpend(staminaCost))
+            {
+                actionLock.Release(this);
+                return;
+            }
+
             dodgeDirection = ResolveDirection();
             elapsed = 0f;
             IsDodging = true;
 
-            // Face the dodge so the character does not slide backwards through it.
-            transform.rotation = Quaternion.LookRotation(dodgeDirection, Vector3.up);
+            // Preserve target-facing in combat so left/right/back evasion remains directional.
+            if (locomotion == null || locomotion.FaceTarget == null)
+                transform.rotation = Quaternion.LookRotation(dodgeDirection, Vector3.up);
             motor.SetHorizontalVelocity(dodgeDirection * startSpeed);
+            if (characterAnimation is MecanimCharacterAnimation mecanim)
+                mecanim.SetDodge(true, dodgeDirection, duration);
             characterAnimation?.PlayAction(CharacterAction.Dodge);
 
             GameLog.Info(LogChannel.Player, $"Dodge started toward {dodgeDirection}.", this);
@@ -166,6 +183,13 @@ namespace Frieren.Player
                 UnityEngine.Camera main = UnityEngine.Camera.main;
                 Quaternion reference = main != null ? main.transform.rotation : transform.rotation;
                 Vector3 direction = MotorMath.CameraRelativeDirection(input, reference);
+                if (locomotion != null && locomotion.FaceTarget != null)
+                {
+                    Vector3 toward = locomotion.FaceTarget.position - transform.position;
+                    toward.y = 0f;
+                    if (toward.sqrMagnitude > 0.0001f)
+                        direction = toward.normalized * input.y + Vector3.Cross(Vector3.up, toward.normalized) * input.x;
+                }
 
                 if (direction.sqrMagnitude > 0.0001f)
                 {
@@ -173,7 +197,7 @@ namespace Frieren.Player
                 }
             }
 
-            Vector3 forward = transform.forward;
+            Vector3 forward = locomotion != null && locomotion.FaceTarget != null ? -transform.forward : transform.forward;
             forward.y = 0f;
 
             return forward.sqrMagnitude > 0.0001f ? forward.normalized : Vector3.forward;
@@ -184,6 +208,8 @@ namespace Frieren.Player
             IsDodging = false;
             elapsed = 0f;
             lastDodgeEndTime = Time.time;
+            if (characterAnimation is MecanimCharacterAnimation mecanim)
+                mecanim.SetDodge(false, dodgeDirection, duration);
 
             // Hand the body back with the dodge's exit speed intact; locomotion picks it up from
             // the motor next frame rather than snapping to zero.

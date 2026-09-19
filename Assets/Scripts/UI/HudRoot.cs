@@ -58,6 +58,10 @@ namespace Frieren.UI
         private Image manaFill;
         private Image manaGhost;
         private Text manaLabel;
+        private CharacterStamina stamina;
+        private Image staminaFill;
+        private Image staminaGhost;
+        private Text staminaLabel;
         private Image spellIcon;
         private Image spellCooldown;
         private Text spellName;
@@ -120,6 +124,7 @@ namespace Frieren.UI
 
             health = player.GetComponent<CharacterHealth>();
             mana = player.GetComponent<CharacterMana>();
+            stamina = player.GetComponent<CharacterStamina>();
             spellcaster = player.GetComponent<CharacterSpellcaster>();
             spells = player.GetComponent<PlayerSpellInput>();
             targetLock = player.GetComponent<PlayerTargetLock>();
@@ -170,6 +175,7 @@ namespace Frieren.UI
 
             health = null;
             mana = null;
+            stamina = null;
             spellcaster = null;
             spells = null;
             targetLock = null;
@@ -193,6 +199,12 @@ namespace Frieren.UI
 
         private void TickBars(float deltaTime)
         {
+            if (stamina != null)
+            {
+                staminaFill.fillAmount = stamina.Normalized;
+                staminaGhost.fillAmount = stamina.Normalized;
+                staminaLabel.text = $"{stamina.Current:0} / {stamina.Max:0}";
+            }
             float target = BarSmoothing.Safe(health.Normalized);
             healthGhostValue = BarSmoothing.Step(healthGhostValue, target, deltaTime, ghostRate,
                 ref healthGhostDelay);
@@ -334,6 +346,9 @@ namespace Frieren.UI
                 out manaFill, out manaGhost, out manaLabel);
 
             BuildSpellSlot(root);
+            HudBuilder.CreateBar(root, "Stamina", Vector2.zero, barCorner + new Vector2(0f, 2f * (barSize.y + 8f)),
+                barSize, new Color(0.35f, 0.75f, 0.35f), new Color(0.6f, 0.9f, 0.4f),
+                out staminaFill, out staminaGhost, out staminaLabel);
             BuildReticle(root);
         }
 

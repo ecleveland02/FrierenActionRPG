@@ -1,4 +1,5 @@
 using Frieren.Characters;
+using Frieren.Core;
 using Frieren.Core.Debugging;
 using Frieren.Magic;
 using Frieren.Player.Cameras;
@@ -62,14 +63,35 @@ namespace Frieren.Player
                 return null;
             }
 
-            SpawnedPlayer = Instantiate(playerPrefab, point.position, point.rotation);
+            Vector3 spawnPosition = GroundedSpawnPosition(point.position);
+            SpawnedPlayer = Instantiate(playerPrefab, spawnPosition, point.rotation);
             SpawnedPlayer.name = playerPrefab.name;
 
             ConnectCamera();
-            GameLog.Info(LogChannel.Player, $"Player spawned at {point.position}.", this);
+            GameLog.Info(LogChannel.Player, $"Player spawned at {spawnPosition}.", this);
             ReportBody();
 
             return SpawnedPlayer;
+        }
+
+        private static Vector3 GroundedSpawnPosition(Vector3 authoredPosition)
+        {
+            Vector3 origin = authoredPosition + Vector3.up * 3f;
+            if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 12f,
+                    1 << GameLayers.Ground, QueryTriggerInteraction.Ignore))
+                return hit.point + Vector3.up * 0.08f;
+
+            foreach (Terrain terrain in Terrain.activeTerrains)
+            {
+                Vector3 terrainOrigin = terrain.transform.position;
+                Vector3 size = terrain.terrainData.size;
+                if (authoredPosition.x < terrainOrigin.x || authoredPosition.x > terrainOrigin.x + size.x ||
+                    authoredPosition.z < terrainOrigin.z || authoredPosition.z > terrainOrigin.z + size.z)
+                    continue;
+                float y = terrain.SampleHeight(authoredPosition) + terrainOrigin.y;
+                return new Vector3(authoredPosition.x, y + 0.08f, authoredPosition.z);
+            }
+            return authoredPosition;
         }
 
         /// <summary>

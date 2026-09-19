@@ -36,6 +36,8 @@ namespace Frieren.Core.Input
         private InputAction lookAction;
         private InputAction jumpAction;
         private InputAction sprintAction;
+        private InputAction walkAction;
+        public bool WalkHeld => walkAction != null && walkAction.enabled && walkAction.IsPressed();
         private InputAction dodgeAction;
         private InputAction interactAction;
         private InputAction castAction;
@@ -134,6 +136,12 @@ namespace Frieren.Core.Input
             lookAction = Resolve(gameplayMap, "Look");
             jumpAction = Resolve(gameplayMap, "Jump");
             sprintAction = Resolve(gameplayMap, "Sprint");
+            walkAction = gameplayMap.FindAction("Walk", false);
+            if (walkAction == null)
+            {
+                walkAction = gameplayMap.AddAction("Walk", InputActionType.Button);
+                walkAction.AddBinding("<Keyboard>/leftAlt");
+            }
             dodgeAction = Resolve(gameplayMap, "Dodge");
             interactAction = Resolve(gameplayMap, "Interact");
             castAction = Resolve(gameplayMap, "Cast");
@@ -240,6 +248,7 @@ namespace Frieren.Core.Input
             lookAction = null;
             jumpAction = null;
             sprintAction = null;
+            walkAction = null;
             dodgeAction = null;
             interactAction = null;
             castAction = null;

@@ -1,0 +1,36 @@
+{
+  "vertices": 24178,
+  "unweighted_vertices": 6907,
+  "tests": {
+    "FrontLeg_A": {
+      "bone": "bone_38",
+      "moved_vertices": 5711,
+      "max_displacement": 0.14956473670564926
+    },
+    "FrontLeg_B": {
+      "bone": "bone_66",
+      "moved_vertices": 1221,
+      "max_displacement": 0.10606007520591397
+    },
+    "RearLeg_A": {
+      "bone": "bone_6",
+      "moved_vertices": 1616,
+      "max_displacement": 0.08029414107766647
+    },
+    "RearLeg_B": {
+      "bone": "bone_15",
+      "moved_vertices": 1772,
+      "max_displacement": 0.08793553456679025
+    },
+    "Wing_A": {
+      "bone": "bone_28",
+      "moved_vertices": 2507,
+      "max_displacement": 0.2203692734750574
+    },
+    "Wing_B": {
+      "bone": "bone_51",
+      "moved_vertices": 2665,
+      "max_displacement": 0.20765942962916034
+    }
+  }
+}

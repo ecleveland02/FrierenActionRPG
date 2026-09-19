@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Frieren.Core.Debugging;
 using Frieren.Core.Input;
 using Frieren.Magic;
+using Frieren.Characters;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -31,6 +32,10 @@ namespace Frieren.Player
         private List<SpellDefinition> knownSpells = new List<SpellDefinition>();
 
         private CharacterSpellcaster spellcaster;
+        private CharacterActionLock actionLock;
+        private SpellDefinition bufferedSpell;
+        private float bufferedUntil;
+        [SerializeField, Min(0f)] private float castBufferSeconds = 0.2f;
 
         // Optional sibling. Resolved rather than serialized so a player without a wheel - a test
         // rig, an early tutorial - still casts.
@@ -49,6 +54,7 @@ namespace Frieren.Player
         private void Awake()
         {
             spellcaster = GetComponent<CharacterSpellcaster>();
+            actionLock = GetComponent<CharacterActionLock>();
             wheel = GetComponent<SpellWheelInput>();
 
             if (inputReader == null)
@@ -74,6 +80,7 @@ namespace Frieren.Player
 
         private void OnDisable()
         {
+            bufferedSpell = null;
             if (inputReader != null)
             {
                 inputReader.CastPerformed -= OnCastPressed;
@@ -85,7 +92,24 @@ namespace Frieren.Player
             spellcaster.ReleaseChannel(SelectedSpell);
         }
 
-        private void Update() => ReadSelectionKeys();
+        private void Update()
+        {
+            ReadSelectionKeys();
+            if (bufferedSpell == null) return;
+            if (Time.time > bufferedUntil || (wheel != null && wheel.IsOpen))
+            {
+                bufferedSpell = null;
+                return;
+            }
+            if (Time.timeScale <= 0f || IsTemporarilyBusy(bufferedSpell)) return;
+            var spell = bufferedSpell;
+            bufferedSpell = null;
+            spellcaster.TryCast(spell);
+        }
+
+        private bool IsTemporarilyBusy(SpellDefinition spell) =>
+            spellcaster.IsCasting || spellcaster.CooldownRemaining(spell) > 0f ||
+            (spell.HoldsActionLock && actionLock != null && actionLock.IsLocked);
 
         /// <summary>
         /// Selection is read directly from the keyboard rather than through the input asset. A spell
@@ -119,6 +143,7 @@ namespace Frieren.Player
             }
 
             SelectedIndex = index;
+            bufferedSpell = null;
             GameLog.Info(LogChannel.Magic, $"Selected spell {SelectedSpell}.", this);
             SelectionChanged?.Invoke(SelectedSpell);
         }
@@ -137,6 +162,7 @@ namespace Frieren.Player
             if (wheel != null && wheel.IsOpen)
             {
                 castWasConsumedByWheel = true;
+                bufferedSpell = null;
                 wheel.CloseAndCommit();
                 return;
             }
@@ -147,6 +173,15 @@ namespace Frieren.Player
                 return;
             }
 
+            if (Time.timeScale <= 0f) return;
+            bufferedSpell = null;
+            // One pending press, never a stack of attacks. Channels retain hold/release semantics.
+            if (!SelectedSpell.IsChannelled && IsTemporarilyBusy(SelectedSpell))
+            {
+                bufferedSpell = SelectedSpell;
+                bufferedUntil = Time.time + castBufferSeconds;
+                return;
+            }
             spellcaster.TryCast(SelectedSpell);
         }
 

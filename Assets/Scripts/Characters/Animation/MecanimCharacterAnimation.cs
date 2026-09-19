@@ -46,6 +46,25 @@ namespace Frieren.Characters.Animation
         private int groundedHash;
         private int sprintHash;
         private bool warnedMissingAnimator;
+        private readonly int turnHash = Animator.StringToHash("Turn");
+        public void SetLanding(float impactSpeed)
+        {
+            if (IsUsable()) SetBool(Animator.StringToHash("HardLanding"), impactSpeed >= 11f);
+        }
+
+        public void SetDodge(bool active, Vector3 worldDirection, float duration)
+        {
+            if (!IsUsable()) return;
+            Vector3 local = transform.InverseTransformDirection(worldDirection);
+            SetFloat(Animator.StringToHash("DodgeX"), local.x);
+            SetFloat(Animator.StringToHash("DodgeY"), local.z);
+            SetFloat(Animator.StringToHash("DodgePlayback"), 0.45f / Mathf.Max(0.01f, duration));
+            SetBool(Animator.StringToHash("IsDodging"), active);
+        }
+        public void SetTurnRate(float degreesPerSecond)
+        {
+            if (IsUsable()) SetFloatDamped(turnHash, Mathf.Clamp(degreesPerSecond / 180f, -1f, 1f));
+        }
 
         // Animator.parameters allocates a fresh array on every access, and this component touched
         // it four times a frame per character. Cached once against the controller it was built
@@ -85,12 +104,13 @@ namespace Frieren.Characters.Animation
             SetBool(sprintHash, normalizedSpeed > 0.8f);
         }
 
-        public void SetMovementDirection(Vector3 worldVelocity)
+        public void SetMovementDirection(Vector3 worldVelocity, bool strafe = true, float referenceSpeed = 8f)
         {
             if (!IsUsable()) return;
-            Vector3 local = transform.InverseTransformDirection(worldVelocity);
-            SetFloatDamped(directionHash, Mathf.Clamp(local.x / 8f, -1f, 1f));
-            SetFloatDamped(forwardHash, Mathf.Clamp(local.z / 8f, -1f, 1f));
+            Vector3 local = strafe ? transform.InverseTransformDirection(worldVelocity) : Vector3.forward * worldVelocity.magnitude;
+            float scale = Mathf.Max(0.01f, referenceSpeed);
+            SetFloatDamped(directionHash, Mathf.Clamp(local.x / scale, -1f, 1f));
+            SetFloatDamped(forwardHash, Mathf.Clamp(local.z / scale, -1f, 1f));
         }
 
         public void PlayAction(CharacterAction action)

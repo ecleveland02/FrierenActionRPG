@@ -40,6 +40,13 @@ namespace Frieren.Characters
         private float manaRegenDelay = 1.5f;
 
         public float MaxHealth => Mathf.Max(0f, maxHealth);
+        [Header("Stamina")]
+        [SerializeField] private float maxStamina = 100f;
+        [SerializeField] private float staminaRegenPerSecond = 25f;
+        [SerializeField] private float staminaRegenDelay = 0.8f;
+        public float MaxStamina => Mathf.Max(0f, maxStamina);
+        public float StaminaRegenPerSecond => Mathf.Max(0f, staminaRegenPerSecond);
+        public float StaminaRegenDelay => Mathf.Max(0f, staminaRegenDelay);
 
         public float HealthRegenPerSecond => Mathf.Max(0f, healthRegenPerSecond);
 

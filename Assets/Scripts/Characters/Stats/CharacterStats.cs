@@ -34,6 +34,9 @@ namespace Frieren.Characters
         public float HealthRegenDelay => definition != null ? definition.HealthRegenDelay : 0f;
 
         public float MaxMana => definition != null ? definition.MaxMana : 0f;
+        public float MaxStamina => definition != null ? definition.MaxStamina : 0f;
+        public float StaminaRegenPerSecond => definition != null ? definition.StaminaRegenPerSecond : 0f;
+        public float StaminaRegenDelay => definition != null ? definition.StaminaRegenDelay : 0f;
 
         public float ManaRegenPerSecond => definition != null ? definition.ManaRegenPerSecond : 0f;
 

@@ -42,6 +42,23 @@ namespace Frieren.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator ZeroWindupCastDoesNotLeaveCasterBusy()
+        {
+            SpawnCaster();
+            var spell = World.CreateSpell("test.zero", SpellTargeting.Self,
+                World.CreatePulseEffect(MagicElement.Warding, 10f));
+            TestFields.Set(spell, "castTime", 0f);
+            TestFields.Set(spell, "cooldown", 0f);
+            TestFields.Set(spell, "manaCost", 0f);
+            Assert.IsTrue(spellcaster.TryCast(spell));
+            Assert.IsFalse(spellcaster.IsCasting);
+            Assert.IsFalse(actionLock.IsLocked);
+            Assert.IsTrue(spellcaster.TryCast(spell));
+            yield return null;
+            Assert.IsFalse(spellcaster.IsCasting);
+        }
+
+        [UnityTest]
         public IEnumerator AnInstantCastSpendsManaOnce()
         {
             SpawnCaster();

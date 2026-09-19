@@ -30,6 +30,11 @@ namespace Frieren.Player
 
         [Header("Speeds")]
         [SerializeField] private float walkSpeed = 4.5f;
+        [SerializeField] private float runSpeed = 4.5f;
+        [SerializeField] private float sprintDrainPerSecond = 18f;
+        private CharacterStamina stamina;
+        private bool sprintExhausted;
+        private Vector3 desiredDirection;
         [SerializeField] private float sprintSpeed = 8f;
 
         [SerializeField]
@@ -78,6 +83,7 @@ namespace Frieren.Player
         private void Awake()
         {
             motor = GetComponent<CharacterMotor>();
+            stamina = GetComponent<CharacterStamina>();
             actionLock = GetComponent<CharacterActionLock>();
             characterAnimation = GetComponent<ICharacterAnimation>();
             jumpGate = new JumpGate(coyoteTime, jumpBufferTime);
@@ -173,6 +179,7 @@ namespace Frieren.Player
 
             if (IsUnderExternalControl())
             {
+                IsSprinting = false;
                 // Another ability owns the body. Keep our cached velocity in step with reality so
                 // there is no snap when control returns.
                 planarVelocity = motor.Velocity;
@@ -182,7 +189,10 @@ namespace Frieren.Player
             }
 
             ApplyMovement(deltaTime);
+            Vector3 previousForward = transform.forward;
             ApplyRotation(deltaTime);
+            if (characterAnimation is MecanimCharacterAnimation turningAnimation)
+                turningAnimation.SetTurnRate(Vector3.SignedAngle(previousForward, transform.forward, Vector3.up) / deltaTime);
             TryJump();
             UpdateAnimation();
         }
@@ -192,6 +202,17 @@ namespace Frieren.Player
         private void ApplyMovement(float deltaTime)
         {
             Vector2 input = inputReader != null ? inputReader.MoveInput : Vector2.zero;
+            input = Vector2.ClampMagnitude(input, 1f);
+            bool sprintHeld = inputReader != null && inputReader.SprintHeld;
+            if (!sprintHeld && stamina != null && stamina.Normalized >= 0.2f)
+                sprintExhausted = false;
+            IsSprinting = sprintHeld && !sprintExhausted && input.sqrMagnitude > 0.01f
+                && motor.IsGrounded && stamina != null;
+            if (IsSprinting && !stamina.SpendSprint(sprintDrainPerSecond * deltaTime))
+            {
+                sprintExhausted = true;
+                IsSprinting = false;
+            }
             Vector3 direction;
             if (FaceTarget != null && !IsSprinting)
             {
@@ -216,9 +237,9 @@ namespace Frieren.Player
                 direction = MotorMath.CameraRelativeDirection(input, cameraRotation);
             }
 
-            IsSprinting = inputReader != null && inputReader.SprintHeld && direction.sqrMagnitude > 0.01f;
-
-            float targetSpeed = IsSprinting ? sprintSpeed : walkSpeed;
+            desiredDirection = direction;
+            float targetSpeed = IsSprinting ? sprintSpeed :
+                (inputReader != null && inputReader.WalkHeld ? walkSpeed : runSpeed);
             Vector3 targetVelocity = direction * targetSpeed;
 
             bool slowingDown = targetVelocity.sqrMagnitude < planarVelocity.sqrMagnitude;
@@ -265,9 +286,9 @@ namespace Frieren.Player
 
                 facing = toTarget.normalized;
             }
-            else if (planarVelocity.sqrMagnitude > 0.01f)
+            else if (desiredDirection.sqrMagnitude > 0.01f)
             {
-                facing = planarVelocity.normalized;
+                facing = desiredDirection.normalized;
             }
             else
             {
@@ -316,7 +337,7 @@ namespace Frieren.Player
                 motor.IsGrounded,
                 motor.VerticalVelocity);
             if (characterAnimation is MecanimCharacterAnimation mecanim)
-                mecanim.SetMovementDirection(planarVelocity);
+                mecanim.SetMovementDirection(planarVelocity, FaceTarget != null && !IsSprinting, sprintSpeed);
         }
 
         /// <summary>
@@ -340,6 +361,10 @@ namespace Frieren.Player
 
         private void OnJumpPressed() => jumpGate.NotifyJumpPressed(Time.time);
 
-        private void OnLanded(float impactSpeed) => characterAnimation?.PlayAction(CharacterAction.Land);
+        private void OnLanded(float impactSpeed)
+        {
+            if (characterAnimation is MecanimCharacterAnimation mecanim) mecanim.SetLanding(impactSpeed);
+            characterAnimation?.PlayAction(CharacterAction.Land);
+        }
     }
 }

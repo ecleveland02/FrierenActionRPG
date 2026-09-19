@@ -16,6 +16,6 @@ namespace Frieren.Core.Debugging
     public static class BuildStamp
     {
         /// <summary>Bump this whenever behaviour changes. Shown in the debug overlay.</summary>
-        public const string Current = "open world v5 - layered meadows and tall grass";
+        public const string Current = "world entry v1 - open world grounded spawn";
     }
 }

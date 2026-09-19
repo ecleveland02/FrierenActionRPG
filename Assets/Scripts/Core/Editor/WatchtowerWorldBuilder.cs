@@ -292,6 +292,12 @@ namespace Frieren.Core.EditorTools
             SetArray(music, "encounters", new Object[] { first, second });
             Set(music, "exploration", Audio("Exploration", "Assets/Audio/25 Rpg Game Tracks/Light Ambient 3 (Loop).wav", Vector3.zero, 0.38f, false));
             Set(music, "combat", Audio("Combat", "Assets/Audio/25 Rpg Game Tracks/Action 2 (Loop).wav", Vector3.zero, 0f, false));
+            SetArray(music, "combatTracks", new Object[] {
+                Require<AudioClip>("Assets/Audio/25 Rpg Game Tracks/Action 1 (Loop).wav"),
+                Require<AudioClip>("Assets/Audio/25 Rpg Game Tracks/Action 2 (Loop).wav"),
+                Require<AudioClip>("Assets/Audio/25 Rpg Game Tracks/Action 3 (Loop).wav"),
+                Require<AudioClip>("Assets/Audio/25 Rpg Game Tracks/Action 4 (Loop).wav"),
+                Require<AudioClip>("Assets/Audio/25 Rpg Game Tracks/Action 5 (Loop).wav") });
             Set(music, "forest", Audio("Forest Birds", "Assets/Audio/Nature - Essentials/Ambiance_Forest_Birds_Loop_Stereo.wav", Vector3.zero, 0.2f, false));
             Audio("Forest Wind", "Assets/Audio/Nature - Essentials/Ambiance_Wind_Forest_Loop_Stereo.wav", Vector3.zero, 0.10f, false);
             Audio("Campfire", "Assets/Audio/Nature - Essentials/Ambiance_Firecamp_Small_Loop_Mono.wav", new Vector3(-4.5f, 0.5f, -29f), 0.6f, true);

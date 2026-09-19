@@ -60,7 +60,7 @@ namespace Frieren.Magic
         /// <summary>Raised when a cast is refused, with a short reason for feedback.</summary>
         public event Action<SpellDefinition, string> CastRefused;
 
-        public bool IsCasting => castRoutine != null;
+        public bool IsCasting => CurrentSpell != null;
 
         /// <summary>True while a channelled spell is running and has not yet been released.</summary>
         public bool IsChannelling { get; private set; }
@@ -154,7 +154,10 @@ namespace Frieren.Magic
             cooldowns.Begin(spell.Id, Time.time, spell.Cooldown);
             CastStarted?.Invoke(spell);
             characterAnimation?.PlayAction(CharacterAction.CastStart);
-            castRoutine = StartCoroutine(CastRoutine(spell));
+            // An instant cast can finish before StartCoroutine returns. Do not restore its
+            // completed handle and leave subsequent input stuck in "already casting".
+            Coroutine started = StartCoroutine(CastRoutine(spell));
+            castRoutine = IsCasting ? started : null;
             return true;
         }
 
