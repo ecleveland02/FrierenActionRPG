@@ -16,6 +16,6 @@ namespace Frieren.Core.Debugging
     public static class BuildStamp
     {
         /// <summary>Bump this whenever behaviour changes. Shown in the debug overlay.</summary>
-        public const string Current = "m8.4 kaelcloth with the cloth sim";
+        public const string Current = "m8.5 eldenbrook merged, cloth sim kept";
     }
 }

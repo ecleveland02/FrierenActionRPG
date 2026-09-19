@@ -25,10 +25,13 @@ namespace Frieren.Characters.Animation
         [Header("Float parameters")]
         [SerializeField] private string speedParameter = "Speed";
         [SerializeField] private string normalizedSpeedParameter = "MoveBlend";
+        [SerializeField] private string directionParameter = "MoveDirection";
+        [SerializeField] private string forwardParameter = "MoveForward";
         [SerializeField] private string verticalVelocityParameter = "VerticalVelocity";
 
         [Header("Bool parameters")]
         [SerializeField] private string groundedParameter = "IsGrounded";
+        [SerializeField] private string sprintParameter = "IsSprinting";
 
         [Header("Damping")]
         [SerializeField]
@@ -37,8 +40,11 @@ namespace Frieren.Characters.Animation
 
         private int speedHash;
         private int normalizedSpeedHash;
+        private int directionHash;
+        private int forwardHash;
         private int verticalVelocityHash;
         private int groundedHash;
+        private int sprintHash;
         private bool warnedMissingAnimator;
 
         // Animator.parameters allocates a fresh array on every access, and this component touched
@@ -58,8 +64,11 @@ namespace Frieren.Characters.Animation
 
             speedHash = Animator.StringToHash(speedParameter);
             normalizedSpeedHash = Animator.StringToHash(normalizedSpeedParameter);
+            directionHash = Animator.StringToHash(directionParameter);
+            forwardHash = Animator.StringToHash(forwardParameter);
             verticalVelocityHash = Animator.StringToHash(verticalVelocityParameter);
             groundedHash = Animator.StringToHash(groundedParameter);
+            sprintHash = Animator.StringToHash(sprintParameter);
         }
 
         public void SetLocomotion(float planarSpeed, float normalizedSpeed, bool isGrounded, float verticalVelocity)
@@ -73,6 +82,15 @@ namespace Frieren.Characters.Animation
             SetFloatDamped(normalizedSpeedHash, normalizedSpeed);
             SetFloat(verticalVelocityHash, verticalVelocity);
             SetBool(groundedHash, isGrounded);
+            SetBool(sprintHash, normalizedSpeed > 0.8f);
+        }
+
+        public void SetMovementDirection(Vector3 worldVelocity)
+        {
+            if (!IsUsable()) return;
+            Vector3 local = transform.InverseTransformDirection(worldVelocity);
+            SetFloatDamped(directionHash, Mathf.Clamp(local.x / 8f, -1f, 1f));
+            SetFloatDamped(forwardHash, Mathf.Clamp(local.z / 8f, -1f, 1f));
         }
 
         public void PlayAction(CharacterAction action)

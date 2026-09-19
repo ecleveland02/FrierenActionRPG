@@ -292,6 +292,9 @@ namespace Frieren.Core.EditorTools
         private void OnPreprocessModel()
         {
             if (!assetPath.StartsWith(KaelPrototypeBuilder.ModelFolder, StringComparison.Ordinal)) return;
+            // KaelRigged contains artist-supplied Humanoid exports. Do not overwrite their
+            // importer choice with the Generic settings used by the legacy prototype FBXs.
+            if (assetPath.StartsWith(KaelPrototypeBuilder.ModelFolder + "KaelRigged/", StringComparison.Ordinal)) return;
             var importer = (ModelImporter)assetImporter;
             importer.animationType = ModelImporterAnimationType.Generic;
             importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
@@ -308,6 +311,7 @@ namespace Frieren.Core.EditorTools
         private void OnPreprocessAnimation()
         {
             if (!assetPath.StartsWith(KaelPrototypeBuilder.ModelFolder, StringComparison.Ordinal)) return;
+            if (assetPath.StartsWith(KaelPrototypeBuilder.ModelFolder + "KaelRigged/", StringComparison.Ordinal)) return;
             var importer = (ModelImporter)assetImporter;
             string clipName = Path.GetFileNameWithoutExtension(assetPath).Replace("Kael_", "");
             var clips = importer.defaultClipAnimations;
