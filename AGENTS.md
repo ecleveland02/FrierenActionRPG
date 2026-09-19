@@ -30,19 +30,25 @@ and quests are authored content, never hardcoded branches.
 | 6.2 - Time slows while the wheel is open | Verified in play by the owner |
 | 7 - The Watchtower vertical slice | Verified in play by the owner |
 | 7.1 - Camera: cursor claims, lock-on, off-centre framing | Verified in play by the owner |
-| 7.2 - Kael as the player character | Pushed; retargeting unverified |
+| 7.2 - Kael as the player character | Pushed; still does not animate, see STATUS.md |
 | 7.3 - Spell icons and spell VFX | Pushed; unverified on screen |
+| 8 - HUD: vitals, spell slot, lock-on reticle | Pushed; unverified on screen |
+| 9 - Eldenbrook open world (Codex) | Merged 2026-09-19; standalone scene, never played |
 
 **The full picture, and what happens next, is in [`docs/STATUS.md`](docs/STATUS.md). Read that
 first.** It supersedes this table whenever the two disagree.
 
-Kael is no longer a side spike. `Player.prefab` now instantiates
-`Assets/Art/Characters/KaelMeshyCloth/KaelCloth.fbx` with `MecanimCharacterAnimation` driving
-`Kael.controller`, and the eight animation FBXs have been converted from Generic to Humanoid so they
-retarget onto it. The blockout at `Assets/Art/Characters/Kael/Models/Kael.fbx` is no longer used by
-the player and is kept only as the source of those animation clips.
+Kael is no longer a side spike. `Player.prefab` instantiates
+`Assets/Art/Characters/KaelMeshyCloth/KaelCloth.fbx`, cloth simulation included, with
+`MecanimCharacterAnimation` driving `Kael.controller`. The eight animation FBXs were converted from
+Generic to Humanoid so they would retarget onto it, and they still do not: he stands in a T-pose,
+which is now a diagnosed problem rather than a mysterious one - see STATUS.md section 6 item 2 for
+why, and for the three untried fixes sitting on the branch right now (a real animation pack a single
+menu command away, Mixamo, or an alternate AI-generated rig). The blockout at
+`Assets/Art/Characters/Kael/Models/Kael.fbx` is no longer used by the player and is kept only as the
+source of those failing animation clips.
 
-**343 tests exist (260 EditMode, 83 PlayMode) and none has ever been run.** Treat anything not
+**351 tests exist (268 EditMode, 83 PlayMode) and none has ever been run.** Treat anything not
 actually exercised in the editor as unverified.
 
 Running Milestones 1 and 2 found three defects static analysis had missed, which is worth knowing
@@ -212,15 +218,26 @@ Check with the script before removing one.
 |---|---|
 | The milestone line: core, characters, magic, combat, world systems | Claude |
 | The Kael character spike: cloth, rig, animation clips, Blender pipeline | Codex |
+| The Eldenbrook open world: terrain, foliage, village, world-builder tooling | Codex |
 
 Concretely, Codex owns `KaelClothBuilder.cs`, `KaelPrototypeBuilder.cs`, `Tools/Blender/`,
-`KaelClothPlayer.prefab`, `KaelClothTestScene.unity`, `Assets/Art/Characters/`, `ArtSource/` and the
-`KAEL_*.md` documents. Claude owns everything under the milestone plan, including `Player.prefab`
-and `TestScene.unity`.
+`KaelClothPlayer.prefab`, `KaelClothTestScene.unity`, `Assets/Art/Characters/`, `ArtSource/`, the
+`KAEL_*.md` documents, `Assets/Scenes/FrierenOpenWorld.unity`, `docs/FRIEREN_OPEN_WORLD.md`, and the
+world-builder editor scripts (`FrierenMapWorldBuilder.cs`, `EldenbrookLandscape.cs`,
+`WorldFoliagePass.cs`, `StarterVillageBuilder.cs`, `KaelHumanAnimationPackBuilder.cs`). Claude owns
+everything under the milestone plan, including `Player.prefab` and `TestScene.unity`.
 
 `CharacterClothWind.cs` sits in Claude's assembly but is Codex's component; leave it alone unless
 the cloth work needs it changed. Diagnostics for someone else's subsystem go in a new file rather
 than into theirs - see `KaelClothDiagnostics.cs`.
+
+`Player.prefab` and `BuildStamp.cs` are the two files both owners have now actually needed to touch
+at once, on 2026-09-19: Codex's branch experimented with swapping Kael's model and diverged from
+this branch's cloth-sim restoration. Ownership above still holds for where new work starts, but a
+shared file that has diverged is resolved by diffing the two versions' actual components against
+each other before picking one - not by trusting a text merge on hand-authored YAML, and not by
+picking a side without checking what the other side uniquely contains. See STATUS.md section 5b for
+exactly how that resolution went.
 
 Neither owner edits the other's files without saying so first. This division is why the first
 merge of the two lines of work had zero conflicts.

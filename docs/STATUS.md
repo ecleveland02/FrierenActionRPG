@@ -1,6 +1,6 @@
 # Project status and forward plan
 
-Last updated 2026-09-13, at commit `f7404d0`.
+Last updated 2026-09-19, at commit `62ec0de` (merge of `codex/open-world-v5`).
 
 This is the single page to read before picking up work. It says what exists, what is actually
 verified, what is known to be broken or missing, and what should happen next. For the reasoning
@@ -47,6 +47,7 @@ Do not reintroduce URP without revisiting that. See section 6.
 | 7.2 Kael as the player character | Model swapped and pushed; **retargeting unverified** |
 | 7.3 Spell icons and spell VFX | Wired and pushed; **unverified on screen** |
 | 8 HUD: vitals, spell slot, lock-on reticle | Written; **unverified on screen** |
+| 9 Eldenbrook open world (Codex) | Merged 2026-09-19; **never pressed Play, standalone scene** |
 
 "Verified in play by the owner" means a human pressed Play and it behaved. It does not mean tested.
 
@@ -98,7 +99,9 @@ without giving the flash-and-floating-text layer a dependency on player input.
 Logic worth testing goes in a plain C# class, not a MonoBehaviour. `JumpGate`, `OrbitCameraSolver`,
 `MotorMath`, `ResourcePool`, `BurnState`, `TimeScaleState`, `LockOnPicker` and
 `SpellWheelInput.SlotFor` and `BarSmoothing` all exist because their logic was extracted out of
-components.
+components. 167 C# files across the same 13 assemblies as of the merge below; no new assembly
+was needed for the open world, which lives entirely in `Frieren.Core.Editor` build tooling plus
+the scene file itself.
 
 ---
 
@@ -193,55 +196,134 @@ checks the exit code, and fails loudly. `PlayerSpawner` reports the spawned body
 count, bounds, animator state — and says outright when it is the placeholder rather than the rigged
 character.
 
+## 5b. What changed since (2026-09-13 to 09-19)
+
+Twelve more commits on this branch, `c0a075e` through `e2c46bb`, then a merge of a second branch,
+`codex/open-world-v5` (24 commits), landing at `62ec0de`.
+
+**Milestone 8: a real HUD.** New `Frieren.UI` assembly (screen-space, references `Frieren.Player`;
+kept separate from `Frieren.Presentation`, which is world-space and does not). Built at runtime in
+code rather than authored as a prefab, because a UGUI hierarchy in hand-written YAML needs a
+TextMeshPro font asset this project does not have. Two-speed health and mana bars - the fill snaps
+to the truth, a ghost trails behind at a fixed rate after a short pause - plus the spell slot with a
+radial cooldown sweep and the lock-on reticle, replacing the last `OnGUI` placeholders those systems
+were judged through.
+
+**Kael actually standing on the ground.** `CharacterVisualAlign` measures the rendered bounds at
+`Start` and moves the visual so its feet sit on the collider's base, rather than a hand-typed offset
+that goes stale on the next model swap. `PlayerSpawner` and the vitals overlay both gained rig
+diagnostics - avatar humanoid/generic, whether the current clip's normalised time is actually
+advancing - because "no character", "sunk in the floor" and "frozen in a T-pose" all look identical
+from the outside and are three different bugs.
+
+**The cloth simulation, dropped then restored.** The KaelCloth swap in the prior window carried the
+mesh but not what makes it "the cloth one" - the graft's cross-references into objects Player.prefab
+did not have were cleared rather than ported, silently dropping five capsule colliders, the `Cloth`
+component and its 894 per-vertex coefficients, and `CharacterClothWind`. Ported properly afterward,
+along with two more exemptions `check_unity_yaml` needed for nested-prefab additions it had not seen
+before (a stripped GameObject has no component list; a stripped transform has no children), each
+proven by breaking the prefab that way and watching the check fire.
+
+**The animation diagnosis, not yet a fix.** T-pose (not sinking, not invisible) proved the humanoid
+system and the model's avatar are both fine, and that the eight animation clips are what fails to
+retarget: KaelCloth's skeleton is Mixamo naming, the source clips use `Shoulder.L` / `Thigh.L` in an
+A-pose, and Generic binding is impossible given the hierarchy mismatch. Recorded rather than guessed
+at again - see item 2 below.
+
+**Tooling for a shared branch going wrong.** `Update.bat` pulling a new copy of itself while
+`cmd.exe` was still reading the old one produced `'hing' is not recognized`, from mid-word in
+"nothing"; both update scripts now relaunch from a `%TEMP%` copy first. `Rescue-LocalWork.bat` and
+`Sync-To-Server.bat` exist because a local commit that never reached the server left a pull stuck
+mid-merge with conflict markers in `BuildStamp.cs` - both scripts push anything of value to a
+timestamped rescue branch before resetting anything, so a bad state is recoverable by running one
+file rather than by being talked through git over chat.
+
+**The merge.** `codex/open-world-v5` branched from `4631a5a`, before the cloth restoration and the
+rig diagnostics above, and added `Assets/Scenes/FrierenOpenWorld.unity`: nine 4 km terrain tiles
+(144 km<sup>2</sup>), snowy northern mountains, forests, a carved river with a footbridge, and
+**Eldenbrook**, a six-cottage starter village. Built entirely through Unity Editor menu commands,
+documented in `docs/FRIEREN_OPEN_WORLD.md`, and explicitly standalone - it does not touch Boot or
+the Watchtower. It also added real, keepable locomotion work: `PlayerLocomotion` strafes
+target-relative while locked on rather than camera-relative, faces the sprint direction instead of
+the target while sprinting, and `MecanimCharacterAnimation` gained the `MoveDirection` /
+`MoveForward` / `IsSprinting` parameters that drive it.
+
+Only two files were touched on both branches: `Player.prefab` and `BuildStamp.cs`. Resolved by hand
+rather than trusting a line merge on hand-authored YAML: `BuildStamp.cs` took a new combined stamp,
+and `Player.prefab` took this branch's version whole, because the two sides' script components were
+diffed directly and the only difference was `CharacterClothWind`, present only here. Codex's branch
+had, over its own 24 commits, tried swapping in an AI-generated rigged model ("KaelRigged", via
+Tripo) and a real animation pack ("Kevin Iglesias" Human Animations) with matching Editor menu
+commands to switch between them - but none of that is what ended up wired into their committed
+`Player.prefab`, which pointed at the same KaelCloth mesh and the same unfixed `Kael.controller` this
+branch already had. Those menu commands (`Frieren > Kael > ...`) survived the merge and are the
+fastest way to actually try the Kevin Iglesias pack, since its clips are real and already imported.
+
+All four validators pass on the merged tree, including `check_unity_yaml` against the new scene file
+at 47 scanned assets. Not run: the Test Runner, and nobody has pressed Play on any of this.
+
+
 ---
 
 ## 6. Known gaps, in priority order
 
-1. **343 tests have never been run.** Open the Test Runner. This is the highest value hour available.
-2. **Kael does not animate, and the cause is now known.** He renders in a T-pose, which means the
-   humanoid system is running and the model's avatar is fine; a clip with no valid humanoid data
-   plays as the avatar's rest pose. So the eight animation FBXs are the half that failed.
+1. **351 tests have never been run.** Open the Test Runner. This is the highest value hour available,
+   and it now has to cover the merge above too - nothing in `codex/open-world-v5` added tests.
 
-   They cannot be made to work as Generic clips either. KaelCloth's skeleton is Mixamo naming with
-   the prefix stripped - Hips, LeftUpLeg, LeftLeg, LeftFoot, LeftToeBase, Spine, Spine01, Spine02,
-   LeftShoulder, LeftArm, LeftForeArm, LeftHand, neck, Head - while the blockout uses Root, Hips,
-   Spine, Chest, Shoulder.L, UpperArm.L, Forearm.L, Thigh.L, Shin.L. Different names and a
-   different hierarchy, so Generic path binding is impossible and humanoid retargeting is the only
-   route from those clips. That retargeting is what is failing: the blockout is authored in an
-   A-pose (build_kael.py line 308) with bone names Unity's mapper has to guess at.
+2. **Kael still does not animate, and there are now three ways to try to fix it rather than one.**
+   The diagnosis stands: a T-pose means the humanoid system and the model's avatar are both fine, and
+   the eight source clips are what fails to retarget. KaelCloth's skeleton is Mixamo naming - Hips,
+   LeftUpLeg, LeftLeg, Spine, Spine01, Spine02, LeftShoulder, LeftForeArm - while the blockout clips
+   use Root, Chest, Shoulder.L, Thigh.L, Shin.L in a different hierarchy and an A-pose, so Generic
+   binding is impossible and humanoid retargeting is the only route, and it is the route failing.
 
-   The cheap fix is Mixamo. KaelCloth's rig is already Mixamo-shaped, so animations downloaded for
-   it come back on its own skeleton and bind with no retargeting at all. That also replaces
-   hand-keyed blockout poses with captured motion. See section 7.
+   Three options now sit side by side, none yet tried in the editor:
+   - **`Frieren > Kael > Use Kevin Human Animation Pack`** - a menu command from the merge that
+     builds a controller from a real, already-imported animation pack (idle, walk, run, strafes,
+     jump, land). The clips exist and are Mecanim-ready; this is the fastest thing to actually try.
+   - **Mixamo**, as recommended before the merge: KaelCloth's rig is Mixamo-shaped, so clips fetched
+     for it bind with no retargeting at all.
+   - **`Frieren > Kael > Use Imported KaelRigged Model`** - swaps to an AI-generated ("Tripo") body.
+     Untested and the model's own `.meta` was never committed, so this one needs redoing before it
+     can work at all.
+
+   Whichever wins, the cloth simulation this branch restored is specific to KaelCloth; swapping the
+   body again means deciding whether cloth still matters or the animation fix takes priority.
 
 3. **KaelCloth has no StaffSocket bone.** The blockout had one; this rig ends at LeftHand and
    RightHand. Attaching the staff means parenting to RightHand rather than to a purpose-made bone.
 
-4. **Kael's retargeting is unverified.** Humanoid retargeting quality depends on the two rest poses
-   agreeing. If a clip looks wrong, it is the avatar T-pose, fixed in the Rig tab under Configure,
-   not in any file. The source rig's `Coat` chain and `StaffSocket` are not humanoid bones and are
-   dropped in retargeting; that matters when the staff gets attached.
-3. **Kael has no Death or Attack clip.** Death is handled by `DeathSink` tipping the body.
+4. **Kael has no Death or Attack clip.** Death is handled by `DeathSink` tipping the body.
    `MecanimCharacterAnimation` ignores an action with no matching trigger, so neither logs an error.
-4. **Spell icon choices are guesses.** Mapped from the Blink pack's class folder names without ever
+
+5. **Spell icon choices are guesses.** Mapped from the Blink pack's class folder names without ever
    seeing the images.
-5. **The Water spell's VFX is a snow hit.** Closest thing the pack has to a splash. Replace first.
-6. **Git LFS is over quota and this is now blocking, not theoretical.** The repository holds
-   **2.52 GB** of LFS content against GitHub's free allowance of 1 GB storage and 1 GB of downloads
-   per month. `Assets/Audio` alone is 1.90 GB, 76% of the total, across five overlapping music
-   libraries that are barely used. Without it the repository would be 0.62 GB and comfortably
-   inside the free tier.
+
+6. **The Water spell's VFX is a snow hit.** Closest thing the pack has to a splash. Replace first.
+
+7. **Git LFS is over quota and this is blocking, not theoretical.** Roughly **2.57 GB** of LFS
+   content against GitHub's free allowance of 1 GB storage and 1 GB of downloads per month -
+   `Assets/Audio` alone is 1.90 GB across five overlapping, barely-used music libraries, and the
+   merge added another ~46 MB (the Kevin Iglesias pack, the Tripo model, new terrain and prop
+   textures). Without the audio the repository would be comfortably inside the free tier.
 
    Two things worth knowing before acting. First, deleting the audio in a new commit does **not**
    reclaim LFS storage: the objects stay on the remote, and GitHub's documented way to remove them
    is to delete and recreate the repository. Second, code and scenes are ordinary text and are not
    affected, so `Update-NoLFS.bat` pulls everything except art and audio and works while LFS is
    blocked.
-7. **The HUD is unverified.** Built at runtime in code rather than as a prefab, so it cannot be
+
+8. **The HUD is unverified.** Built at runtime in code rather than as a prefab, so it cannot be
    inspected without pressing Play. Font is the engine builtin; a real one is a single change in
    `HudBuilder.Font`.
-8. **`MonsterCelMaterial.mat`** references a texture GUID not in the repo, so it renders white.
-   Nothing uses it; inventing a texture would be a guess.
+
+9. **The Eldenbrook open world has never been played.** Built and validated structurally, but no one
+   has pressed Play in that scene: no frame rate profile, no confirmation the terrain collider holds
+   the player, no check that foliage density is sane at ground level despite `WorldFoliagePass`
+   offering a preview command for exactly that.
+
+10. **`MonsterCelMaterial.mat`** references a texture GUID not in the repo, so it renders white.
+    Nothing uses it; inventing a texture would be a guess.
 
 ---
 
@@ -249,27 +331,32 @@ character.
 
 **Immediately, before new features:**
 
-- Run the Test Runner. Fix what fails. 343 tests written blind will not all pass.
-- Confirm Kael animates correctly, and fix the avatar T-pose if not.
+- Run the Test Runner. Fix what fails. 351 tests written blind will not all pass, and that is now
+  true of both lines of work in the merge, not just one.
+- Pick a Kael animation route from the three in section 6 item 2 and actually try it in the editor -
+  Kevin Iglesias first, since its clips are real and already imported and it costs one menu click.
+- Press Play in `FrierenOpenWorld.unity` at least once. Nobody has, on either side of the merge.
 - Look at the nine spell icons and the nine VFX on screen; swap what reads wrong.
 
-**Then, the natural next milestone — Milestone 8, the HUD.** Health, mana, the selected spell,
-cooldowns and a lock-on reticle, replacing the `OnGUI` placeholders. It is the gate on judging combat
-feel honestly, and lock-on has already run into it.
+**A decision, not a task: does Eldenbrook join the milestone line, or stay a separate prototype?**
+It does not touch Boot or the Watchtower today, which was the right call for merging it safely, but
+that also means it is disconnected from persistence, spells and combat. Folding it in later is a
+real integration - the `PlayerSpawner` and camera it already carries are the easy part.
 
-**After that, in rough order:**
+**After the animation question is settled, in rough order:**
 
-- **Attach the staff.** The magic staff pack is imported and unused; the rig has a `StaffSocket`
-  bone, which is currently dropped by humanoid retargeting and will need an explicit transform.
+- **Attach the staff.** The magic staff pack is imported and unused; whichever rig wins needs an
+  explicit transform for it, since neither KaelCloth nor KaelRigged has a purpose-made socket bone.
 - **A second enemy type** that forces a different answer than the first, to prove the enemy data
   model is actually general.
 - **Audio.** The libraries are imported and `CombatMusicState` / `EncounterMusic` exist but are
   minimal.
-- **A second area**, to prove the scene and persistence systems hold across a transition. Persistence
-  is written and has never been exercised deliberately.
-- **Trim the audio** before the LFS cliff arrives.
+- **Persistence across a transition** - Eldenbrook is the obvious second area if it joins the
+  milestone line; if not, a smaller purpose-built one still needs to exist, since persistence has
+  never been exercised deliberately.
+- **Trim the audio** before the LFS cliff, which the merge moved closer rather than further away.
 
-**Not yet:** final art, dialogue, quests, inventory. The brief's constraint still holds — the
+**Not yet:** final art, dialogue, quests, inventory. The brief's constraint still holds - the
 vertical slice has to be fun first.
 
 ---
@@ -279,6 +366,12 @@ vertical slice has to be fun first.
 - **Two agents share this repo** (Claude and Codex/GPT) with the owner as integrator. Strict file
   ownership, documented in [`COLLABORATION.md`](COLLABORATION.md). Never edit a file the other agent
   owns in the current handoff without saying so.
+- **Separate branches, merged deliberately, is the pattern that works.** The `codex/open-world-v5`
+  merge touched only two files on both sides in 24 commits of divergence, and both were resolved by
+  hand rather than trusted to a line merge. The earlier disaster this project already paid for -
+  two agents committing to the same branch name, surfacing as a conflict on the owner's machine
+  instead of on either agent's - has not recurred since each agent got its own branch. Keep it that
+  way; do not go back to a shared branch for convenience.
 - **Hand-editing YAML is permitted but gated.** `AGENTS.md` rule 1 originally banned it; that was
   written when the alternative was the editor. In practice the entire asset layer is hand-authored,
   and the four validators are what make it safe. The rule is now: hand-edit if you must, run all four
