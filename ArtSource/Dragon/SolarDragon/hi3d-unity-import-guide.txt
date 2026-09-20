@@ -1,0 +1,66 @@
+Solar Dragon â€” Unity import guide
+
+CONTENTS
+- FBX: custom Generic creature skeleton, skinned body, jaw, tongue and teeth, five test clips.
+- BLEND: editable packed-texture source. Select SolarDragon_Rig and enter Pose Mode to animate.
+- GLB: portable skinned preview with embedded materials and animations.
+- 4K textures and a Unity metallic/smoothness conversion.
+- Rendered inspection poses, skeleton map and validation reports.
+
+SKELETON
+95 bones total, including Root; spine, two neck joints, head, jaw, three tongue joints,
+four lip controls, independent forelimbs and hindlimbs, three toe/claw chains and one
+dewclaw per foot, shoulder/forearm/thumb and four 3-joint finger chains per wing,
+and ten tail joints. This is an FK/deformation rig; it does not include animator IK
+widgets, a Humanoid avatar, gameplay controllers, collisions, or a locomotion pack.
+L/R refer to the character's own left/right. Preserve these bone names for animation.
+
+UNITY (2022 LTS or newer recommended)
+1. Copy the FBX and textures folder into Assets/SolarDragon. Keep the BLEND outside
+   Assets to avoid Unity automatically importing a second model.
+2. FBX > Rig: Animation Type = Generic; Avatar Definition = Create From This Model.
+   Select Root as the root-motion node if your Unity version exposes this setting.
+   Keep Optimize Game Objects off while directly controlling individual bones.
+3. Model > Skin Weights: Custom, Max Bones Per Vertex = 8. In project quality settings
+   allow Unlimited skin weights, and use Auto on the SkinnedMeshRenderer.
+   A four-influence runtime setting truncates the authored wing weights.
+4. Extract materials. For the body material use URP/Lit or Built-in Standard:
+   hi3d-dragon-texture-0.png = Base Map/Albedo, sRGB ON.
+   hi3d-unity-metallic-smoothness.png = Metallic map, sRGB OFF;
+   red contains metallic, alpha contains smoothness. Set smoothness multiplier to 1.
+   hi3d-dragon-texture-1.png is the original glTF metallic/roughness map;
+   do not assign it directly to Unity's metallic/smoothness slot.
+   Mouth_Lining: dark burgundy; Tongue: muted pink; Ivory_Teeth: warm ivory.
+   HDRP needs material conversion to its own mask-map convention.
+5. Enable Import Animation. The five clips are Jaw_Open_Close, Wing_Flap_Test,
+   Tail_Sway_Test, Limbs_Claws_Test, and Lips_Tongue_Test at 30 fps.
+   FBX may prefix these names with the rig name. They are diagnostic clips.
+6. Drag the FBX into your scene and create an Animator Controller as needed.
+   The reference length is approximately 5 meters nose-to-tail, feet at ground level.
+   For smaller characters, scale the parent GameObject uniformly.
+
+BLENDER
+All five diagnostic actions are available in the Action Editor. NLA tracks are
+muted so they do not stack accidentally; select one action at a time for playback.
+Textures are packed. The mouth is a separate lower jaw, connected quad-ring palate
+and floor liners, modeled tongue and separately attached upper/lower teeth.
+The body preserves generated triangular topology; it is not an all-quad sculpt cage.
+
+VALIDATION AND LIMITS
+All integer frames of the supplied clips were checked for finite deformation.
+Read hi3d-original-rig-validation.json for actual edge-stretch measurements, including remaining
+local wing-membrane stretch. These are measurements, not a collision-free certificate.
+The Blender, GLB and FBX files were reopened and checked for skeleton, skin weights
+and actual jaw movement; see hi3d-roundtrip-validation.json.
+Unity itself was not available for an engine import test. Validate the material
+pipeline and your production animations in your target Unity project.
+Extreme wing folding, flight and locomotion need animation-specific deformation
+review and possible corrective shapes. No high-to-low normal-map bake or LOD chain
+is included. The original detailed source remains a separate workspace model.
+
+JAW REVISION
+The jaw opening follows the black lip border. Jaw pivot, mouth liners, teeth and
+tongue position were adjusted. All non-mouth geometry and vertex skin weights
+were confirmed unchanged. See hi3d-jaw-revision-checks.json for the 40-frame check.
+The original rig-validation report describes the earlier version; use the jaw
+revision report for this mouth and the new round-trip report for current exports.

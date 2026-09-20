@@ -37,5 +37,15 @@ namespace Frieren.Tests.EditMode
             state.Clear();
             Assert.IsFalse(state.InCombat);
         }
+
+        [TestCase(5, 2, 2, 3)]
+        [TestCase(5, 2, 4, 4)]
+        [TestCase(2, 1, 1, 0)]
+        [TestCase(1, 0, 0, 0)]
+        public void CombatTrackSelectionAvoidsImmediateRepeats(
+            int count, int previous, int randomValue, int expected)
+        {
+            Assert.AreEqual(expected, CombatTrackSelection.Choose(count, previous, randomValue));
+        }
     }
 }

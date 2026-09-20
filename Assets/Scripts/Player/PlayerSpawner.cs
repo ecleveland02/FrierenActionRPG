@@ -1,4 +1,5 @@
 using Frieren.Characters;
+using Frieren.Core;
 using Frieren.Core.Debugging;
 using Frieren.Magic;
 using Frieren.Player.Cameras;
@@ -50,6 +51,9 @@ namespace Frieren.Player
         {
             Transform point = spawnPoint != null ? spawnPoint : transform;
 
+            StopInvalidTerrainNeighboring();
+            EnsureSpawnSafety(point);
+
             if (SpawnedPlayer != null)
             {
                 Respawn(point);
@@ -62,14 +66,56 @@ namespace Frieren.Player
                 return null;
             }
 
-            SpawnedPlayer = Instantiate(playerPrefab, point.position, point.rotation);
+            Vector3 spawnPosition = GroundedSpawnPosition(point.position);
+            SpawnedPlayer = Instantiate(playerPrefab, spawnPosition, point.rotation);
             SpawnedPlayer.name = playerPrefab.name;
 
             ConnectCamera();
-            GameLog.Info(LogChannel.Player, $"Player spawned at {point.position}.", this);
+            GameLog.Info(LogChannel.Player, $"Player spawned at {spawnPosition}.", this);
             ReportBody();
 
             return SpawnedPlayer;
+        }
+
+        private static void EnsureSpawnSafety(Transform point)
+        {
+            // A small invisible landing pad guarantees that the first physics frame has support,
+            // even while a large TerrainCollider is still synchronising after scene load.
+            BoxCollider safety = point.GetComponent<BoxCollider>();
+            if (safety == null) safety = point.gameObject.AddComponent<BoxCollider>();
+            point.gameObject.layer = GameLayers.Ground;
+            safety.isTrigger = false;
+            safety.center = new Vector3(0f, -0.1f, 0f);
+            safety.size = new Vector3(6f, 0.2f, 6f);
+            Physics.SyncTransforms();
+        }
+
+        private static void StopInvalidTerrainNeighboring()
+        {
+            foreach (Terrain terrain in Terrain.activeTerrains)
+            {
+                terrain.allowAutoConnect = false;
+                terrain.SetNeighbors(null, null, null, null);
+            }
+            Physics.SyncTransforms();
+        }
+
+        private static Vector3 GroundedSpawnPosition(Vector3 authoredPosition)
+        {
+            if (Physics.Raycast(authoredPosition + Vector3.up * 3f, Vector3.down, out RaycastHit hit,
+                    12f, 1 << GameLayers.Ground, QueryTriggerInteraction.Ignore))
+                return hit.point + Vector3.up * 0.08f;
+
+            foreach (Terrain terrain in Terrain.activeTerrains)
+            {
+                Vector3 origin = terrain.transform.position;
+                Vector3 size = terrain.terrainData.size;
+                if (authoredPosition.x < origin.x || authoredPosition.x > origin.x + size.x ||
+                    authoredPosition.z < origin.z || authoredPosition.z > origin.z + size.z) continue;
+                return new Vector3(authoredPosition.x,
+                    terrain.SampleHeight(authoredPosition) + origin.y + 0.08f, authoredPosition.z);
+            }
+            return authoredPosition;
         }
 
         /// <summary>

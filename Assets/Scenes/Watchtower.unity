@@ -16063,6 +16063,12 @@ MonoBehaviour:
   - {fileID: 343013959}
   exploration: {fileID: 1049265184}
   combat: {fileID: 1915945414}
+  combatTracks:
+  - {fileID: 8300000, guid: 5a1944aa7c9b294499f993b3c5b484f5, type: 3}
+  - {fileID: 8300000, guid: 3f9d2a49059160546818cd858b1adc43, type: 3}
+  - {fileID: 8300000, guid: 75809951836972743baf521ade23dca0, type: 3}
+  - {fileID: 8300000, guid: c7539e82f49a8554cae4b061c0ff1227, type: 3}
+  - {fileID: 8300000, guid: 826bb8ea4939f9340ba3d55e1120eb1f, type: 3}
   forest: {fileID: 1610038935}
   musicVolume: 0.38
   fadeSeconds: 2

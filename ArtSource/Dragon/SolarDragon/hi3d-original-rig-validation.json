@@ -1,0 +1,64 @@
+{
+  "target": "Unity Generic",
+  "scale": "5m nose-to-tail reference length",
+  "bones": 95,
+  "mesh_stats": {
+    "Dragon_Body": {
+      "vertices": 50600,
+      "unweighted": 0,
+      "max_influences": 8
+    },
+    "Dragon_LowerJaw": {
+      "vertices": 791,
+      "unweighted": 0,
+      "max_influences": 2
+    }
+  },
+  "mouth_boundary_loops": {
+    "upper": [
+      125
+    ],
+    "lower": [
+      125
+    ]
+  },
+  "deformation": {
+    "Jaw_Open_Close": {
+      "all_integer_frames_checked": 40,
+      "finite": true,
+      "max_edge_stretch": 1.0407256987525546,
+      "max_vertex_movement_m": 0.29819460533156833
+    },
+    "Wing_Flap_Test": {
+      "all_integer_frames_checked": 32,
+      "finite": true,
+      "max_edge_stretch": 3.865956068731195,
+      "max_vertex_movement_m": 0.8693469176512851
+    },
+    "Tail_Sway_Test": {
+      "all_integer_frames_checked": 48,
+      "finite": true,
+      "max_edge_stretch": 1.5953461111280782,
+      "max_vertex_movement_m": 1.315921005837365
+    },
+    "Limbs_Claws_Test": {
+      "all_integer_frames_checked": 32,
+      "finite": true,
+      "max_edge_stretch": 1.9543681879225745,
+      "max_vertex_movement_m": 0.389404700249535
+    },
+    "Lips_Tongue_Test": {
+      "all_integer_frames_checked": 32,
+      "finite": true,
+      "max_edge_stretch": 1.0872802615999182,
+      "max_vertex_movement_m": 0.18024261267573616
+    }
+  },
+  "triangles": 103562,
+  "notes": [
+    "Custom non-humanoid FK skeleton.",
+    "Test actions are deformation diagnostics, not a locomotion animation pack.",
+    "Automatic reduction preserves source UVs; no high-to-low normal bake was performed.",
+    "Numerical stretch checks do not establish collision-free animation."
+  ]
+}

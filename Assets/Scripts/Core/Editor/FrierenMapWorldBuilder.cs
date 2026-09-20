@@ -3,6 +3,7 @@ using System.IO;
 using Frieren.Core.Input;
 using Frieren.Player;
 using Frieren.Player.Cameras;
+using Frieren.Presentation;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -48,20 +49,67 @@ namespace Frieren.Core.EditorTools
             for (int z = 0; z < TilesPerAxis; z++)
             for (int x = 0; x < TilesPerAxis; x++)
                 terrains[x, z] = BuildTile(root.transform, x, z);
-            for (int z = 0; z < TilesPerAxis; z++)
-            for (int x = 0; x < TilesPerAxis; x++)
-                terrains[x, z].SetNeighbors(x > 0 ? terrains[x - 1, z] : null,
-                    z < TilesPerAxis - 1 ? terrains[x, z + 1] : null,
-                    x < TilesPerAxis - 1 ? terrains[x + 1, z] : null,
-                    z > 0 ? terrains[x, z - 1] : null);
+            // The village tile deliberately has a denser heightmap. Unity cannot neighbor terrain
+            // tiles with different resolutions, so keep the tiles independent.
             EldenbrookLandscape.BuildWaterAndBridge(root.transform);
             BuildScenicProps(root.transform);
             BuildLandmarks(root.transform);
             BuildPlayerStart(root.transform);
             StarterVillageBuilder.Build(root.transform, SurfaceHeight(1150f, 50f));
+            BuildSoundtrack(root.transform);
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.SaveAssets();
             Debug.Log("Created Frieren Open World: 12 x 12 km (55.6 square miles), 9 terrain tiles. Open Assets/Scenes/FrierenOpenWorld.unity to explore.");
+        }
+
+        [MenuItem("Frieren/World/Restore Open World Music", priority = 33)]
+        public static void RestoreOpenWorldMusic()
+        {
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            GameObject existing = GameObject.Find("Open World Soundtrack");
+            if (existing != null) Object.DestroyImmediate(existing);
+            BuildSoundtrack(null);
+            EditorSceneManager.SaveScene(scene, ScenePath);
+            AssetDatabase.SaveAssets();
+            Debug.Log("Restored exploration ambience and randomized combat music in FrierenOpenWorld.");
+        }
+
+        private static void BuildSoundtrack(Transform parent)
+        {
+            var host = new GameObject("Open World Soundtrack");
+            host.transform.SetParent(parent);
+            var music = host.AddComponent<EncounterMusic>();
+            var exploration = SoundtrackSource(host.transform, "Exploration",
+                "Assets/Audio/25 Rpg Game Tracks/Light Ambient 3 (Loop).wav", .38f);
+            var combat = SoundtrackSource(host.transform, "Combat",
+                "Assets/Audio/25 Rpg Game Tracks/Action 2 (Loop).wav", 0f);
+            var forest = SoundtrackSource(host.transform, "Forest Birds",
+                "Assets/Audio/Nature - Essentials/Ambiance_Forest_Birds_Loop_Stereo.wav", .2f);
+            SoundtrackSource(host.transform, "Forest Wind",
+                "Assets/Audio/Nature - Essentials/Ambiance_Wind_Forest_Loop_Stereo.wav", .1f);
+            SetReference(music, "exploration", exploration);
+            SetReference(music, "combat", combat);
+            SetReference(music, "forest", forest);
+            SetReferences(music, "combatTracks", new Object[]
+            {
+                Require<AudioClip>("Assets/Audio/25 Rpg Game Tracks/Action 1 (Loop).wav"),
+                Require<AudioClip>("Assets/Audio/25 Rpg Game Tracks/Action 2 (Loop).wav"),
+                Require<AudioClip>("Assets/Audio/25 Rpg Game Tracks/Action 3 (Loop).wav"),
+                Require<AudioClip>("Assets/Audio/25 Rpg Game Tracks/Action 4 (Loop).wav"),
+                Require<AudioClip>("Assets/Audio/25 Rpg Game Tracks/Action 5 (Loop).wav")
+            });
+        }
+
+        private static AudioSource SoundtrackSource(Transform parent, string name, string path, float volume)
+        {
+            var source = new GameObject(name).AddComponent<AudioSource>();
+            source.transform.SetParent(parent);
+            source.clip = Require<AudioClip>(path);
+            source.volume = volume;
+            source.loop = true;
+            source.playOnAwake = true;
+            source.spatialBlend = 0f;
+            return source;
         }
 
         [MenuItem("Frieren/World/Render Frieren Open World Preview", priority = 32)]
@@ -160,6 +208,7 @@ namespace Frieren.Core.EditorTools
             gameObject.transform.position = new Vector3(startX, 0f, startZ);
             gameObject.layer = GameLayers.Ground;
             var terrain = gameObject.GetComponent<Terrain>();
+            terrain.allowAutoConnect = false;
             terrain.drawHeightmap = true;
             terrain.heightmapPixelError = 8;
             terrain.basemapDistance = 2000f;
@@ -617,6 +666,15 @@ namespace Frieren.Core.EditorTools
         {
             var serialized = new SerializedObject(target);
             serialized.FindProperty(field).objectReferenceValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+        private static void SetReferences(Object target, string field, Object[] values)
+        {
+            var serialized = new SerializedObject(target);
+            SerializedProperty array = serialized.FindProperty(field);
+            array.arraySize = values.Length;
+            for (int i = 0; i < values.Length; i++)
+                array.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
         private static void EnsureFolder(string path)

@@ -1,0 +1,53 @@
+{
+  "blend": {
+    "rigs": 1,
+    "bones": [
+      95
+    ],
+    "mesh_count": 5,
+    "actions": [
+      "Jaw_Open_Close",
+      "Limbs_Claws_Test",
+      "Lips_Tongue_Test",
+      "Tail_Sway_Test",
+      "Wing_Flap_Test"
+    ],
+    "unweighted_vertices": 0,
+    "max_influences": 8,
+    "animated_vertices_move": true
+  },
+  "glb": {
+    "rigs": 1,
+    "bones": [
+      95
+    ],
+    "mesh_count": 5,
+    "actions": [
+      "Jaw_Open_Close",
+      "Limbs_Claws_Test",
+      "Lips_Tongue_Test",
+      "Tail_Sway_Test",
+      "Wing_Flap_Test"
+    ],
+    "unweighted_vertices": 0,
+    "max_influences": 8,
+    "animated_vertices_move": true
+  },
+  "fbx": {
+    "rigs": 1,
+    "bones": [
+      95
+    ],
+    "mesh_count": 5,
+    "actions": [
+      "SolarDragon_Rig|SolarDragon_Rig|Jaw_Open_Close",
+      "SolarDragon_Rig|SolarDragon_Rig|Limbs_Claws_Test",
+      "SolarDragon_Rig|SolarDragon_Rig|Lips_Tongue_Test",
+      "SolarDragon_Rig|SolarDragon_Rig|Tail_Sway_Test",
+      "SolarDragon_Rig|SolarDragon_Rig|Wing_Flap_Test"
+    ],
+    "unweighted_vertices": 0,
+    "max_influences": 8,
+    "animated_vertices_move": true
+  }
+}

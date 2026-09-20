@@ -50,17 +50,12 @@ namespace Frieren.Characters
         {
             Keyboard keyboard = Keyboard.current;
 
-            if (keyboard == null)
-            {
-                return;
-            }
-
-            if (keyboard.f2Key.wasPressedThisFrame && health != null)
+            if (keyboard != null && keyboard.f2Key.wasPressedThisFrame && health != null)
             {
                 health.TakeDamage(new DamageInfo(TestAmount, DamageType.Physical, gameObject));
             }
 
-            if (keyboard.f3Key.wasPressedThisFrame && health != null)
+            if (keyboard != null && keyboard.f3Key.wasPressedThisFrame && health != null)
             {
                 if (health.IsAlive)
                 {
@@ -72,23 +67,11 @@ namespace Frieren.Characters
                 }
             }
 
-            if (keyboard.f4Key.wasPressedThisFrame && mana != null)
+            if (keyboard != null && keyboard.f4Key.wasPressedThisFrame && mana != null)
             {
                 mana.TrySpend(TestAmount);
             }
-        }
 
-        /// <summary>
-        /// Watches whether the animator's normalised time is actually moving.
-        /// </summary>
-        /// <remarks>
-        /// A state name alone proves nothing. An animator sitting in Locomotion with a clip that
-        /// failed to retarget looks identical, from outside, to one playing a perfectly good idle.
-        /// Whether normalised time advances is the difference, and it is the single fact that
-        /// separates "the controller is wrong" from "the clip never bound".
-        /// </remarks>
-        private void Update()
-        {
             if (animator == null || animator.runtimeAnimatorController == null)
             {
                 return;

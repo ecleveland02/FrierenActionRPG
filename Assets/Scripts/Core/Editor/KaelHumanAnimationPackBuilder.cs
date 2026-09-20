@@ -244,6 +244,12 @@ namespace Frieren.Core.EditorTools
                         .IndexOf("Kael", StringComparison.OrdinalIgnoreCase) >= 0);
             if (string.IsNullOrEmpty(modelPath))
                 modelPath = AssetDatabase.GetAllAssetPaths()
+                    .Where(path => path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
+                                   path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
+                    .OrderByDescending(File.GetLastWriteTimeUtc)
+                    .FirstOrDefault();
+            if (string.IsNullOrEmpty(modelPath))
+                modelPath = AssetDatabase.GetAllAssetPaths()
                     .Where(path => path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
                     .Where(path => Path.GetFileNameWithoutExtension(path)
                         .IndexOf("Kael", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -265,6 +271,8 @@ namespace Frieren.Core.EditorTools
             {
                 var oldVisual = prefab.transform.Find("KaelVisual");
                 if (oldVisual != null) Object.DestroyImmediate(oldVisual.gameObject);
+                var oldClothVisual = prefab.transform.Find("KaelClothVisual");
+                if (oldClothVisual != null) Object.DestroyImmediate(oldClothVisual.gameObject);
                 var visual = (GameObject)PrefabUtility.InstantiatePrefab(model);
                 visual.name = "KaelVisual";
                 visual.transform.SetParent(prefab.transform, false);
